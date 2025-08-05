@@ -5,8 +5,8 @@ import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType } from './types';
-import { ICON_PATHS } from './constants';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette } from './types';
+import { ICON_PATHS, COLOR_PALETTES } from './constants';
 
 function App() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -23,9 +23,17 @@ function App() {
     const [smoothing, setSmoothing] = useState<number>(0);
     const [equalization, setEqualization] = useState<number>(0.25);
     const [showWarning, setShowWarning] = useState<boolean>(false);
+    const [backgroundColor, setBackgroundColor] = useState<BackgroundColorType>(BackgroundColorType.BLACK);
+    const [colorPalette, setColorPalette] = useState<ColorPaletteType>(ColorPaletteType.DEFAULT);
 
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    
+    const canvasBgColors: Record<BackgroundColorType, string> = {
+        [BackgroundColorType.BLACK]: 'rgba(0, 0, 0, 1)',
+        [BackgroundColorType.GREEN]: 'rgba(0, 255, 0, 1)',
+    };
+
 
     const handleRecordingComplete = useCallback((url: string, extension: string) => {
         setVideoUrl(url);
@@ -121,6 +129,8 @@ function App() {
                                 sensitivity={sensitivity}
                                 smoothing={smoothing}
                                 equalization={equalization}
+                                backgroundColor={canvasBgColors[backgroundColor]}
+                                colors={COLOR_PALETTES[colorPalette]}
                             />
                         </div>
 
@@ -157,6 +167,10 @@ function App() {
                             audioFile={audioFile}
                             videoUrl={videoUrl}
                             videoExtension={videoExtension}
+                            backgroundColor={backgroundColor}
+                            onBackgroundColorChange={setBackgroundColor}
+                            colorPalette={colorPalette}
+                            onColorPaletteChange={setColorPalette}
                         />
                     </div>
                 )}

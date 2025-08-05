@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef } from 'react';
-import { VisualizationType } from '../types';
+import { VisualizationType, Palette } from '../types';
 
 interface AudioVisualizerProps {
     analyser: AnalyserNode | null;
@@ -11,45 +11,46 @@ interface AudioVisualizerProps {
     sensitivity: number;
     smoothing: number;
     equalization: number;
+    backgroundColor: string;
+    colors: Palette;
 }
 
-const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
     const maxAmplitude = height * 0.35;
 
-    // 1. Draw central light beam (remains the same)
+    // 1. Draw central light beam
     const beamGradient = ctx.createLinearGradient(0, centerY, width, centerY);
     beamGradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
-    beamGradient.addColorStop(0.2, 'rgba(173, 235, 255, 0.5)');
-    beamGradient.addColorStop(0.5, 'rgba(200, 255, 255, 1)');
-    beamGradient.addColorStop(0.8, 'rgba(173, 235, 255, 0.5)');
+    beamGradient.addColorStop(0.2, `${colors.accent}40`); // 25% opacity
+    beamGradient.addColorStop(0.5, colors.accent);
+    beamGradient.addColorStop(0.8, `${colors.accent}40`);
     beamGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
     ctx.fillStyle = beamGradient;
     ctx.shadowBlur = 30;
-    ctx.shadowColor = 'rgba(0, 255, 255, 0.7)';
+    ctx.shadowColor = colors.accent;
     ctx.fillRect(0, centerY - 2, width, 4);
     
     // 2. Setup for the mirrored waves
     const waveGradient = ctx.createLinearGradient(centerX, centerY - maxAmplitude, centerX, centerY + maxAmplitude);
-    waveGradient.addColorStop(0, 'rgba(255, 100, 200, 0.8)'); // Pinkish top
-    waveGradient.addColorStop(0.4, 'rgba(0, 255, 255, 1)');   // Cyan middle
-    waveGradient.addColorStop(0.5, 'rgba(200, 255, 255, 1)'); // White core
-    waveGradient.addColorStop(0.6, 'rgba(0, 255, 255, 1)');   // Cyan middle
-    waveGradient.addColorStop(1, 'rgba(255, 100, 200, 0.8)'); // Pinkish bottom
+    waveGradient.addColorStop(0, `${colors.secondary}cc`); // 80% opacity
+    waveGradient.addColorStop(0.4, colors.primary);
+    waveGradient.addColorStop(0.5, colors.accent);
+    waveGradient.addColorStop(0.6, colors.primary);
+    waveGradient.addColorStop(1, `${colors.secondary}cc`);
 
     ctx.strokeStyle = waveGradient;
     ctx.lineWidth = 2.5;
     ctx.shadowBlur = 15;
-    ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
+    ctx.shadowColor = colors.primary;
 
     // 3. New drawing logic for mirrored, separated waves
     const drawMirroredBezierWave = (side: 'left' | 'right') => {
         const numPointsOnSide = 128;
         const dataSliceLength = dataArray.length * 0.5;
 
-        // Generate points for top and bottom curves for one side
         const topPoints: {x: number, y: number}[] = [];
         const bottomPoints: {x: number, y: number}[] = [];
 
@@ -65,7 +66,6 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
             bottomPoints.push({ x, y: centerY + (amplitude + oscillation) });
         }
         
-        // Helper to draw a smooth curve through a set of points
         const drawCurve = (points: {x: number, y: number}[]) => {
             if (points.length < 2) return;
             ctx.beginPath();
@@ -91,10 +91,13 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     ctx.restore();
 };
 
-const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
+
+    const [startHue, endHue] = colors.hueRange;
+    const hueRangeSpan = endHue - startHue;
 
     // --- 1. Draw dotted columns from the bottom ---
     const numColumns = 128;
@@ -107,7 +110,7 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
         const columnHeight = Math.pow(dataArray[dataIndex] / 255, 2) * height * 0.8 * sensitivity;
         if (columnHeight < 1) continue;
         
-        const hue = 180 + (i / numColumns) * 120; // Spectrum from Cyan to Magenta
+        const hue = startHue + (i / numColumns) * hueRangeSpan;
         const color = `hsl(${hue}, 80%, 60%)`;
         ctx.fillStyle = color;
         ctx.shadowColor = color;
@@ -164,9 +167,9 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     const dottedWaveAmpMultiplier = 1.2; // More sensitive, will have bigger amplitude
 
     // Draw Solid Wave (Less Sensitive)
-    ctx.strokeStyle = '#67E8F9';
+    ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#67E8F9';
+    ctx.shadowColor = colors.primary;
     ctx.shadowBlur = 15;
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
@@ -188,8 +191,8 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     ctx.stroke();
 
     // Draw Dotted Wave (More Sensitive)
-    ctx.fillStyle = '#F472B6';
-    ctx.shadowColor = '#F472B6';
+    ctx.fillStyle = colors.secondary;
+    ctx.shadowColor = colors.secondary;
     ctx.shadowBlur = 10;
     for (const p of full_wave_data) {
         // A different oscillation makes it more dynamic and appear to "float" around the solid wave
@@ -211,7 +214,7 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     ctx.restore();
 };
 
-const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
@@ -246,9 +249,9 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     const dottedWaveAmpMultiplier = 1.2; // More sensitive, will have bigger amplitude
 
     // Draw Solid Wave (Less Sensitive)
-    ctx.strokeStyle = '#67E8F9';
+    ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#67E8F9';
+    ctx.shadowColor = colors.primary;
     ctx.shadowBlur = 15;
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
@@ -270,8 +273,8 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.stroke();
 
     // Draw Dotted Wave (More Sensitive)
-    ctx.fillStyle = '#F472B6';
-    ctx.shadowColor = '#F472B6';
+    ctx.fillStyle = colors.secondary;
+    ctx.shadowColor = colors.secondary;
     ctx.shadowBlur = 10;
     for (const p of full_wave_data) {
         // A different oscillation makes it more dynamic and appear to "float" around the solid wave
@@ -293,17 +296,22 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) * 0.15;
     const bars = 128;
     
-    ctx.strokeStyle = `hsl(${frame / 2}, 80%, 60%)`;
+    const [startHue, endHue] = colors.hueRange;
+    const hueRangeSpan = endHue - startHue;
+    const hue = startHue + ((frame / 2) % hueRangeSpan);
+    const color = `hsl(${hue}, 80%, 60%)`;
+
+    ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.shadowBlur = 15;
-    ctx.shadowColor = `hsl(${frame / 2}, 80%, 60%)`;
+    ctx.shadowColor = color;
 
     for (let i = 0; i < bars; i++) {
         const barHeight = dataArray[i] * 0.5 * sensitivity;
@@ -322,7 +330,7 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     ctx.restore();
 };
 
-const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -333,7 +341,7 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     // 1. Pulsating Background Glow
     const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
     const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
-    bgGradient.addColorStop(0, `rgba(10, 80, 150, ${0.1 + normalizedBass * 0.2})`);
+    bgGradient.addColorStop(0, colors.backgroundGlow);
     bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
@@ -341,8 +349,8 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     // 2. Frequency "Tendrils" using Bezier Curves
     const spikes = 180;
     const spikeBaseRadius = Math.min(width, height) * 0.15;
-    ctx.strokeStyle = '#67E8F9';
-    ctx.shadowColor = '#67E8F9';
+    ctx.strokeStyle = colors.primary;
+    ctx.shadowColor = colors.primary;
     ctx.shadowBlur = 10;
     ctx.lineWidth = 1.5;
 
@@ -380,12 +388,12 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     // 3. Central Core
     const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 30;
     const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
-    coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    coreGradient.addColorStop(0.3, 'rgba(120, 230, 255, 1)');
+    coreGradient.addColorStop(0, colors.accent);
+    coreGradient.addColorStop(0.3, colors.primary);
     coreGradient.addColorStop(1, 'rgba(0, 150, 200, 0)');
     
     ctx.shadowBlur = 40;
-    ctx.shadowColor = '#67E8F9';
+    ctx.shadowColor = colors.primary;
     ctx.fillStyle = coreGradient;
     ctx.beginPath();
     ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
@@ -395,14 +403,12 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
 };
 
 
-const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
+const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
 
-    const intenseColor = '#67E8F9';
-    const defaultColor = '#FFFFFF';
-    const color = isBeat ? intenseColor : defaultColor;
+    const color = isBeat ? colors.accent : colors.primary;
 
     ctx.shadowBlur = 10;
     ctx.shadowColor = color;
@@ -557,6 +563,7 @@ type DrawFunction = (
     height: number, 
     frame: number,
     sensitivity: number,
+    colors: Palette,
     isBeat?: boolean
 ) => void;
 
@@ -592,7 +599,7 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, sensitivity, smoothing, equalization }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, sensitivity, smoothing, equalization, backgroundColor, colors }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -634,11 +641,24 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             const centerX = width / 2;
             const centerY = height / 2;
 
-            ctx.fillStyle = 'rgba(10, 15, 25, 1)';
+            ctx.fillStyle = backgroundColor;
             ctx.fillRect(0, 0, width, height);
             
             const drawFunction = VISUALIZATION_MAP[visualizationType];
-            drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, isBeat);
+            if (drawFunction) {
+                // For Stellar Core, draw the glow on top of the base background
+                if (visualizationType === VisualizationType.STELLAR_CORE) {
+                    const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+                    const normalizedBass = bass / 255;
+                    const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
+                    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
+                    bgGradient.addColorStop(0, colors.backgroundGlow);
+                    bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
+                    ctx.fillStyle = bgGradient;
+                    ctx.fillRect(0, 0, width, height);
+                }
+                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, colors, isBeat);
+            }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves) ---
             if (visualizationType === VisualizationType.STELLAR_CORE) {
@@ -654,7 +674,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                             baseOrbitRadius: baseOrbitRadius,
                             radius: Math.random() * 1.5 + 0.5,
                             opacity: Math.random() * 0.5 + 0.5,
-                            color: Math.random() > 0.3 ? '#67E8F9' : '#F472B6',
+                            color: Math.random() > 0.3 ? colors.primary : colors.secondary,
                         });
                     }
                 }
@@ -671,7 +691,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${p.color === '#67E8F9' ? '103, 232, 249' : '244, 114, 182'}, ${p.opacity})`;
+                    ctx.fillStyle = `${p.color}${Math.round(p.opacity * 255).toString(16).padStart(2, '0')}`;
                     ctx.fill();
                 });
                 
@@ -706,7 +726,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(200, 255, 255, ${p.opacity})`;
+                    ctx.fillStyle = `${colors.accent}${Math.round(p.opacity * 255).toString(16).padStart(2, '0')}`;
                     ctx.fill();
                 });
                 particlesRef.current = particlesRef.current.filter(p => p.opacity > 0);
@@ -717,7 +737,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                         x: centerX, y: centerY,
                         vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
                         radius: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.5,
-                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: '#FFFFFF'
+                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent
                     });
                 } else if (visualizationType === VisualizationType.FUSION) {
                     const bass = smoothedData.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
@@ -727,7 +747,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                                 x: Math.random() * width, y: height,
                                 vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
                                 radius: Math.random() * 2 + 1, opacity: 1,
-                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: '#FFFFFF'
+                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent
                             });
                         }
                     }
@@ -753,7 +773,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, sensitivity, smoothing, equalization]);
+    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, sensitivity, smoothing, equalization, backgroundColor, colors]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;

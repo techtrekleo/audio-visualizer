@@ -17,3 +17,25 @@ export enum FontType {
     PACIFICO = 'Pacifico',
     DANCING_SCRIPT = 'Dancing Script',
 }
+
+export enum BackgroundColorType {
+    BLACK = 'Black',
+    GREEN = 'Green',
+}
+
+export enum ColorPaletteType {
+    DEFAULT = 'Default',
+    CYBERPUNK = 'Cyberpunk',
+    SUNSET = 'Sunset',
+    GLACIER = 'Glacier',
+    LAVA = 'Lava',
+}
+
+export type Palette = {
+    name: ColorPaletteType;
+    primary: string;
+    secondary: string;
+    accent: string;
+    backgroundGlow: string;
+    hueRange: [number, number];
+};

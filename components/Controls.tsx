@@ -1,5 +1,5 @@
 import React from 'react';
-import { VisualizationType, FontType } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 
@@ -26,6 +26,10 @@ interface ControlsProps {
     audioFile: File | null;
     videoUrl: string;
     videoExtension: string;
+    backgroundColor: BackgroundColorType;
+    onBackgroundColorChange: (color: BackgroundColorType) => void;
+    colorPalette: ColorPaletteType;
+    onColorPaletteChange: (palette: ColorPaletteType) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
@@ -56,7 +60,11 @@ const Controls: React.FC<ControlsProps> = ({
     onEqualizationChange,
     audioFile,
     videoUrl,
-    videoExtension
+    videoExtension,
+    backgroundColor,
+    onBackgroundColorChange,
+    colorPalette,
+    onColorPaletteChange,
 }) => {
     return (
         <div className="w-full max-w-7xl p-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 flex-wrap">
@@ -88,6 +96,28 @@ const Controls: React.FC<ControlsProps> = ({
                         className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                     >
                         {Object.values(VisualizationType).map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-col items-center">
+                    <label htmlFor="palette-select" className="text-sm text-gray-400 mb-1">Color Theme</label>
+                    <select
+                        id="palette-select"
+                        value={colorPalette}
+                        onChange={(e) => onColorPaletteChange(e.target.value as ColorPaletteType)}
+                        className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    >
+                        {Object.values(ColorPaletteType).map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+                 <div className="flex flex-col items-center">
+                    <label htmlFor="bg-select" className="text-sm text-gray-400 mb-1">Background</label>
+                    <select
+                        id="bg-select"
+                        value={backgroundColor}
+                        onChange={(e) => onBackgroundColorChange(e.target.value as BackgroundColorType)}
+                        className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    >
+                        {Object.values(BackgroundColorType).map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                 </div>
                  <div className="flex flex-col items-center">
