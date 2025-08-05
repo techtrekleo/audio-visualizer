@@ -99,11 +99,9 @@ function App() {
     const visualizerContainerStyle = {
         width: resValue ? `${resValue.width}px` : '100%',
         height: resValue ? `${resValue.height}px` : '100%',
-        maxHeight: '75vh',
-        maxWidth: '100%',
         flexShrink: 0,
     };
-    const wrapperStyle = resValue ? { height: '75vh', width: '100%'} : { width: '100%', aspectRatio: '16/9' };
+    const wrapperStyle = resValue ? {} : { width: '100%', aspectRatio: '16/9' };
 
 
     return (
