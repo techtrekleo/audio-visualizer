@@ -636,8 +636,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             const balancedData = equalizeDataArray(dataArray, equalization);
             const smoothedData = smoothDataArray(balancedData, smoothing);
 
-            const rect = canvas.getBoundingClientRect();
-            const { width, height } = rect;
+            // THE FIX: Read from canvas buffer dimensions, not CSS dimensions.
+            const { width, height } = canvas;
             const centerX = width / 2;
             const centerY = height / 2;
 
@@ -779,25 +779,25 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
         if (!canvas) return;
         
-        const handleResize = () => {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            
-            if (rect.width > 0 && rect.height > 0) {
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.scale(dpr, dpr);
-                }
-            }
-        };
+        // Use ResizeObserver to detect when the canvas's CSS size changes.
+        // This is the modern and correct way to handle canvas resizing.
+        const observer = new ResizeObserver(entries => {
+            const entry = entries[0];
+            const rect = entry.contentRect;
 
-        handleResize();
-        window.addEventListener('resize', handleResize);
+            // The core fix: Set the canvas buffer size to its CSS display size.
+            // This ensures that when we set style="width:3840px", canvas.width is also 3840.
+            // No more devicePixelRatio scaling, which caused the blurriness.
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+        });
+
+        observer.observe(canvas);
         
         return () => {
-            window.removeEventListener('resize', handleResize);
+            observer.disconnect();
         };
     }, [ref]);
 

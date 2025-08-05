@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback } from 'react';
 import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
@@ -5,8 +6,8 @@ import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette } from './types';
-import { ICON_PATHS, COLOR_PALETTES } from './constants';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution } from './types';
+import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -25,6 +26,7 @@ function App() {
     const [showWarning, setShowWarning] = useState<boolean>(false);
     const [backgroundColor, setBackgroundColor] = useState<BackgroundColorType>(BackgroundColorType.BLACK);
     const [colorPalette, setColorPalette] = useState<ColorPaletteType>(ColorPaletteType.DEFAULT);
+    const [resolution, setResolution] = useState<Resolution>(Resolution.P1080);
 
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -93,6 +95,17 @@ function App() {
         }
     };
     
+    const resValue = RESOLUTION_MAP[resolution];
+    const visualizerContainerStyle = {
+        width: resValue ? `${resValue.width}px` : '100%',
+        height: resValue ? `${resValue.height}px` : '100%',
+        maxHeight: '75vh',
+        maxWidth: '100%',
+        flexShrink: 0,
+    };
+    const wrapperStyle = resValue ? { height: '75vh', width: '100%'} : { width: '100%', aspectRatio: '16/9' };
+
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-gray-100">
             <audio
@@ -117,21 +130,23 @@ function App() {
                     <AudioUploader onFileSelect={handleFileSelect} />
                 ) : (
                     <div className="w-full max-w-7xl flex flex-col items-center space-y-4">
-                        <div className="relative w-full aspect-video bg-black rounded-lg shadow-2xl shadow-cyan-500/10 overflow-hidden border border-gray-700">
-                           <AudioVisualizer 
-                                ref={canvasRef}
-                                analyser={analyser} 
-                                visualizationType={visualizationType} 
-                                isPlaying={isPlaying}
-                                customText={customText}
-                                textColor={textColor}
-                                fontFamily={fontFamily}
-                                sensitivity={sensitivity}
-                                smoothing={smoothing}
-                                equalization={equalization}
-                                backgroundColor={canvasBgColors[backgroundColor]}
-                                colors={COLOR_PALETTES[colorPalette]}
-                            />
+                         <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-auto">
+                            <div style={visualizerContainerStyle} className="relative shadow-2xl shadow-cyan-500/10">
+                               <AudioVisualizer 
+                                    ref={canvasRef}
+                                    analyser={analyser} 
+                                    visualizationType={visualizationType} 
+                                    isPlaying={isPlaying}
+                                    customText={customText}
+                                    textColor={textColor}
+                                    fontFamily={fontFamily}
+                                    sensitivity={sensitivity}
+                                    smoothing={smoothing}
+                                    equalization={equalization}
+                                    backgroundColor={canvasBgColors[backgroundColor]}
+                                    colors={COLOR_PALETTES[colorPalette]}
+                                />
+                            </div>
                         </div>
 
                         {showWarning && (
@@ -140,7 +155,7 @@ function App() {
                                 role="alert"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-yellow-400 flex-shrink-0"><path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.74c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" /></svg>
-                                <p><strong>錄製中...</strong> 為了確保影片完整，請將此分頁保持在前景顯示。</p>
+                                <p><strong>錄製中...</strong> 為了確保影片完整，請將此分頁保持在前景顯示。高解析度錄製可能會導致介面回應緩慢。</p>
                             </div>
                         )}
 
@@ -171,6 +186,8 @@ function App() {
                             onBackgroundColorChange={setBackgroundColor}
                             colorPalette={colorPalette}
                             onColorPaletteChange={setColorPalette}
+                            resolution={resolution}
+                            onResolutionChange={setResolution}
                         />
                     </div>
                 )}

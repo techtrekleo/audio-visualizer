@@ -31,6 +31,13 @@ export enum ColorPaletteType {
     LAVA = 'Lava',
 }
 
+export enum Resolution {
+    P720 = '720p (1280x720)',
+    P1080 = '1080p (1920x1080)',
+    P4K = '4K (3840x2160)',
+    CURRENT = 'Fit to Screen',
+}
+
 export type Palette = {
     name: ColorPaletteType;
     primary: string;

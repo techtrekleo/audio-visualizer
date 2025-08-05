@@ -1,4 +1,4 @@
-import { ColorPaletteType, Palette } from './types';
+import { ColorPaletteType, Palette, Resolution } from './types';
 
 export const ICON_PATHS = {
     UPLOAD: 'M9.25 15.5V11.375L7.25 13.375L6 12L10 8L14 12L12.75 13.375L10.75 11.375V15.5H9.25ZM5.625 20C5.175 20 4.79375 19.8562 4.48125 19.5687C4.16875 19.2812 4.0125 18.9187 4.0125 18.4812L4 16.5H5.5V18.5H14.5V16.5H16V18.4812C16 18.9187 15.8438 19.2812 15.5313 19.5687C15.2188 19.8562 14.8375 20 14.375 20H5.625Z',
@@ -8,6 +8,13 @@ export const ICON_PATHS = {
     RECORD_STOP: 'M10 10h4v4h-4z',
     DOWNLOAD: 'M5 20H19V18H5V20ZM19 9H15V3H9V9H5L12 16L19 9Z',
     MUSIC_NOTE: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'
+};
+
+export const RESOLUTION_MAP: Record<Resolution, {width: number, height: number} | null> = {
+    [Resolution.P720]: { width: 1280, height: 720 },
+    [Resolution.P1080]: { width: 1920, height: 1080 },
+    [Resolution.P4K]: { width: 3840, height: 2160 },
+    [Resolution.CURRENT]: null,
 };
 
 export const COLOR_PALETTES: Record<ColorPaletteType, Palette> = {
