@@ -177,7 +177,7 @@ const Controls: React.FC<ControlsProps> = ({
                 {videoUrl && (
                     <a href={videoUrl} download={`${audioFile?.name.replace(/\.[^/.]+$/, "") || 'visualization'}.${videoExtension}`} className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white">
                         <Icon path={ICON_PATHS.DOWNLOAD} />
-                        <span>Video</span>
+                        <span>Download {videoExtension.toUpperCase()}</span>
                     </a>
                 )}
             </div>

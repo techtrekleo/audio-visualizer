@@ -14,7 +14,7 @@ function App() {
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [videoExtension, setVideoExtension] = useState<string>('webm');
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.MONSTERCAT);
+    const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.FUSION);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [customText, setCustomText] = useState<string>('口袋裡有貓');
     const [textColor, setTextColor] = useState<string>('#67E8F9');
