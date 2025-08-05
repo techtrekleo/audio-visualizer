@@ -4,7 +4,7 @@ This project is a real-time audio visualizer built with React, TypeScript, and T
 
 ## Features
 
--   **Multiple Visualization Styles**: Choose from styles like 'Monstercat', 'Tech Wave', 'Magic Circle', and more.
+-   **Multiple Visualization Styles**: Choose from styles like 'Monstercat', 'Luminous Wave', 'Fusion', and more.
 -   **Real-time Customization**: Adjust sensitivity, balance, smoothing, text, fonts, and colors on the fly.
 -   **Audio Upload**: Supports drag-and-drop and file browsing for your audio tracks.
 -   **Video Recording**: Record the canvas animation combined with the audio into a downloadable MP4/WebM file.
@@ -51,20 +51,29 @@ Make sure you have the following software installed on your machine:
 
 ## How to Deploy to Railway
 
-Deploying this application is straightforward with [Railway](https://railway.app/).
+Deploying this application is straightforward thanks to the included `Dockerfile`.
 
-1.  **Fork/Clone to Your GitHub:**
-    Get this repository into your own GitHub account.
+### Step 1: Get the Project on Your GitHub Account
 
-2.  **Create a New Project on Railway:**
-    -   Log in to your Railway account.
-    -   Click on "New Project".
-    -   Select "Deploy from GitHub repo" and choose the repository you just created.
+Before you can deploy to Railway, you need to have this project in a repository that you own. The best way to do this is to **Fork** the original repository.
 
-3.  **Automatic Deployment:**
-    -   Railway will automatically detect the `Dockerfile` in the repository.
-    -   It will then build the Docker image and deploy the application.
-    -   No environment variables are needed for this project.
+1.  Navigate to the project's GitHub page.
+2.  Click the **"Fork"** button in the top-right corner. This will create a complete copy of the project under your own GitHub account.
 
-4.  **Done!**
-    -   Once the deployment is complete, Railway will provide you with a public URL where you can access your live audio visualizer.
+### Step 2: Deploy on Railway
+
+1.  **Log in to Railway** with your GitHub account.
+2.  On your dashboard, click **"+ New Project"**.
+3.  Select **"Deploy from GitHub repo"**.
+4.  Choose the repository you just forked.
+
+### Step 3: Automatic Deployment
+
+That's it! Railway will automatically detect the `Dockerfile` in the repository and handle everything for you:
+-   It will build the project.
+-   It will start the server.
+-   It will deploy the application.
+
+**You do not need to configure any build commands or environment variables.**
+
+Once the deployment is complete, Railway will provide you with a public URL where you can access your live audio visualizer.

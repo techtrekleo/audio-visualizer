@@ -1,10 +1,10 @@
 
 export enum VisualizationType {
-    MONSTERCAT = 'Monstercat',
+    NEBULA_WAVE = 'Nebula Wave',
     LUMINOUS_WAVE = 'Luminous Wave',
     FUSION = 'Fusion',
     TECH_WAVE = 'Tech Wave',
-    MAGIC_CIRCLE = 'Magic Circle',
+    STELLAR_CORE = 'Stellar Core',
     RADIAL_BARS = 'Radial Bars',
 }
 

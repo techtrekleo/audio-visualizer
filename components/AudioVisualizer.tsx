@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useRef, useEffect, forwardRef } from 'react';
 import { VisualizationType } from '../types';
 
@@ -17,14 +13,13 @@ interface AudioVisualizerProps {
     equalization: number;
 }
 
-const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
-    const numPoints = 256;
     const maxAmplitude = height * 0.35;
 
-    // 1. Draw central light beam
+    // 1. Draw central light beam (remains the same)
     const beamGradient = ctx.createLinearGradient(0, centerY, width, centerY);
     beamGradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
     beamGradient.addColorStop(0.2, 'rgba(173, 235, 255, 0.5)');
@@ -35,78 +30,108 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     ctx.shadowBlur = 30;
     ctx.shadowColor = 'rgba(0, 255, 255, 0.7)';
     ctx.fillRect(0, centerY - 2, width, 4);
-    ctx.shadowBlur = 0;
-
-
-    // 2. Draw the waveform
+    
+    // 2. Setup for the mirrored waves
     const waveGradient = ctx.createLinearGradient(centerX, centerY - maxAmplitude, centerX, centerY + maxAmplitude);
     waveGradient.addColorStop(0, 'rgba(255, 100, 200, 0.8)'); // Pinkish top
-    waveGradient.addColorStop(0.4, 'rgba(0, 255, 255, 1)'); // Cyan middle
+    waveGradient.addColorStop(0.4, 'rgba(0, 255, 255, 1)');   // Cyan middle
     waveGradient.addColorStop(0.5, 'rgba(200, 255, 255, 1)'); // White core
-    waveGradient.addColorStop(0.6, 'rgba(0, 255, 255, 1)'); // Cyan middle
+    waveGradient.addColorStop(0.6, 'rgba(0, 255, 255, 1)');   // Cyan middle
     waveGradient.addColorStop(1, 'rgba(255, 100, 200, 0.8)'); // Pinkish bottom
 
     ctx.strokeStyle = waveGradient;
     ctx.lineWidth = 2.5;
     ctx.shadowBlur = 15;
     ctx.shadowColor = 'rgba(0, 255, 255, 0.8)';
-    
-    // Improved drawing logic for open ends
-    const drawSmoothedWave = (direction: 'top' | 'bottom') => {
-        ctx.beginPath();
-        const sign = direction === 'top' ? -1 : 1;
-        
-        for (let i = 0; i <= numPoints; i++) {
-            const dataIndex = Math.floor((i / numPoints) * (dataArray.length * 0.5));
-            const amplitude = (dataArray[dataIndex] / 255) * maxAmplitude * sensitivity;
-            const x = (i / numPoints) * width;
-            const oscillation = Math.sin(i * 0.1 + frame * 0.05) * 5 * (amplitude/maxAmplitude); // Subtle secondary wave
-            const y = centerY + sign * (amplitude + oscillation);
 
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                const prevDataIndex = Math.floor(((i - 1) / numPoints) * (dataArray.length * 0.5));
-                const prevAmplitude = (dataArray[prevDataIndex] / 255) * maxAmplitude * sensitivity;
-                const prevX = ((i-1)/numPoints) * width;
-                const prevOscillation = Math.sin((i - 1) * 0.1 + frame * 0.05) * 5 * (prevAmplitude/maxAmplitude);
-                const prevY = centerY + sign * (prevAmplitude + prevOscillation);
-                
-                const cpX = (prevX + x) / 2;
-                const cpY = (prevY + y) / 2;
-                ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
-            }
+    // 3. New drawing logic for mirrored, separated waves
+    const drawMirroredBezierWave = (side: 'left' | 'right') => {
+        const numPointsOnSide = 128;
+        const dataSliceLength = dataArray.length * 0.5;
+
+        // Generate points for top and bottom curves for one side
+        const topPoints: {x: number, y: number}[] = [];
+        const bottomPoints: {x: number, y: number}[] = [];
+
+        for (let i = 0; i <= numPointsOnSide; i++) {
+            const progress = i / numPointsOnSide;
+            const dataIndex = Math.floor(progress * dataSliceLength);
+            
+            const x = side === 'left' ? centerX - (progress * centerX) : centerX + (progress * centerX);
+            const amplitude = (dataArray[dataIndex] / 255) * maxAmplitude * sensitivity;
+            const oscillation = Math.sin(i * 0.1 + frame * 0.05) * 5 * (amplitude / maxAmplitude);
+
+            topPoints.push({ x, y: centerY - (amplitude + oscillation) });
+            bottomPoints.push({ x, y: centerY + (amplitude + oscillation) });
         }
-        ctx.stroke();
+        
+        // Helper to draw a smooth curve through a set of points
+        const drawCurve = (points: {x: number, y: number}[]) => {
+            if (points.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const xc = (points[i].x + points[i+1].x) / 2;
+                const yc = (points[i].y + points[i+1].y) / 2;
+                ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+            }
+             // Draw the last segment to the final point
+            ctx.quadraticCurveTo(points[points.length - 1].x, points[points.length - 1].y, points[points.length - 1].x, points[points.length - 1].y);
+            ctx.stroke();
+        };
+
+        drawCurve(topPoints);
+        drawCurve(bottomPoints);
     };
 
-    drawSmoothedWave('top');
-    drawSmoothedWave('bottom');
-
+    drawMirroredBezierWave('left');
+    drawMirroredBezierWave('right');
+    
     ctx.restore();
 };
 
-const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
 
-    // --- 1. Draw bars from the bottom ---
-    const numBars = 128;
-    const barWidth = width / numBars;
-    ctx.shadowBlur = 10;
-    for (let i = 0; i < numBars; i++) {
-        const dataIndex = Math.floor(i * (dataArray.length * 0.7 / numBars));
-        const barHeight = (dataArray[dataIndex] / 255) * height * 0.7 * sensitivity;
-        if (barHeight < 1) continue;
+    // --- 1. Draw dotted columns from the bottom ---
+    const numColumns = 128;
+    const columnSpacingX = width / numColumns;
+    ctx.shadowBlur = 5;
+
+    for (let i = 0; i < numColumns; i++) {
+        const dataIndex = Math.floor(i * (dataArray.length * 0.7 / numColumns));
+        // Use a power function to make the effect more sensitive to louder sounds
+        const columnHeight = Math.pow(dataArray[dataIndex] / 255, 2) * height * 0.8 * sensitivity;
+        if (columnHeight < 1) continue;
         
-        const hue = 180 + (i / numBars) * 120; // Spectrum from Cyan to Magenta
+        const hue = 180 + (i / numColumns) * 120; // Spectrum from Cyan to Magenta
         const color = `hsl(${hue}, 80%, 60%)`;
         ctx.fillStyle = color;
         ctx.shadowColor = color;
-        ctx.fillRect(i * barWidth, height - barHeight, barWidth, barHeight);
+        
+        const x = i * columnSpacingX + columnSpacingX / 2;
+        
+        const dotSpacingY = 8;
+        const numDots = Math.floor(columnHeight / dotSpacingY);
+
+        for (let j = 0; j < numDots; j++) {
+            const y = height - j * dotSpacingY;
+            // Fade out dots at the top of the column
+            const opacity = 1 - Math.pow(j / numDots, 2);
+            ctx.globalAlpha = opacity;
+            
+            ctx.beginPath();
+            // Radius is based on amplitude, making loud parts have bigger dots
+            const radius = 1 + (dataArray[dataIndex] / 255) * 1.5;
+            ctx.arc(x, y - dotSpacingY / 2, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
-    
+    // Reset global alpha and shadowBlur for the next drawing operations
+    ctx.globalAlpha = 1.0;
     ctx.shadowBlur = 0;
 
     // --- 2. Create Mirrored Base Wave Data ---
@@ -186,69 +211,89 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     ctx.restore();
 };
 
-const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
-    const centerX = width / 2;
     const centerY = height / 2;
-    
-    const numBars = 90; 
-    const radius = Math.min(width, height) * 0.18;
-    const maxBarHeight = Math.min(width, height) * 0.28;
-    const arcAngle = Math.PI * 2; // 360 degrees for a full circle
-    
-    const dataPoints = numBars / 2;
-    
-    const barValues = new Uint8Array(dataPoints);
-    const dataSlice = dataArray.slice(0, 512); 
-    const step = Math.floor(dataSlice.length / dataPoints);
-    if (step > 0) {
-        for(let i=0; i < dataPoints; i++){
-            let sum = 0;
-            for(let j=0; j < step; j++){
-                sum += dataSlice[i*step + j];
-            }
-            barValues[i] = sum / step;
-        }
+    const centerX = width / 2;
+
+    // --- Create Mirrored Base Wave Data ---
+    const numPoints = Math.floor(width / 2);
+    const dataSliceLength = dataArray.length * 0.35;
+    const wave_base_data: { x: number, y_amp: number }[] = [];
+
+    // Generate data for the left half
+    for (let i = 0; i <= numPoints / 2; i++) {
+        const progress = i / (numPoints / 2);
+        const x = centerX - (progress * centerX);
+        
+        const dataIndex = Math.floor(progress * dataSliceLength);
+        const audioAmp = Math.pow(dataArray[dataIndex] / 255, 2) * 150 * sensitivity;
+
+        wave_base_data.push({ x, y_amp: audioAmp });
     }
 
+    // Mirror to create the right half
+    const right_half = wave_base_data.slice(1).reverse().map(p => ({
+        x: width - p.x,
+        y_amp: p.y_amp
+    }));
+    const full_wave_data = [...wave_base_data, ...right_half];
+
+    // --- Draw the overlapping waves with different amplitudes ---
+
+    // Sensitivity multipliers for each wave
+    const solidWaveAmpMultiplier = 0.6; // Less sensitive
+    const dottedWaveAmpMultiplier = 1.2; // More sensitive, will have bigger amplitude
+
+    // Draw Solid Wave (Less Sensitive)
     ctx.strokeStyle = '#67E8F9';
     ctx.lineWidth = 2.5;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#0CF5F5';
+    ctx.shadowColor = '#67E8F9';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    const firstPoint = full_wave_data[0];
+    const yOscSolid_first = Math.sin(firstPoint.x * 0.05 + frame * 0.02) * 5; 
+    ctx.moveTo(firstPoint.x, centerY + firstPoint.y_amp * solidWaveAmpMultiplier + yOscSolid_first);
 
-    const angleStep = (arcAngle / 2) / dataPoints;
+    // Top path
+    for (const p of full_wave_data) {
+        const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
+        ctx.lineTo(p.x, centerY + p.y_amp * solidWaveAmpMultiplier + yOsc);
+    }
+    // Mirrored bottom path
+    for (let i = full_wave_data.length - 1; i >= 0; i--) {
+        const p = full_wave_data[i];
+        const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
+        ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+    }
+    ctx.closePath();
+    ctx.stroke();
 
-    for (let i = 0; i < dataPoints; i++) {
-        const barHeight = (barValues[i] / 255) * maxBarHeight * sensitivity;
-        if (barHeight < 1) continue; 
-
-        const angleTop = Math.PI - (i * angleStep);
-        const x1_t = centerX + Math.cos(angleTop) * radius;
-        const y1_t = centerY + Math.sin(angleTop) * radius;
-        const x2_t = centerX + Math.cos(angleTop) * (radius + barHeight);
-        const y2_t = centerY + Math.sin(angleTop) * (radius + barHeight);
-
+    // Draw Dotted Wave (More Sensitive)
+    ctx.fillStyle = '#F472B6';
+    ctx.shadowColor = '#F472B6';
+    ctx.shadowBlur = 10;
+    for (const p of full_wave_data) {
+        // A different oscillation makes it more dynamic and appear to "float" around the solid wave
+        const yOsc = Math.sin(p.x * 0.08 + frame * -0.03) * 8; 
+        
+        // Top dot
+        const y_top = centerY + p.y_amp * dottedWaveAmpMultiplier + yOsc;
         ctx.beginPath();
-        ctx.moveTo(x1_t, y1_t);
-        ctx.lineTo(x2_t, y2_t);
-        ctx.stroke();
+        ctx.arc(p.x, y_top, 1.5, 0, Math.PI * 2);
+        ctx.fill();
 
-        const angleBottom = Math.PI + (i * angleStep);
-        const x1_b = centerX + Math.cos(angleBottom) * radius;
-        const y1_b = centerY + Math.sin(angleBottom) * radius;
-        const x2_b = centerX + Math.cos(angleBottom) * (radius + barHeight);
-        const y2_b = centerY + Math.sin(angleBottom) * (radius + barHeight);
-
+        // Bottom dot
+        const y_bottom = centerY - p.y_amp * dottedWaveAmpMultiplier + yOsc;
         ctx.beginPath();
-        ctx.moveTo(x1_b, y1_b);
-        ctx.lineTo(x2_b, y2_b);
-        ctx.stroke();
+        ctx.arc(p.x, y_bottom, 1.5, 0, Math.PI * 2);
+        ctx.fill();
     }
     
     ctx.restore();
 };
 
-const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -277,72 +322,145 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     ctx.restore();
 };
 
-const drawMagicCircle = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
-    const baseRadius = Math.min(width, height) * 0.2;
-    const points = 180;
     
-    ctx.lineWidth = 3;
-    ctx.shadowBlur = 20;
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const normalizedBass = bass / 255;
     
-    for (let j = 1; j <= 3; j++) {
-        const radius = baseRadius * j * 0.7;
-        const colorVal = (frame + j * 60) % 360;
-        ctx.strokeStyle = `hsl(${colorVal}, 90%, 65%)`;
-        ctx.shadowColor = `hsl(${colorVal}, 90%, 65%)`;
+    // 1. Pulsating Background Glow
+    const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
+    bgGradient.addColorStop(0, `rgba(10, 80, 150, ${0.1 + normalizedBass * 0.2})`);
+    bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // 2. Frequency "Tendrils" using Bezier Curves
+    const spikes = 180;
+    const spikeBaseRadius = Math.min(width, height) * 0.15;
+    ctx.strokeStyle = '#67E8F9';
+    ctx.shadowColor = '#67E8F9';
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 1.5;
 
+    for (let i = 0; i < spikes; i++) {
+        const dataIndex = Math.floor((i / spikes) * (dataArray.length * 0.5));
+        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 1.8) * 150 * sensitivity;
+        if (spikeHeight < 1) continue;
+        
+        const angle = (i / spikes) * Math.PI * 2;
+        
+        // Start point on the base circle
+        const x1 = centerX + Math.cos(angle) * spikeBaseRadius;
+        const y1 = centerY + Math.sin(angle) * spikeBaseRadius;
+
+        // End point at the tip of the tendril
+        const x2 = centerX + Math.cos(angle) * (spikeBaseRadius + spikeHeight);
+        const y2 = centerY + Math.sin(angle) * (spikeBaseRadius + spikeHeight);
+
+        // Control point to create the curve
+        // Place it halfway along the spike, but shifted perpendicularly to create a swirl
+        const controlPointRadius = spikeBaseRadius + spikeHeight / 2;
+        const swirlAngle = angle + Math.PI / 2; // Perpendicular direction
+        // The amount of swirl will have a base value and an oscillating part for a more organic feel
+        const swirlAmount = (spikeHeight / 10) + Math.sin(frame * 0.05 + i * 0.1) * 10;
+
+        const controlX = centerX + Math.cos(angle) * controlPointRadius + Math.cos(swirlAngle) * swirlAmount;
+        const controlY = centerY + Math.sin(angle) * controlPointRadius + Math.sin(swirlAngle) * swirlAmount;
+        
         ctx.beginPath();
-        for (let i = 0; i <= points; i++) {
-            const index = Math.floor((i / points) * dataArray.length * 0.7);
-            const amplitude = (dataArray[index] / 10) * sensitivity;
-            const angle = (i / points) * Math.PI * 2 + (frame / 100) * (j % 2 === 0 ? -1 : 1);
-            
-            const currentRadius = radius + amplitude;
-            const x = centerX + Math.cos(angle) * currentRadius;
-            const y = centerY + Math.sin(angle) * currentRadius;
-
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.closePath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(controlX, controlY, x2, y2);
         ctx.stroke();
     }
+    
+    // 3. Central Core
+    const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 30;
+    const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+    coreGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    coreGradient.addColorStop(0.3, 'rgba(120, 230, 255, 1)');
+    coreGradient.addColorStop(1, 'rgba(0, 150, 200, 0)');
+    
+    ctx.shadowBlur = 40;
+    ctx.shadowColor = '#67E8F9';
+    ctx.fillStyle = coreGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
     ctx.restore();
 };
 
-const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number) => {
+
+const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.1;
-    const bars = 256;
-    const maxBarHeight = Math.min(width, height) * 0.35;
+
+    const intenseColor = '#67E8F9';
+    const defaultColor = '#FFFFFF';
+    const color = isBeat ? intenseColor : defaultColor;
+
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = color;
+    ctx.strokeStyle = color;
+
+    const innerRadius = Math.min(width, height) * 0.22;
+    const outerRadius = innerRadius + (width * 0.015);
+
+    // --- Inner Circle (Bass spikes pointing INWARDS, now thinner) ---
+    const innerSpikes = 128; // Increased for a spikier look
+    const maxInnerHeight = Math.min(width, height) * 0.08; // Reduced amplitude
     
-    for (let i = 0; i < bars; i++) {
-        const barHeight = ((dataArray[i] / 255) * maxBarHeight) * sensitivity;
-        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
-        const hue = (i / bars) * 360 + frame;
+    ctx.lineWidth = 2; // Thinner lines, same as outer circle
 
-        ctx.strokeStyle = `hsl(${hue}, 100%, 70%)`;
-        ctx.lineWidth = (width / bars) * 0.8;
-        ctx.shadowBlur = 5;
-        ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
+    for (let i = 0; i < innerSpikes; i++) {
+        // Still reacting to bass frequencies (lower part of dataArray)
+        const dataIndex = Math.floor(i / innerSpikes * 64); // Sample from bass range
+        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 2) * maxInnerHeight * sensitivity;
+        if (spikeHeight < 1) continue;
+        
+        const angle = (i / innerSpikes) * Math.PI * 2 - Math.PI / 2;
 
-        const x1 = centerX + Math.cos(angle) * radius;
-        const y1 = centerY + Math.sin(angle) * radius;
-        const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-        const y2 = centerY + Math.sin(angle) * (radius + barHeight);
+        const x1 = centerX + Math.cos(angle) * innerRadius;
+        const y1 = centerY + Math.sin(angle) * innerRadius;
+        const x2 = centerX + Math.cos(angle) * (innerRadius - spikeHeight);
+        const y2 = centerY + Math.sin(angle) * (innerRadius - spikeHeight);
 
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
         ctx.stroke();
     }
+
+    // --- Outer Circle (Treble spikes pointing OUTWARDS, more exaggerated) ---
+    const outerSpikes = 128;
+    const maxOuterHeight = Math.min(width, height) * 0.28; // Increased amplitude significantly
+
+    ctx.lineWidth = 2;
+    
+    for (let i = 0; i < outerSpikes; i++) {
+        const dataIndex = Math.floor(100 + (i / outerSpikes) * (dataArray.length / 4));
+        // Using a stronger power function to make spikes more dramatic
+        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 1.5) * maxOuterHeight * sensitivity;
+        if (spikeHeight < 1) continue;
+
+        const angle = (i / outerSpikes) * Math.PI * 2 - Math.PI / 2;
+
+        const x1 = centerX + Math.cos(angle) * outerRadius;
+        const y1 = centerY + Math.sin(angle) * outerRadius;
+        const x2 = centerX + Math.cos(angle) * (outerRadius + spikeHeight);
+        const y2 = centerY + Math.sin(angle) * (outerRadius + spikeHeight);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
     ctx.restore();
 };
 
@@ -438,25 +556,39 @@ type DrawFunction = (
     width: number, 
     height: number, 
     frame: number,
-    sensitivity: number
+    sensitivity: number,
+    isBeat?: boolean
 ) => void;
 
 const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
-    [VisualizationType.MONSTERCAT]: drawMonstercat,
+    [VisualizationType.NEBULA_WAVE]: drawNebulaWave,
     [VisualizationType.LUMINOUS_WAVE]: drawLuminousWave,
     [VisualizationType.FUSION]: drawFusion,
     [VisualizationType.TECH_WAVE]: drawTechWave,
-    [VisualizationType.MAGIC_CIRCLE]: drawMagicCircle,
+    [VisualizationType.STELLAR_CORE]: drawStellarCore,
     [VisualizationType.RADIAL_BARS]: drawRadialBars,
 };
 
 type Particle = {
     x: number;
     y: number;
+    // Linear motion (for Fusion, Luminous Wave)
     vx: number;
     vy: number;
+    // Orbital motion (for Stellar Core)
+    angle: number;
+    orbitRadius: number;
+    baseOrbitRadius: number;
+    // Common properties
     radius: number;
     opacity: number;
+    color: string;
+};
+
+type Shockwave = {
+    radius: number;
+    opacity: number;
+    lineWidth: number;
 };
 
 
@@ -464,6 +596,13 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
+    const shockwavesRef = useRef<Shockwave[]>([]);
+
+    useEffect(() => {
+        // Clear dynamic elements when visualization changes to prevent artifacts
+        particlesRef.current = [];
+        shockwavesRef.current = [];
+    }, [visualizationType]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>).current;
@@ -473,26 +612,93 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         if (!ctx) return;
         
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let beatCooldown = 0;
 
         const renderFrame = () => {
             frame.current++;
             analyser.getByteFrequencyData(dataArray);
+
+            const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+            let isBeat = false;
+            if (bassAvg > 180 && beatCooldown <= 0) {
+                 isBeat = true;
+                 beatCooldown = 10; // Cooldown for 10 frames to avoid too many shockwaves
+            }
+            if(beatCooldown > 0) beatCooldown--;
             
             const balancedData = equalizeDataArray(dataArray, equalization);
             const smoothedData = smoothDataArray(balancedData, smoothing);
 
             const rect = canvas.getBoundingClientRect();
             const { width, height } = rect;
+            const centerX = width / 2;
+            const centerY = height / 2;
 
             ctx.fillStyle = 'rgba(10, 15, 25, 1)';
             ctx.fillRect(0, 0, width, height);
             
             const drawFunction = VISUALIZATION_MAP[visualizationType];
-            drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity);
+            drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, isBeat);
             
-            // Handle particles
-            if (visualizationType === VisualizationType.LUMINOUS_WAVE || visualizationType === VisualizationType.FUSION) {
-                // Update and draw particles
+            // --- Handle Dynamic Elements (Particles, Shockwaves) ---
+            if (visualizationType === VisualizationType.STELLAR_CORE) {
+                // Initialize particles if needed
+                if (particlesRef.current.length === 0) {
+                    const numParticles = 200;
+                    for (let i = 0; i < numParticles; i++) {
+                        const baseOrbitRadius = Math.min(width, height) * 0.15 + Math.random() * 20;
+                        particlesRef.current.push({
+                            x: 0, y: 0, vx: 0, vy: 0,
+                            angle: Math.random() * Math.PI * 2,
+                            orbitRadius: baseOrbitRadius,
+                            baseOrbitRadius: baseOrbitRadius,
+                            radius: Math.random() * 1.5 + 0.5,
+                            opacity: Math.random() * 0.5 + 0.5,
+                            color: Math.random() > 0.3 ? '#67E8F9' : '#F472B6',
+                        });
+                    }
+                }
+                
+                // Update and draw orbital particles
+                const midFrequencies = smoothedData.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
+                const orbitFlux = (midFrequencies / 255) * 30 * sensitivity;
+
+                particlesRef.current.forEach(p => {
+                    p.angle += 0.005;
+                    p.orbitRadius = p.baseOrbitRadius + orbitFlux;
+                    p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
+                    p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${p.color === '#67E8F9' ? '103, 232, 249' : '244, 114, 182'}, ${p.opacity})`;
+                    ctx.fill();
+                });
+                
+                // Spawn and manage shockwaves
+                if (isBeat) {
+                    shockwavesRef.current.push({
+                        radius: Math.min(width, height) * 0.15,
+                        opacity: 1,
+                        lineWidth: 3
+                    });
+                }
+
+                shockwavesRef.current.forEach(s => {
+                    s.radius += 5;
+                    s.opacity -= 0.02;
+                    s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
+                    
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                    ctx.lineWidth = s.lineWidth;
+                    ctx.stroke();
+                });
+                shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
+
+            } else if (visualizationType === VisualizationType.LUMINOUS_WAVE || visualizationType === VisualizationType.FUSION) {
+                // Update and draw linear particles
                 particlesRef.current.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
@@ -503,37 +709,29 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     ctx.fillStyle = `rgba(200, 255, 255, ${p.opacity})`;
                     ctx.fill();
                 });
-                // Filter out dead particles
                 particlesRef.current = particlesRef.current.filter(p => p.opacity > 0);
                 
                 // Spawn new particles based on effect
                 if (visualizationType === VisualizationType.LUMINOUS_WAVE && Math.random() > 0.7) {
                     particlesRef.current.push({
-                        x: width / 2,
-                        y: height / 2,
-                        vx: (Math.random() - 0.5) * 2,
-                        vy: (Math.random() - 0.5) * 2,
-                        radius: Math.random() * 1.5 + 0.5,
-                        opacity: Math.random() * 0.5 + 0.5,
+                        x: centerX, y: centerY,
+                        vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
+                        radius: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.5,
+                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: '#FFFFFF'
                     });
                 } else if (visualizationType === VisualizationType.FUSION) {
                     const bass = smoothedData.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
                     if (bass > 160 && Math.random() > 0.6) {
                         for (let i = 0; i < 2; i++) {
                              particlesRef.current.push({
-                                x: Math.random() * width,
-                                y: height,
-                                vx: (Math.random() - 0.5) * 0.5,
-                                vy: -Math.random() * 1.5 - 0.5,
-                                radius: Math.random() * 2 + 1,
-                                opacity: 1,
+                                x: Math.random() * width, y: height,
+                                vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
+                                radius: Math.random() * 2 + 1, opacity: 1,
+                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: '#FFFFFF'
                             });
                         }
                     }
                 }
-
-            } else {
-                 particlesRef.current = []; // Clear particles for other visualizers
             }
 
 
