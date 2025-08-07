@@ -58,4 +58,12 @@ export const COLOR_PALETTES: Record<ColorPaletteType, Palette> = {
         backgroundGlow: 'rgba(180, 20, 0, 0.3)',
         hueRange: [0, 50], // Red to Orange
     },
+    [ColorPaletteType.MIDNIGHT]: {
+        name: ColorPaletteType.MIDNIGHT,
+        primary: '#581C87', // Deep Purple
+        secondary: '#1E40AF', // Dark Blue
+        accent: '#E5E7EB',   // Light Gray
+        backgroundGlow: 'rgba(40, 40, 80, 0.2)',
+        hueRange: [240, 280], // Blue to Purple
+    },
 };

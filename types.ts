@@ -29,6 +29,7 @@ export enum ColorPaletteType {
     SUNSET = 'Sunset',
     GLACIER = 'Glacier',
     LAVA = 'Lava',
+    MIDNIGHT = 'Midnight',
 }
 
 export enum Resolution {
