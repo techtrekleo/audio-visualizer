@@ -23,6 +23,7 @@ export enum BackgroundColorType {
     BLACK = 'Black',
     GREEN = 'Green',
     WHITE = 'White',
+    TRANSPARENT = 'Transparent',
 }
 
 export enum ColorPaletteType {

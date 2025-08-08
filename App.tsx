@@ -36,6 +36,7 @@ function App() {
         [BackgroundColorType.BLACK]: 'rgba(0, 0, 0, 1)',
         [BackgroundColorType.GREEN]: 'rgba(0, 255, 0, 1)',
         [BackgroundColorType.WHITE]: 'rgba(255, 255, 255, 1)',
+        [BackgroundColorType.TRANSPARENT]: 'transparent',
     };
 
 
@@ -88,7 +89,8 @@ function App() {
             const audioStream = getAudioStream();
             if (canvasRef.current && audioStream && audioRef.current) {
                 setShowWarning(true);
-                startRecording(canvasRef.current, audioStream);
+                const isTransparent = backgroundColor === BackgroundColorType.TRANSPARENT;
+                startRecording(canvasRef.current, audioStream, isTransparent);
                 audioRef.current.currentTime = 0;
                 audioRef.current.play().then(() => setIsPlaying(true));
             } else {
@@ -104,6 +106,10 @@ function App() {
         flexShrink: 0,
     };
     const wrapperStyle = resValue ? {} : { width: '100%', aspectRatio: '16/9' };
+    
+    const isTransparentBg = backgroundColor === BackgroundColorType.TRANSPARENT;
+    const checkerboardSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="10" height="10" x="0" y="0" fill="#888" /><rect width="10" height="10" x="10" y="10" fill="#888" /><rect width="10" height="10" x="10" y="0" fill="#444" /><rect width="10" height="10" x="0" y="10" fill="#444" /></svg>`;
+    const checkerboardUrl = `url("data:image/svg+xml,${encodeURIComponent(checkerboardSvg)}")`;
 
 
     return (
@@ -131,7 +137,14 @@ function App() {
                 ) : (
                     <div className="w-full max-w-7xl flex flex-col items-center space-y-4">
                          <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-auto">
-                            <div style={visualizerContainerStyle} className="relative shadow-2xl shadow-cyan-500/10">
+                            <div 
+                                style={{
+                                    ...visualizerContainerStyle,
+                                    backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
+                                    backgroundSize: '20px 20px',
+                                }} 
+                                className="relative shadow-2xl shadow-cyan-500/10"
+                            >
                                <AudioVisualizer 
                                     ref={canvasRef}
                                     analyser={analyser} 

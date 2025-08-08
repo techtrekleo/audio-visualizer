@@ -738,13 +738,17 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             const balancedData = equalizeDataArray(dataArray, equalization);
             const smoothedData = smoothDataArray(balancedData, smoothing);
 
-            // THE FIX: Read from canvas buffer dimensions, not CSS dimensions.
             const { width, height } = canvas;
             const centerX = width / 2;
             const centerY = height / 2;
-
-            ctx.fillStyle = backgroundColor;
-            ctx.fillRect(0, 0, width, height);
+            
+            // Clear canvas based on background type
+            if (backgroundColor === 'transparent') {
+                ctx.clearRect(0, 0, width, height);
+            } else {
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, width, height);
+            }
             
             const drawFunction = VISUALIZATION_MAP[visualizationType];
             if (drawFunction) {
@@ -904,7 +908,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
     }, [ref]);
 
 
-    return <canvas ref={ref} className="w-full h-full" />;
+    return <canvas ref={ref} className="w-full h-full" style={{ backgroundColor: 'transparent' }} />;
 });
 
 AudioVisualizer.displayName = 'AudioVisualizer';
