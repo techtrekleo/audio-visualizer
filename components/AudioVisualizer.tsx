@@ -36,33 +36,38 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
 
 const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
-    
-    const numBars = 128;
-    const dataSliceEnd = Math.floor(dataArray.length * 0.7);
-    const barWidth = width / numBars;
+
+    const numBarsOnHalf = 64; // Bars on one side of the center
+    const totalBars = numBarsOnHalf * 2;
+    const barWidth = width / totalBars;
+    const centerX = width / 2;
     const centerY = height / 2;
-    const maxHeight = height * 0.45; // Max height for one side
-    
+    const maxHeight = height * 0.45;
+
+    // Use lower-to-mid frequencies for the visualizer, which are more responsive to the "beat"
+    const dataSliceEnd = Math.floor(dataArray.length * 0.7);
+
     const [startHue, endHue] = colors.hueRange;
     const hueRangeSpan = endHue - startHue;
 
-    for (let i = 0; i < numBars; i++) {
-        const dataIndex = Math.floor((i / numBars) * dataSliceEnd);
+    for (let i = 0; i < numBarsOnHalf; i++) {
+        // As `i` increases, we move away from the center, so we sample further into the frequency data
+        const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceEnd);
         const amplitude = dataArray[dataIndex] / 255.0;
+        // Use a power function to make the visualization more dynamic and responsive to peaks
         const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
 
-        if (barHeight < 2) continue; // Skip drawing bars that are too small
-        
-        const x = i * barWidth;
-        
+        if (barHeight < 2) continue; // Skip drawing bars that are too small to see
+
         let color;
         if (colors.name === ColorPaletteType.WHITE) {
-            const lightness = 85 + (amplitude * 15); // Vary lightness from 85% to 100%
-            color = `hsl(220, 10%, ${lightness}%)`; // Use a cool, desaturated white
+            const lightness = 85 + (amplitude * 15); // Vary lightness for a shimmering effect
+            color = `hsl(220, 10%, ${lightness}%)`;
         } else {
-            const hue = startHue + ((i / numBars) * hueRangeSpan);
+            // Color is based on the bar's distance from the center
+            const hue = startHue + ((i / numBarsOnHalf) * hueRangeSpan);
             const saturation = isBeat ? 100 : 90;
-            const lightness = 60;
+            const lightness = 60 + (amplitude * 10);
             color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         }
 
@@ -74,13 +79,19 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         const effectiveBarWidth = barWidth - barGap;
         const cornerRadius = Math.min(4, effectiveBarWidth / 3);
 
-        // Draw top bar (moving upwards from center)
-        drawRoundedRect(ctx, x + barGap / 2, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
-        
-        // Draw bottom bar (moving downwards from center)
-        drawRoundedRect(ctx, x + barGap / 2, centerY, effectiveBarWidth, barHeight, cornerRadius);
+        // --- Draw the mirrored bars ---
+
+        // Left bar (moves from center to the left)
+        const xLeft = centerX - (i + 1) * barWidth + barGap / 2;
+        drawRoundedRect(ctx, xLeft, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+        drawRoundedRect(ctx, xLeft, centerY, effectiveBarWidth, barHeight, cornerRadius);
+
+        // Right bar (moves from center to the right)
+        const xRight = centerX + i * barWidth + barGap / 2;
+        drawRoundedRect(ctx, xRight, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+        drawRoundedRect(ctx, xRight, centerY, effectiveBarWidth, barHeight, cornerRadius);
     }
-    
+
     ctx.restore();
 };
 
