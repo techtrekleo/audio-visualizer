@@ -1,12 +1,13 @@
+declare const chrome: any;
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
 import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
@@ -17,9 +18,9 @@ function App() {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.MONSTERCAT);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [customText, setCustomText] = useState<string>('口袋裡有貓');
+    const [customText, setCustomText] = useState<string>('Sonic Pulse');
     const [textColor, setTextColor] = useState<string>('#67E8F9');
-    const [fontFamily, setFontFamily] = useState<FontType>(FontType.POPPINS);
+    const [fontFamily, setFontFamily] = useState<FontType>(FontType.ROCKNROLL_ONE);
     const [graphicEffect, setGraphicEffect] = useState<GraphicEffectType>(GraphicEffectType.GLOW);
     const [sensitivity, setSensitivity] = useState<number>(1.0);
     const [smoothing, setSmoothing] = useState<number>(0);
@@ -28,7 +29,9 @@ function App() {
     const [backgroundColor, setBackgroundColor] = useState<BackgroundColorType>(BackgroundColorType.BLACK);
     const [colorPalette, setColorPalette] = useState<ColorPaletteType>(ColorPaletteType.DEFAULT);
     const [resolution, setResolution] = useState<Resolution>(Resolution.P1080);
-
+    const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+    const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
+    
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     
@@ -38,7 +41,41 @@ function App() {
         [BackgroundColorType.WHITE]: 'rgba(255, 255, 255, 1)',
         [BackgroundColorType.TRANSPARENT]: 'transparent',
     };
+    
+    const handleSetResolution = (newRes: Resolution) => {
+        setResolution(newRes);
+    };
+    
+    const handleSetVisualization = (newVis: VisualizationType) => {
+        setVisualizationType(newVis);
+    };
+    
+    const handleSetColorPalette = (newPalette: ColorPaletteType) => {
+        setColorPalette(newPalette);
+    };
 
+    const handleTextChange = (text: string) => {
+        setCustomText(text);
+    };
+    
+    const handleWatermarkPositionChange = (position: WatermarkPosition) => {
+        setWatermarkPosition(position);
+    };
+
+    const handleBackgroundImageSelect = (file: File) => {
+        if (backgroundImage) {
+            URL.revokeObjectURL(backgroundImage);
+        }
+        const url = URL.createObjectURL(file);
+        setBackgroundImage(url);
+    };
+
+    const clearBackgroundImage = () => {
+        if (backgroundImage) {
+            URL.revokeObjectURL(backgroundImage);
+        }
+        setBackgroundImage(null);
+    };
 
     const handleRecordingComplete = useCallback((url: string, extension: string) => {
         setVideoUrl(url);
@@ -94,7 +131,7 @@ function App() {
                 audioRef.current.currentTime = 0;
                 audioRef.current.play().then(() => setIsPlaying(true));
             } else {
-                 alert("Could not start recording. Please ensure audio is loaded and ready.");
+                 alert("無法開始錄製。請確認音訊已載入並準備就緒。");
             }
         }
     };
@@ -123,11 +160,11 @@ function App() {
                 onTimeUpdate={handleTimeUpdate}
                 crossOrigin="anonymous"
             />
-            
+
             <header className="w-full max-w-7xl mx-auto flex items-center justify-between p-4 border-b border-gray-700 mb-4">
                 <div className="flex items-center space-x-3">
                     <Icon path={ICON_PATHS.MUSIC_NOTE} className="w-8 h-8 text-cyan-400" />
-                    <h1 className="text-2xl font-bold tracking-wider">Audio Visualizer Pro</h1>
+                    <h1 className="text-2xl font-bold tracking-wider">音訊視覺化工具 Pro</h1>
                 </div>
             </header>
 
@@ -159,6 +196,8 @@ function App() {
                                     equalization={equalization}
                                     backgroundColor={canvasBgColors[backgroundColor]}
                                     colors={COLOR_PALETTES[colorPalette]}
+                                    backgroundImage={backgroundImage}
+                                    watermarkPosition={watermarkPosition}
                                 />
                             </div>
                         </div>
@@ -180,9 +219,9 @@ function App() {
                             onRecordToggle={handleStartRecording}
                             isLoading={isLoading}
                             visualizationType={visualizationType}
-                            onVisualizationChange={setVisualizationType}
+                            onVisualizationChange={handleSetVisualization}
                             customText={customText}
-                            onTextChange={setCustomText}
+                            onTextChange={handleTextChange}
                             textColor={textColor}
                             onTextColorChange={setTextColor}
                             fontFamily={fontFamily}
@@ -201,13 +240,21 @@ function App() {
                             backgroundColor={backgroundColor}
                             onBackgroundColorChange={setBackgroundColor}
                             colorPalette={colorPalette}
-                            onColorPaletteChange={setColorPalette}
+                            onColorPaletteChange={handleSetColorPalette}
                             resolution={resolution}
-                            onResolutionChange={setResolution}
+                            onResolutionChange={handleSetResolution}
+                            backgroundImage={backgroundImage}
+                            onBackgroundImageSelect={handleBackgroundImageSelect}
+                            onClearBackgroundImage={clearBackgroundImage}
+                            watermarkPosition={watermarkPosition}
+                            onWatermarkPositionChange={handleWatermarkPositionChange}
                         />
                     </div>
                 )}
             </main>
+            <footer className="w-full text-center p-4 mt-4 text-gray-500 text-sm">
+                一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
+            </footer>
         </div>
     );
 }

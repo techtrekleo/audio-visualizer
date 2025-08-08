@@ -28,7 +28,7 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({ onFileSelect }) => {
             if (e.dataTransfer.files[0].type.startsWith('audio/')) {
                 onFileSelect(e.dataTransfer.files[0]);
             } else {
-                alert('Please upload a valid audio file.');
+                alert('請上傳有效的音訊檔案。');
             }
         }
     }, [onFileSelect]);
@@ -38,7 +38,7 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({ onFileSelect }) => {
              if (e.target.files[0].type.startsWith('audio/')) {
                 onFileSelect(e.target.files[0]);
             } else {
-                alert('Please upload a valid audio file.');
+                alert('請上傳有效的音訊檔案。');
             }
         }
     };
@@ -62,10 +62,10 @@ const AudioUploader: React.FC<AudioUploaderProps> = ({ onFileSelect }) => {
             />
             <label htmlFor="audio-upload" className="flex flex-col items-center justify-center space-y-4 cursor-pointer">
                 <Icon path={ICON_PATHS.UPLOAD} className="w-16 h-16 text-gray-500" />
-                <p className="text-xl font-semibold">Drag & Drop your music here</p>
-                <p className="text-gray-400">or</p>
+                <p className="text-xl font-semibold">將您的音樂拖放到此處</p>
+                <p className="text-gray-400">或</p>
                 <span className="bg-cyan-600 text-white px-6 py-2 rounded-md font-medium hover:bg-cyan-500 transition-colors">
-                    Browse Files
+                    瀏覽檔案
                 </span>
             </label>
         </div>

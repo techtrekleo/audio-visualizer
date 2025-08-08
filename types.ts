@@ -20,38 +20,50 @@ export enum FontType {
     PRESS_START_2P = 'Press Start 2P',
     PACIFICO = 'Pacifico',
     DANCING_SCRIPT = 'Dancing Script',
+    ROCKNROLL_ONE = 'RocknRoll One',
+    REGGAE_ONE = 'Reggae One',
+    VT323 = 'VT323',
 }
 
 export enum BackgroundColorType {
-    BLACK = 'Black',
-    GREEN = 'Green',
-    WHITE = 'White',
-    TRANSPARENT = 'Transparent',
+    BLACK = '黑色',
+    GREEN = '綠色',
+    WHITE = '白色',
+    TRANSPARENT = '透明',
 }
 
 export enum ColorPaletteType {
-    DEFAULT = 'Default',
-    CYBERPUNK = 'Cyberpunk',
-    SUNSET = 'Sunset',
-    GLACIER = 'Glacier',
-    LAVA = 'Lava',
-    MIDNIGHT = 'Midnight',
-    WHITE = 'White',
-    RAINBOW = 'Rainbow',
+    DEFAULT = '預設',
+    CYBERPUNK = '賽博龐克',
+    SUNSET = '日落',
+    GLACIER = '冰川',
+    LAVA = '熔岩',
+    MIDNIGHT = '午夜',
+    WHITE = '純白',
+    RAINBOW = '彩虹',
 }
 
 export enum GraphicEffectType {
-    GLOW = 'Glow',
-    SHADOW = 'Shadow',
-    STROKE = 'Stroke',
-    NONE = 'None',
+    GLOW = '霓虹光',
+    SHADOW = '陰影',
+    STROKE = '描邊',
+    GLITCH = '故障感',
+    NONE = '無',
 }
 
 export enum Resolution {
     P720 = '720p (1280x720)',
     P1080 = '1080p (1920x1080)',
     P4K = '4K (3840x2160)',
-    CURRENT = 'Fit to Screen',
+    CURRENT = '符合螢幕',
+}
+
+export enum WatermarkPosition {
+    BOTTOM_RIGHT = '右下角',
+    BOTTOM_LEFT = '左下角',
+    TOP_RIGHT = '右上角',
+    TOP_LEFT = '左上角',
+    CENTER = '正中心',
 }
 
 export type Palette = {

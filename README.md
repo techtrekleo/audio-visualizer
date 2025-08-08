@@ -12,7 +12,7 @@ This project is a real-time audio visualizer built with React, TypeScript, and T
 
 ## Running Locally / Development Setup
 
-Before deploying, you can run this project on your own computer for development and testing.
+Before loading as an extension, you can run this project on your own computer for development and testing.
 
 ### Prerequisites
 
@@ -49,31 +49,21 @@ Make sure you have the following software installed on your machine:
 5.  **Open your browser:**
     Open your web browser and navigate to the local URL provided in the terminal (usually `http://localhost:5173`). You should now see the application running!
 
-## How to Deploy to Railway
+## How to Load as a Chrome Extension
 
-Deploying this application is straightforward thanks to the included `Dockerfile`.
+This project is configured to run as a Google Chrome extension. Follow these steps to load it for testing.
 
-### Step 1: Get the Project on Your GitHub Account
+1.  **Open Chrome Extensions Page:**
+    Navigate to `chrome://extensions` in your Chrome browser.
 
-Before you can deploy to Railway, you need to have this project in a repository that you own. The best way to do this is to **Fork** the original repository.
+2.  **Enable Developer Mode:**
+    In the top-right corner of the Extensions page, toggle the "Developer mode" switch to the "on" position.
 
-1.  Navigate to the project's GitHub page.
-2.  Click the **"Fork"** button in the top-right corner. This will create a complete copy of the project under your own GitHub account.
+3.  **Load the Extension:**
+    Three new buttons will appear. Click on the **"Load unpacked"** button.
 
-### Step 2: Deploy on Railway
+4.  **Select Project Folder:**
+    A file selection dialog will open. Navigate to and select the root directory of this project (the `audio-visualizer-pro` folder).
 
-1.  **Log in to Railway** with your GitHub account.
-2.  On your dashboard, click **"+ New Project"**.
-3.  Select **"Deploy from GitHub repo"**.
-4.  Choose the repository you just forked.
-
-### Step 3: Automatic Deployment
-
-That's it! Railway will automatically detect the `Dockerfile` in the repository and handle everything for you:
--   It will build the project.
--   It will start the server.
--   It will deploy the application.
-
-**You do not need to configure any build commands or environment variables.**
-
-Once the deployment is complete, Railway will provide you with a public URL where you can access your live audio visualizer.
+5.  **Done!**
+    The "Audio Visualizer Pro" extension will now appear in your list of extensions. You can find its icon in the Chrome toolbar (you might need to click the puzzle piece icon to pin it). Click the icon to open the visualizer in a new tab!
