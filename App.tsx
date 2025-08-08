@@ -1,3 +1,4 @@
+
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -31,6 +32,7 @@ function App() {
     const [resolution, setResolution] = useState<Resolution>(Resolution.P1080);
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
+    const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
     
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -84,7 +86,7 @@ function App() {
         setShowWarning(false);
     }, []);
 
-    const { analyser, initializeAudio, isAudioInitialized, getAudioStream } = useAudioAnalysis();
+    const { analyser, initializeAudio, isAudioInitialized, getAudioStream, resetAudioAnalysis } = useAudioAnalysis();
     const { isRecording, startRecording, stopRecording } = useMediaRecorder(handleRecordingComplete);
 
     const handleFileSelect = (file: File) => {
@@ -92,6 +94,34 @@ function App() {
         const url = URL.createObjectURL(file);
         setAudioUrl(url);
     };
+
+    const handleClearAudio = useCallback(() => {
+        // Stop playback
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.removeAttribute('src'); // Detach src to prevent memory leaks
+            audioRef.current.load(); // Reset media element state
+        }
+        
+        // Clean up object URLs to prevent memory leaks
+        if (audioUrl) {
+            URL.revokeObjectURL(audioUrl);
+        }
+        if (videoUrl) {
+            URL.revokeObjectURL(videoUrl);
+        }
+
+        // Reset all related state
+        setAudioFile(null);
+        setAudioUrl('');
+        setVideoUrl('');
+        setIsPlaying(false);
+        setShowWarning(false); // Hide recording warning if it was shown
+        
+        // Tear down the audio context and analysis graph
+        resetAudioAnalysis();
+    }, [audioUrl, videoUrl, resetAudioAnalysis]);
+
 
     const handlePlayPause = useCallback(() => {
         if (!audioRef.current) return;
@@ -198,6 +228,7 @@ function App() {
                                     colors={COLOR_PALETTES[colorPalette]}
                                     backgroundImage={backgroundImage}
                                     watermarkPosition={watermarkPosition}
+                                    waveformStroke={waveformStroke}
                                 />
                             </div>
                         </div>
@@ -235,6 +266,7 @@ function App() {
                             equalization={equalization}
                             onEqualizationChange={setEqualization}
                             audioFile={audioFile}
+                            onClearAudio={handleClearAudio}
                             videoUrl={videoUrl}
                             videoExtension={videoExtension}
                             backgroundColor={backgroundColor}
@@ -248,6 +280,8 @@ function App() {
                             onClearBackgroundImage={clearBackgroundImage}
                             watermarkPosition={watermarkPosition}
                             onWatermarkPositionChange={handleWatermarkPositionChange}
+                            waveformStroke={waveformStroke}
+                            onWaveformStrokeChange={setWaveformStroke}
                         />
                     </div>
                 )}

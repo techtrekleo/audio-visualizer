@@ -26,6 +26,7 @@ interface ControlsProps {
     equalization: number;
     onEqualizationChange: (value: number) => void;
     audioFile: File | null;
+    onClearAudio: () => void;
     videoUrl: string;
     videoExtension: string;
     backgroundColor: BackgroundColorType;
@@ -39,6 +40,8 @@ interface ControlsProps {
     onClearBackgroundImage: () => void;
     watermarkPosition: WatermarkPosition;
     onWatermarkPositionChange: (position: WatermarkPosition) => void;
+    waveformStroke: boolean;
+    onWaveformStrokeChange: (value: boolean) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
@@ -86,6 +89,7 @@ const Controls: React.FC<ControlsProps> = ({
     equalization,
     onEqualizationChange,
     audioFile,
+    onClearAudio,
     videoUrl,
     videoExtension,
     backgroundColor,
@@ -99,6 +103,8 @@ const Controls: React.FC<ControlsProps> = ({
     onClearBackgroundImage,
     watermarkPosition,
     onWatermarkPositionChange,
+    waveformStroke,
+    onWaveformStrokeChange,
 }) => {
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
 
@@ -113,6 +119,19 @@ const Controls: React.FC<ControlsProps> = ({
         [FontType.ROCKNROLL_ONE]: '搖滾圓體',
         [FontType.REGGAE_ONE]: '雷鬼 Stencil',
         [FontType.VT323]: '立體裝甲',
+    };
+
+    const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (file.type.startsWith('image/')) {
+                onBackgroundImageSelect(file);
+            } else {
+                alert('請上傳有效的圖片檔案。');
+            }
+        }
+        // By resetting the value, we ensure the onChange event fires even if the same file is selected again.
+        e.target.value = '';
     };
 
     return (
@@ -137,6 +156,12 @@ const Controls: React.FC<ControlsProps> = ({
                     </Button>
                 </div>
                 <div className="flex items-center space-x-3">
+                    {audioFile && (
+                         <Button onClick={onClearAudio} className="bg-orange-600 hover:bg-orange-500 text-white">
+                           <Icon path={ICON_PATHS.CHANGE_MUSIC} className="w-5 h-5"/>
+                           <span>更換音樂</span>
+                        </Button>
+                    )}
                     {audioFile && (
                         <a href={URL.createObjectURL(audioFile)} download={audioFile.name} className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-500 text-white">
                             <Icon path={ICON_PATHS.DOWNLOAD} />
@@ -235,7 +260,7 @@ const Controls: React.FC<ControlsProps> = ({
                     <div className="flex items-center gap-2">
                         <label className="flex-grow text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-md font-semibold transition-all duration-200 cursor-pointer">
                             上傳
-                            <input id="bg-image-upload" type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files && onBackgroundImageSelect(e.target.files[0])} />
+                            <input id="bg-image-upload" type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
                         </label>
                         {backgroundImage && (
                             <button onClick={onClearBackgroundImage} className="bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-md font-semibold transition-colors">
@@ -325,6 +350,29 @@ const Controls: React.FC<ControlsProps> = ({
                             {Object.values(WatermarkPosition).map(v => <option key={v} value={v}>{v}</option>)}
                         </select>
                     </div>
+                </div>
+                 
+                {/* Waveform Stroke */}
+                <div className="flex flex-col">
+                    <div className="flex items-center gap-1 mb-1 relative group">
+                        <label htmlFor="waveform-stroke-toggle" className="text-sm text-gray-400">聲波描邊</label>
+                         <div className="text-gray-500 cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" /></svg>
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            啟用後，會在視覺化波形周圍增加深色外框，以提高在明亮背景下的可見度。
+                        </div>
+                    </div>
+                     <button
+                        id="waveform-stroke-toggle"
+                        onClick={() => onWaveformStrokeChange(!waveformStroke)}
+                        disabled={isRecording}
+                        type="button"
+                        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed ${waveformStroke ? 'bg-cyan-600' : 'bg-gray-600'}`}
+                        aria-pressed={waveformStroke}
+                    >
+                        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${waveformStroke ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
                 </div>
 
                 {/* Sensitivity */}

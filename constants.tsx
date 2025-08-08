@@ -8,7 +8,8 @@ export const ICON_PATHS = {
     RECORD_START: 'M12 12m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0',
     RECORD_STOP: 'M10 10h4v4h-4z',
     DOWNLOAD: 'M5 20H19V18H5V20ZM19 9H15V3H9V9H5L12 16L19 9Z',
-    MUSIC_NOTE: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'
+    MUSIC_NOTE: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
+    CHANGE_MUSIC: 'M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z',
 };
 
 export const RESOLUTION_MAP: Record<Resolution, {width: number, height: number} | null> = {
