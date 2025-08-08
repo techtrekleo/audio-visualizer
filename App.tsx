@@ -6,7 +6,7 @@ import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, TextEffectType } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
@@ -15,11 +15,12 @@ function App() {
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [videoExtension, setVideoExtension] = useState<string>('webm');
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
-    const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.FUSION);
+    const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.MONSTERCAT);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [customText, setCustomText] = useState<string>('口袋裡有貓');
     const [textColor, setTextColor] = useState<string>('#67E8F9');
     const [fontFamily, setFontFamily] = useState<FontType>(FontType.POPPINS);
+    const [textEffect, setTextEffect] = useState<TextEffectType>(TextEffectType.SHADOW);
     const [sensitivity, setSensitivity] = useState<number>(1.0);
     const [smoothing, setSmoothing] = useState<number>(0);
     const [equalization, setEqualization] = useState<number>(0.25);
@@ -34,6 +35,7 @@ function App() {
     const canvasBgColors: Record<BackgroundColorType, string> = {
         [BackgroundColorType.BLACK]: 'rgba(0, 0, 0, 1)',
         [BackgroundColorType.GREEN]: 'rgba(0, 255, 0, 1)',
+        [BackgroundColorType.WHITE]: 'rgba(255, 255, 255, 1)',
     };
 
 
@@ -138,6 +140,7 @@ function App() {
                                     customText={customText}
                                     textColor={textColor}
                                     fontFamily={fontFamily}
+                                    textEffect={textEffect}
                                     sensitivity={sensitivity}
                                     smoothing={smoothing}
                                     equalization={equalization}
@@ -171,6 +174,8 @@ function App() {
                             onTextColorChange={setTextColor}
                             fontFamily={fontFamily}
                             onFontFamilyChange={setFontFamily}
+                            textEffect={textEffect}
+                            onTextEffectChange={setTextEffect}
                             sensitivity={sensitivity}
                             onSensitivityChange={setSensitivity}
                             smoothing={smoothing}

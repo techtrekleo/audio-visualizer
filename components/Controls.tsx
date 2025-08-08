@@ -1,5 +1,5 @@
 import React from 'react';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, TextEffectType } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 
@@ -17,6 +17,8 @@ interface ControlsProps {
     onTextColorChange: (color: string) => void;
     fontFamily: FontType;
     onFontFamilyChange: (font: FontType) => void;
+    textEffect: TextEffectType;
+    onTextEffectChange: (effect: TextEffectType) => void;
     sensitivity: number;
     onSensitivityChange: (value: number) => void;
     smoothing: number;
@@ -40,6 +42,22 @@ const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className
     </button>
 );
 
+const SwatchButton: React.FC<{
+    color: string;
+    onClick: (color: string) => void;
+    isActive: boolean;
+}> = ({ color, onClick, isActive }) => (
+    <button
+        type="button"
+        onClick={() => onClick(color)}
+        className={`w-6 h-6 rounded-full border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-400 ${
+            isActive ? 'border-white scale-110' : 'border-gray-700'
+        }`}
+        style={{ backgroundColor: color }}
+        aria-label={`Set text color to ${color}`}
+    />
+);
+
 const Controls: React.FC<ControlsProps> = ({
     isPlaying,
     onPlayPause,
@@ -54,6 +72,8 @@ const Controls: React.FC<ControlsProps> = ({
     onTextColorChange,
     fontFamily,
     onFontFamilyChange,
+    textEffect,
+    onTextEffectChange,
     sensitivity,
     onSensitivityChange,
     smoothing,
@@ -70,6 +90,8 @@ const Controls: React.FC<ControlsProps> = ({
     resolution,
     onResolutionChange,
 }) => {
+    const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
+
     return (
         <div className="w-full max-w-7xl p-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center space-x-2">
@@ -162,15 +184,39 @@ const Controls: React.FC<ControlsProps> = ({
                     </select>
                 </div>
                 <div className="flex flex-col items-center">
+                    <label htmlFor="effect-select" className="text-sm text-gray-400 mb-1">Text Effect</label>
+                    <select
+                        id="effect-select"
+                        value={textEffect}
+                        onChange={(e) => onTextEffectChange(e.target.value as TextEffectType)}
+                        className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none w-36"
+                        disabled={isRecording}
+                    >
+                        {Object.values(TextEffectType).map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+                <div className="flex flex-col items-center">
                     <label htmlFor="text-color-input" className="text-sm text-gray-400 mb-1">Text Color</label>
-                    <input
-                        id="text-color-input"
-                        type="color"
-                        value={textColor}
-                        onChange={(e) => onTextColorChange(e.target.value)}
-                        className="bg-gray-700 border border-gray-600 rounded-md p-1 h-10 w-12 cursor-pointer"
-                        aria-label="Center text color"
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            id="text-color-input"
+                            type="color"
+                            value={textColor}
+                            onChange={(e) => onTextColorChange(e.target.value)}
+                            className="bg-gray-700 border border-gray-600 rounded-md p-1 h-10 w-12 cursor-pointer"
+                            aria-label="Custom text color"
+                        />
+                        <div className="flex items-center gap-1.5 p-1 rounded-md bg-gray-900/50">
+                            {PRESET_COLORS.map(color => (
+                                <SwatchButton
+                                    key={color}
+                                    color={color}
+                                    onClick={onTextColorChange}
+                                    isActive={textColor.toLowerCase() === color.toLowerCase()}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
                 <div className="flex flex-col items-center">
                     <label htmlFor="sensitivity-slider" className="text-sm text-gray-400 mb-1">Sensitivity</label>

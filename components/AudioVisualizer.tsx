@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect, forwardRef } from 'react';
-import { VisualizationType, Palette } from '../types';
+import { VisualizationType, Palette, TextEffectType, ColorPaletteType } from '../types';
 
 interface AudioVisualizerProps {
     analyser: AnalyserNode | null;
@@ -8,12 +9,80 @@ interface AudioVisualizerProps {
     customText: string;
     textColor: string;
     fontFamily: string;
+    textEffect: TextEffectType;
     sensitivity: number;
     smoothing: number;
     equalization: number;
     backgroundColor: string;
     colors: Palette;
 }
+
+// Helper function to draw a rectangle with rounded corners
+const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+    if (width < 2 * radius) radius = width / 2;
+    if (height < 2 * radius) radius = height / 2;
+    if (radius < 0) radius = 0;
+
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + width, y, x + width, y + height, radius);
+    ctx.arcTo(x + width, y + height, x, y + height, radius);
+    ctx.arcTo(x, y + height, x, y, radius);
+    ctx.arcTo(x, y, x + width, y, radius);
+    ctx.closePath();
+    ctx.fill();
+};
+
+
+const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+    ctx.save();
+    
+    const numBars = 128;
+    const dataSliceEnd = Math.floor(dataArray.length * 0.7);
+    const barWidth = width / numBars;
+    const centerY = height / 2;
+    const maxHeight = height * 0.45; // Max height for one side
+    
+    const [startHue, endHue] = colors.hueRange;
+    const hueRangeSpan = endHue - startHue;
+
+    for (let i = 0; i < numBars; i++) {
+        const dataIndex = Math.floor((i / numBars) * dataSliceEnd);
+        const amplitude = dataArray[dataIndex] / 255.0;
+        const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
+
+        if (barHeight < 2) continue; // Skip drawing bars that are too small
+        
+        const x = i * barWidth;
+        
+        let color;
+        if (colors.name === ColorPaletteType.WHITE) {
+            const lightness = 85 + (amplitude * 15); // Vary lightness from 85% to 100%
+            color = `hsl(220, 10%, ${lightness}%)`; // Use a cool, desaturated white
+        } else {
+            const hue = startHue + ((i / numBars) * hueRangeSpan);
+            const saturation = isBeat ? 100 : 90;
+            const lightness = 60;
+            color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = isBeat ? 10 : 5;
+
+        const barGap = 2; // px
+        const effectiveBarWidth = barWidth - barGap;
+        const cornerRadius = Math.min(4, effectiveBarWidth / 3);
+
+        // Draw top bar (moving upwards from center)
+        drawRoundedRect(ctx, x + barGap / 2, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+        
+        // Draw bottom bar (moving downwards from center)
+        drawRoundedRect(ctx, x + barGap / 2, centerY, effectiveBarWidth, barHeight, cornerRadius);
+    }
+    
+    ctx.restore();
+};
 
 const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
     ctx.save();
@@ -110,8 +179,14 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
         const columnHeight = Math.pow(dataArray[dataIndex] / 255, 2) * height * 0.8 * sensitivity;
         if (columnHeight < 1) continue;
         
-        const hue = startHue + (i / numColumns) * hueRangeSpan;
-        const color = `hsl(${hue}, 80%, 60%)`;
+        let color;
+        if (colors.name === ColorPaletteType.WHITE) {
+            const lightness = 80 + (dataArray[dataIndex] / 255) * 20;
+            color = `hsl(220, 5%, ${lightness}%)`;
+        } else {
+            const hue = startHue + (i / numColumns) * hueRangeSpan;
+            color = `hsl(${hue}, 80%, 60%)`;
+        }
         ctx.fillStyle = color;
         ctx.shadowColor = color;
         
@@ -305,8 +380,14 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     
     const [startHue, endHue] = colors.hueRange;
     const hueRangeSpan = endHue - startHue;
-    const hue = startHue + ((frame / 2) % hueRangeSpan);
-    const color = `hsl(${hue}, 80%, 60%)`;
+    
+    let color;
+    if (colors.name === ColorPaletteType.WHITE) {
+        color = colors.primary; // Use a single solid color for the white theme
+    } else {
+        const hue = startHue + ((frame / 2) % hueRangeSpan);
+        color = `hsl(${hue}, 80%, 60%)`;
+    }
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
@@ -470,17 +551,25 @@ const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawPulsingText = (ctx: CanvasRenderingContext2D, text: string, dataArray: Uint8Array, width: number, height: number, color: string, fontFamily: string) => {
+const drawPulsingText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    dataArray: Uint8Array,
+    width: number,
+    height: number,
+    color: string,
+    fontFamily: string,
+    textEffect: TextEffectType
+) => {
     if (!text) return;
 
     ctx.save();
 
+    // 1. Setup common properties
     const centerX = width / 2;
     const centerY = height / 2;
-
     const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
     const normalizedBass = bass / 255;
-    
     const baseFontSize = Math.min(width, height) * 0.1;
     const pulseAmount = Math.min(width, height) * 0.05;
     const fontSize = baseFontSize + (normalizedBass * pulseAmount);
@@ -488,38 +577,50 @@ const drawPulsingText = (ctx: CanvasRenderingContext2D, text: string, dataArray:
     ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
 
-    // --- Enhanced Neon Glow Effect ---
+    // 2. Draw Shadow (if selected)
+    if (textEffect === TextEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // Draw only the shadow, not the fill
+        ctx.fillText(text, centerX, centerY);
+        
+        // Reset shadow for next layers
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+    }
 
-    // 1. Outer, diffuse glow.
+    // 3. Draw Neon Glow Layers (background auras)
+    ctx.fillStyle = 'rgba(0,0,0,0)'; // We only want the shadow, not the fill itself
     ctx.shadowColor = color;
     ctx.shadowBlur = 30;
-    ctx.fillStyle = 'rgba(0,0,0,0)'; 
     ctx.fillText(text, centerX, centerY);
-
-    // 2. Mid-level glow
     ctx.shadowBlur = 15;
     ctx.fillText(text, centerX, centerY);
-    
-    // 3. Inner, bright glow
     ctx.shadowBlur = 5;
     ctx.fillText(text, centerX, centerY);
     
-    // --- NEW: Add a dark outline for contrast ---
-    ctx.shadowColor = 'transparent'; // Reset shadow for outline
+    // Reset shadow after glows
+    ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)'; // Dark, semi-transparent outline
-    ctx.lineWidth = fontSize * 0.04; // Line width relative to font size
-    ctx.lineJoin = 'round'; // Makes corners look smoother
-    ctx.strokeText(text, centerX, centerY);
-
-
-    // 4. Main text fill - a bright gradient to simulate a neon tube's core
+    
+    // 4. Draw Stroke (if selected)
+    if (textEffect === TextEffectType.STROKE) {
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.lineWidth = fontSize * 0.04;
+        ctx.strokeText(text, centerX, centerY);
+    }
+    
+    // 5. Draw the main text fill on top of everything
     const gradient = ctx.createLinearGradient(0, centerY - fontSize / 2, 0, centerY + fontSize / 2);
     gradient.addColorStop(0, '#FFFFFF');
     gradient.addColorStop(0.8, color);
     gradient.addColorStop(1, color);
-
     ctx.fillStyle = gradient;
     ctx.fillText(text, centerX, centerY);
 
@@ -568,6 +669,7 @@ type DrawFunction = (
 ) => void;
 
 const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
+    [VisualizationType.MONSTERCAT]: drawMonstercat,
     [VisualizationType.NEBULA_WAVE]: drawNebulaWave,
     [VisualizationType.LUMINOUS_WAVE]: drawLuminousWave,
     [VisualizationType.FUSION]: drawFusion,
@@ -599,7 +701,7 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, sensitivity, smoothing, equalization, backgroundColor, colors }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, textEffect, sensitivity, smoothing, equalization, backgroundColor, colors }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -756,7 +858,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
 
             if (customText) {
-                drawPulsingText(ctx, customText, smoothedData, width, height, textColor, fontFamily);
+                drawPulsingText(ctx, customText, smoothedData, width, height, textColor, fontFamily, textEffect);
             }
             
             if (isPlaying) {
@@ -773,7 +875,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, sensitivity, smoothing, equalization, backgroundColor, colors]);
+    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, textEffect, sensitivity, smoothing, equalization, backgroundColor, colors]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;

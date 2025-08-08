@@ -1,5 +1,6 @@
 
 export enum VisualizationType {
+    MONSTERCAT = 'Monstercat',
     NEBULA_WAVE = 'Nebula Wave',
     LUMINOUS_WAVE = 'Luminous Wave',
     FUSION = 'Fusion',
@@ -21,6 +22,7 @@ export enum FontType {
 export enum BackgroundColorType {
     BLACK = 'Black',
     GREEN = 'Green',
+    WHITE = 'White',
 }
 
 export enum ColorPaletteType {
@@ -30,6 +32,13 @@ export enum ColorPaletteType {
     GLACIER = 'Glacier',
     LAVA = 'Lava',
     MIDNIGHT = 'Midnight',
+    WHITE = 'White',
+}
+
+export enum TextEffectType {
+    SHADOW = 'Shadow',
+    STROKE = 'Stroke',
+    NONE = 'None',
 }
 
 export enum Resolution {

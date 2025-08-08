@@ -66,4 +66,12 @@ export const COLOR_PALETTES: Record<ColorPaletteType, Palette> = {
         backgroundGlow: 'rgba(40, 40, 80, 0.2)',
         hueRange: [240, 280], // Blue to Purple
     },
+    [ColorPaletteType.WHITE]: {
+        name: ColorPaletteType.WHITE,
+        primary: '#FFFFFF',
+        secondary: '#E5E7EB', // light gray
+        accent: '#FFFFFF',
+        backgroundGlow: 'rgba(220, 220, 230, 0.2)',
+        hueRange: [0, 0], // Not used, logic is handled in visualizer
+    },
 };
