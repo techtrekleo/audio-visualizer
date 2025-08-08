@@ -7,6 +7,9 @@ export enum VisualizationType {
     TECH_WAVE = 'Tech Wave',
     STELLAR_CORE = 'Stellar Core',
     RADIAL_BARS = 'Radial Bars',
+    PARTICLE_GALAXY = 'Particle Galaxy',
+    LIQUID_METAL = 'Liquid Metal',
+    CRT_GLITCH = 'CRT Glitch',
 }
 
 export enum FontType {

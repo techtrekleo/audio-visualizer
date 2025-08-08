@@ -513,7 +513,7 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         ctx.shadowColor = colors.primary;
         ctx.shadowBlur = 10;
     }
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 4; // Increased from 2.5
 
     for (let i = 0; i < spikes; i++) {
         const dataIndex = Math.floor((i / spikes) * (dataArray.length * 0.5));
@@ -623,6 +623,121 @@ const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
+const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+    ctx.save();
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Core logic is handled by the particle system in the main component.
+    // This function can draw a static background element if needed, e.g., a central star.
+    const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    const normalizedBass = bass / 255;
+    const coreRadius = (Math.min(width, height) * 0.04) + (normalizedBass * 30 * sensitivity);
+
+    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius * 2);
+    gradient.addColorStop(0, '#FFFFFF');
+    gradient.addColorStop(0.2, colors.accent);
+    gradient.addColorStop(0.6, colors.primary);
+    gradient.addColorStop(1, 'transparent');
+
+    ctx.fillStyle = gradient;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 30;
+    }
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+};
+
+const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+    ctx.save();
+    // This effect is fully driven by the particle system ("blobs")
+    // in the main component's render loop.
+    // We can add a background glow here.
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    const normalizedBass = bass / 255;
+    const glowRadius = width * 0.2 + normalizedBass * width * 0.2;
+
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowRadius);
+    bgGradient.addColorStop(0, `${colors.secondary}33`);
+    bgGradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
+};
+
+const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+    ctx.save();
+    
+    if (isBeat) {
+        ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+    }
+    
+    const centerY = height / 2;
+
+    const drawWave = (color: string, offsetX = 0, offsetY = 0) => {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        const sliceWidth = width / (dataArray.length * 0.5);
+        for (let i = 0; i < dataArray.length * 0.5; i++) {
+            const x = i * sliceWidth + offsetX;
+            const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
+            const y = centerY + amp + offsetY;
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+    };
+
+    // Glitch effect on beat
+    if (isBeat) {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 2;
+        drawWave('rgba(255, 0, 100, 0.7)', -12); // Magenta
+        drawWave('rgba(0, 255, 255, 0.7)', 12);  // Cyan
+    }
+    
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = 2.5;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.primary;
+        ctx.shadowBlur = 10;
+    }
+    drawWave(colors.primary);
+
+    // Scanlines effect
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    for (let i = 0; i < height; i += 4) {
+        ctx.fillRect(0, i, width, 2);
+    }
+    
+    // Horizontal slip glitch on beat
+    if (isBeat) {
+        const slipY = Math.random() * height * 0.8;
+        const slipHeight = Math.random() * height * 0.1;
+        const slipShift = (Math.random() - 0.5) * 80;
+        try { // getImageData can throw security errors on tainted canvases
+            const slice = ctx.getImageData(0, slipY, width, slipHeight);
+            ctx.clearRect(0, slipY, width, slipHeight);
+            ctx.putImageData(slice, slipShift, slipY);
+        } catch(e) {
+            // Ignore error
+        }
+    }
+    
+    ctx.restore();
+};
+
+
 const drawPulsingText = (
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -725,6 +840,9 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.TECH_WAVE]: drawTechWave,
     [VisualizationType.STELLAR_CORE]: drawStellarCore,
     [VisualizationType.RADIAL_BARS]: drawRadialBars,
+    [VisualizationType.PARTICLE_GALAXY]: drawParticleGalaxy,
+    [VisualizationType.LIQUID_METAL]: drawLiquidMetal,
+    [VisualizationType.CRT_GLITCH]: drawCrtGlitch,
 };
 
 type Particle = {
@@ -733,15 +851,17 @@ type Particle = {
     // Linear motion (for Fusion, Luminous Wave)
     vx: number;
     vy: number;
-    // Orbital motion (for Stellar Core)
+    // Orbital motion (for Stellar Core, Particle Galaxy)
     angle: number;
     orbitRadius: number;
     baseOrbitRadius: number;
+    angleVelocity: number;
     // Common properties
     radius: number;
     opacity: number;
     color: string;
 };
+
 
 type Shockwave = {
     radius: number;
@@ -815,7 +935,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, colors, graphicEffect, isBeat);
             }
             
-            // --- Handle Dynamic Elements (Particles, Shockwaves) ---
+            // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
             if (visualizationType === VisualizationType.STELLAR_CORE) {
                 // Initialize particles if needed
                 if (particlesRef.current.length === 0) {
@@ -830,6 +950,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                             radius: Math.random() * 1.5 + 0.5,
                             opacity: Math.random() * 0.5 + 0.5,
                             color: Math.random() > 0.3 ? colors.primary : colors.secondary,
+                            angleVelocity: 0.005,
                         });
                     }
                 }
@@ -839,7 +960,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 const orbitFlux = (midFrequencies / 255) * 30 * sensitivity;
 
                 particlesRef.current.forEach(p => {
-                    p.angle += 0.005;
+                    p.angle += p.angleVelocity;
                     p.orbitRadius = p.baseOrbitRadius + orbitFlux;
                     p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
                     p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
@@ -852,25 +973,87 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 
                 // Spawn and manage shockwaves
                 if (isBeat) {
-                    shockwavesRef.current.push({
-                        radius: Math.min(width, height) * 0.15,
-                        opacity: 1,
-                        lineWidth: 3
-                    });
+                    shockwavesRef.current.push({ radius: Math.min(width, height) * 0.15, opacity: 1, lineWidth: 3 });
                 }
 
-                shockwavesRef.current.forEach(s => {
-                    s.radius += 5;
-                    s.opacity -= 0.02;
-                    s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
+            } else if (visualizationType === VisualizationType.PARTICLE_GALAXY) {
+                 if (particlesRef.current.length === 0) {
+                    const numParticles = 2000;
+                    for (let i = 0; i < numParticles; i++) {
+                        const baseOrbitRadius = Math.random() * width * 0.4;
+                        particlesRef.current.push({
+                            x: 0, y: 0, vx: 0, vy: 0,
+                            angle: Math.random() * Math.PI * 2,
+                            orbitRadius: baseOrbitRadius,
+                            baseOrbitRadius,
+                            angleVelocity: 0.001 + (1 / (baseOrbitRadius + 10)) * 0.2,
+                            radius: Math.random() * 1.5 + 0.2,
+                            opacity: Math.random() * 0.8 + 0.2,
+                            color: Math.random() > 0.5 ? colors.primary : colors.secondary,
+                        });
+                    }
+                }
+                const bass = smoothedData.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+                const gravity = Math.pow(bass / 255, 2) * 20 * sensitivity;
+                const flare = (smoothedData.slice(100, 200).reduce((a, b) => a + b, 0) / 100) / 255;
+                
+                particlesRef.current.forEach(p => {
+                    p.angle += p.angleVelocity;
+                    p.orbitRadius = p.baseOrbitRadius - gravity + flare * 20;
+                    p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
+                    p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
                     
+                    const lightness = 60 + flare * 40;
                     ctx.beginPath();
-                    ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
-                    ctx.lineWidth = s.lineWidth;
-                    ctx.stroke();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${colors.hueRange[0]}, 90%, ${lightness}%, ${p.opacity})`;
+                    ctx.fill();
                 });
-                shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
+            
+            } else if (visualizationType === VisualizationType.LIQUID_METAL) {
+                 if (particlesRef.current.length === 0) {
+                    const numBlobs = 15;
+                    for (let i = 0; i < numBlobs; i++) {
+                        particlesRef.current.push({
+                            x: centerX + (Math.random() - 0.5) * 50,
+                            y: centerY + (Math.random() - 0.5) * 50,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            radius: Math.random() * 30 + 20,
+                            opacity: 1, color: '', angle: 0, orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
+                        });
+                    }
+                }
+                const bass = (smoothedData.slice(0, 16).reduce((a,b)=>a+b,0)/16)/255;
+                const energy = (smoothedData.reduce((a,b)=>a+b,0)/smoothedData.length)/255;
+
+                ctx.globalCompositeOperation = 'lighter';
+                particlesRef.current.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vx += (centerX - p.x) * 0.001 + (Math.random() - 0.5) * 0.2;
+                    p.vy += (centerY - p.y) * 0.001 + (Math.random() - 0.5) * 0.2;
+                    
+                    if (isBeat) {
+                        p.vx += (Math.random() - 0.5) * bass * 15;
+                        p.vy += (Math.random() - 0.5) * bass * 15;
+                    }
+                    if (p.vx > 3) p.vx = 3; if (p.vx < -3) p.vx = -3;
+                    if (p.vy > 3) p.vy = 3; if (p.vy < -3) p.vy = -3;
+
+                    const dynamicRadius = p.radius * (0.7 + energy * 0.5 + bass * 0.5);
+                    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, dynamicRadius);
+                    g.addColorStop(0, `${colors.primary}ff`);
+                    g.addColorStop(0.5, `${colors.secondary}88`);
+                    g.addColorStop(1, `${colors.secondary}00`);
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, dynamicRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = g;
+                    ctx.fill();
+                });
+                ctx.globalCompositeOperation = 'source-over';
+
 
             } else if (visualizationType === VisualizationType.LUMINOUS_WAVE || visualizationType === VisualizationType.FUSION) {
                 // Update and draw linear particles
@@ -892,7 +1075,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                         x: centerX, y: centerY,
                         vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
                         radius: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.5,
-                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent
+                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent, angleVelocity: 0,
                     });
                 } else if (visualizationType === VisualizationType.FUSION) {
                     const bass = smoothedData.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
@@ -902,12 +1085,27 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                                 x: Math.random() * width, y: height,
                                 vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
                                 radius: Math.random() * 2 + 1, opacity: 1,
-                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent
+                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent, angleVelocity: 0,
                             });
                         }
                     }
                 }
             }
+
+            // --- Handle Shared Dynamic Elements ---
+            // Update and draw shockwaves (used by Stellar Core, etc.)
+            shockwavesRef.current.forEach(s => {
+                s.radius += 5;
+                s.opacity -= 0.02;
+                s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
+                ctx.lineWidth = s.lineWidth;
+                ctx.stroke();
+            });
+            shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
 
 
             if (customText) {
