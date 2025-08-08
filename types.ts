@@ -36,7 +36,8 @@ export enum ColorPaletteType {
     WHITE = 'White',
 }
 
-export enum TextEffectType {
+export enum GraphicEffectType {
+    GLOW = 'Glow',
     SHADOW = 'Shadow',
     STROKE = 'Stroke',
     NONE = 'None',

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, forwardRef } from 'react';
-import { VisualizationType, Palette, TextEffectType, ColorPaletteType } from '../types';
+import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType } from '../types';
 
 interface AudioVisualizerProps {
     analyser: AnalyserNode | null;
@@ -9,7 +9,7 @@ interface AudioVisualizerProps {
     customText: string;
     textColor: string;
     fontFamily: string;
-    textEffect: TextEffectType;
+    graphicEffect: GraphicEffectType;
     sensitivity: number;
     smoothing: number;
     equalization: number;
@@ -17,8 +17,7 @@ interface AudioVisualizerProps {
     colors: Palette;
 }
 
-// Helper function to draw a rectangle with rounded corners
-const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+const createRoundedRectPath = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
     if (width < 2 * radius) radius = width / 2;
     if (height < 2 * radius) radius = height / 2;
     if (radius < 0) radius = 0;
@@ -30,72 +29,88 @@ const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, wi
     ctx.arcTo(x, y + height, x, y, radius);
     ctx.arcTo(x, y, x + width, y, radius);
     ctx.closePath();
-    ctx.fill();
 };
 
-
-const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
+    
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
+    }
 
-    const numBarsOnHalf = 64; // Bars on one side of the center
+    const numBarsOnHalf = 64;
     const totalBars = numBarsOnHalf * 2;
     const barWidth = width / totalBars;
     const centerX = width / 2;
     const centerY = height / 2;
     const maxHeight = height * 0.45;
 
-    // Use lower-to-mid frequencies for the visualizer, which are more responsive to the "beat"
     const dataSliceEnd = Math.floor(dataArray.length * 0.7);
-
     const [startHue, endHue] = colors.hueRange;
     const hueRangeSpan = endHue - startHue;
 
     for (let i = 0; i < numBarsOnHalf; i++) {
-        // As `i` increases, we move away from the center, so we sample further into the frequency data
         const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceEnd);
         const amplitude = dataArray[dataIndex] / 255.0;
-        // Use a power function to make the visualization more dynamic and responsive to peaks
         const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
 
-        if (barHeight < 2) continue; // Skip drawing bars that are too small to see
+        if (barHeight < 2) continue;
 
         let color;
         if (colors.name === ColorPaletteType.WHITE) {
-            const lightness = 85 + (amplitude * 15); // Vary lightness for a shimmering effect
+            const lightness = 85 + (amplitude * 15);
             color = `hsl(220, 10%, ${lightness}%)`;
         } else {
-            // Color is based on the bar's distance from the center
             const hue = startHue + ((i / numBarsOnHalf) * hueRangeSpan);
             const saturation = isBeat ? 100 : 90;
             const lightness = 60 + (amplitude * 10);
             color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         }
+        
+        if (graphicEffect === GraphicEffectType.GLOW) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = isBeat ? 10 : 5;
+        } else if (graphicEffect !== GraphicEffectType.SHADOW) {
+            ctx.shadowBlur = 0;
+        }
 
         ctx.fillStyle = color;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = isBeat ? 10 : 5;
 
-        const barGap = 2; // px
+        const barGap = 2;
         const effectiveBarWidth = barWidth - barGap;
         const cornerRadius = Math.min(4, effectiveBarWidth / 3);
+        
+        const drawBars = (x: number) => {
+            createRoundedRectPath(ctx, x, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+            ctx.fill();
+            createRoundedRectPath(ctx, x, centerY, effectiveBarWidth, barHeight, cornerRadius);
+            ctx.fill();
 
-        // --- Draw the mirrored bars ---
+            if (graphicEffect === GraphicEffectType.STROKE) {
+                ctx.save();
+                ctx.shadowColor = 'transparent';
+                ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                ctx.lineWidth = 1.5;
+                createRoundedRectPath(ctx, x, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+                ctx.stroke();
+                createRoundedRectPath(ctx, x, centerY, effectiveBarWidth, barHeight, cornerRadius);
+                ctx.stroke();
+                ctx.restore();
+            }
+        };
 
-        // Left bar (moves from center to the left)
-        const xLeft = centerX - (i + 1) * barWidth + barGap / 2;
-        drawRoundedRect(ctx, xLeft, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
-        drawRoundedRect(ctx, xLeft, centerY, effectiveBarWidth, barHeight, cornerRadius);
-
-        // Right bar (moves from center to the right)
-        const xRight = centerX + i * barWidth + barGap / 2;
-        drawRoundedRect(ctx, xRight, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
-        drawRoundedRect(ctx, xRight, centerY, effectiveBarWidth, barHeight, cornerRadius);
+        drawBars(centerX - (i + 1) * barWidth + barGap / 2);
+        drawBars(centerX + i * barWidth + barGap / 2);
     }
 
     ctx.restore();
 };
 
-const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+
+const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -104,7 +119,7 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     // 1. Draw central light beam
     const beamGradient = ctx.createLinearGradient(0, centerY, width, centerY);
     beamGradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
-    beamGradient.addColorStop(0.2, `${colors.accent}40`); // 25% opacity
+    beamGradient.addColorStop(0.2, `${colors.accent}40`);
     beamGradient.addColorStop(0.5, colors.accent);
     beamGradient.addColorStop(0.8, `${colors.accent}40`);
     beamGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
@@ -115,7 +130,7 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     
     // 2. Setup for the mirrored waves
     const waveGradient = ctx.createLinearGradient(centerX, centerY - maxAmplitude, centerX, centerY + maxAmplitude);
-    waveGradient.addColorStop(0, `${colors.secondary}cc`); // 80% opacity
+    waveGradient.addColorStop(0, `${colors.secondary}cc`);
     waveGradient.addColorStop(0.4, colors.primary);
     waveGradient.addColorStop(0.5, colors.accent);
     waveGradient.addColorStop(0.6, colors.primary);
@@ -123,8 +138,16 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
 
     ctx.strokeStyle = waveGradient;
     ctx.lineWidth = 2.5;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = colors.primary;
+    
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+    } else if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = colors.primary;
+    }
 
     // 3. New drawing logic for mirrored, separated waves
     const drawMirroredBezierWave = (side: 'left' | 'right') => {
@@ -156,8 +179,16 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
                 const yc = (points[i].y + points[i+1].y) / 2;
                 ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
             }
-             // Draw the last segment to the final point
             ctx.quadraticCurveTo(points[points.length - 1].x, points[points.length - 1].y, points[points.length - 1].x, points[points.length - 1].y);
+
+            if (graphicEffect === GraphicEffectType.STROKE) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                ctx.lineWidth = ctx.lineWidth + 2;
+                ctx.shadowColor = 'transparent';
+                ctx.stroke();
+                ctx.restore();
+            }
             ctx.stroke();
         };
 
@@ -171,22 +202,26 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     ctx.restore();
 };
 
-const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
-
     const [startHue, endHue] = colors.hueRange;
     const hueRangeSpan = endHue - startHue;
+
+    // --- Apply global shadow effect if selected ---
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+    }
 
     // --- 1. Draw dotted columns from the bottom ---
     const numColumns = 128;
     const columnSpacingX = width / numColumns;
-    ctx.shadowBlur = 5;
-
     for (let i = 0; i < numColumns; i++) {
         const dataIndex = Math.floor(i * (dataArray.length * 0.7 / numColumns));
-        // Use a power function to make the effect more sensitive to louder sounds
         const columnHeight = Math.pow(dataArray[dataIndex] / 255, 2) * height * 0.8 * sensitivity;
         if (columnHeight < 1) continue;
         
@@ -199,99 +234,103 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
             color = `hsl(${hue}, 80%, 60%)`;
         }
         ctx.fillStyle = color;
-        ctx.shadowColor = color;
+        if (graphicEffect === GraphicEffectType.GLOW) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 5;
+        }
         
         const x = i * columnSpacingX + columnSpacingX / 2;
-        
         const dotSpacingY = 8;
         const numDots = Math.floor(columnHeight / dotSpacingY);
 
         for (let j = 0; j < numDots; j++) {
             const y = height - j * dotSpacingY;
-            // Fade out dots at the top of the column
             const opacity = 1 - Math.pow(j / numDots, 2);
             ctx.globalAlpha = opacity;
+            const radius = 1 + (dataArray[dataIndex] / 255) * 1.5;
             
             ctx.beginPath();
-            // Radius is based on amplitude, making loud parts have bigger dots
-            const radius = 1 + (dataArray[dataIndex] / 255) * 1.5;
             ctx.arc(x, y - dotSpacingY / 2, radius, 0, Math.PI * 2);
             ctx.fill();
+            if (graphicEffect === GraphicEffectType.STROKE) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+                ctx.lineWidth = 1;
+                ctx.shadowColor = 'transparent';
+                ctx.stroke();
+                ctx.restore();
+            }
         }
     }
-    // Reset global alpha and shadowBlur for the next drawing operations
     ctx.globalAlpha = 1.0;
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 0; // Reset shadow for waves
 
     // --- 2. Create Mirrored Base Wave Data ---
     const numPoints = Math.floor(width / 2);
     const dataSliceLength = dataArray.length * 0.35;
     const wave_base_data: { x: number, y_amp: number }[] = [];
 
-    // Generate data for the left half
     for (let i = 0; i <= numPoints / 2; i++) {
         const progress = i / (numPoints / 2);
         const x = centerX - (progress * centerX);
-        
         const dataIndex = Math.floor(progress * dataSliceLength);
         const audioAmp = Math.pow(dataArray[dataIndex] / 255, 2) * 150 * sensitivity;
-
         wave_base_data.push({ x, y_amp: audioAmp });
     }
-
-    // Mirror to create the right half
-    const right_half = wave_base_data.slice(1).reverse().map(p => ({
-        x: width - p.x,
-        y_amp: p.y_amp
-    }));
+    const right_half = wave_base_data.slice(1).reverse().map(p => ({ x: width - p.x, y_amp: p.y_amp }));
     const full_wave_data = [...wave_base_data, ...right_half];
 
-    // --- 3. Draw the overlapping waves with different amplitudes ---
+    // --- 3. Draw waves ---
+    const solidWaveAmpMultiplier = 0.6;
+    const dottedWaveAmpMultiplier = 1.2;
 
-    // Sensitivity multipliers for each wave
-    const solidWaveAmpMultiplier = 0.6; // Less sensitive
-    const dottedWaveAmpMultiplier = 1.2; // More sensitive, will have bigger amplitude
-
-    // Draw Solid Wave (Less Sensitive)
+    // Draw Solid Wave
     ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = colors.primary;
-    ctx.shadowBlur = 15;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.primary;
+        ctx.shadowBlur = 15;
+    }
+    
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
     const yOscSolid_first = Math.sin(firstPoint.x * 0.05 + frame * 0.02) * 5; 
     ctx.moveTo(firstPoint.x, centerY + firstPoint.y_amp * solidWaveAmpMultiplier + yOscSolid_first);
-
-    // Top path
     for (const p of full_wave_data) {
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY + p.y_amp * solidWaveAmpMultiplier + yOsc);
     }
-    // Mirrored bottom path
     for (let i = full_wave_data.length - 1; i >= 0; i--) {
         const p = full_wave_data[i];
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
     }
     ctx.closePath();
+
+    if (graphicEffect === GraphicEffectType.STROKE) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = ctx.lineWidth + 2;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke();
+        ctx.restore();
+    }
     ctx.stroke();
 
-    // Draw Dotted Wave (More Sensitive)
+    // Draw Dotted Wave
     ctx.fillStyle = colors.secondary;
-    ctx.shadowColor = colors.secondary;
-    ctx.shadowBlur = 10;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.secondary;
+        ctx.shadowBlur = 10;
+    }
     for (const p of full_wave_data) {
-        // A different oscillation makes it more dynamic and appear to "float" around the solid wave
         const yOsc = Math.sin(p.x * 0.08 + frame * -0.03) * 8; 
-        
-        // Top dot
         const y_top = centerY + p.y_amp * dottedWaveAmpMultiplier + yOsc;
+        const y_bottom = centerY - p.y_amp * dottedWaveAmpMultiplier + yOsc;
+
         ctx.beginPath();
         ctx.arc(p.x, y_top, 1.5, 0, Math.PI * 2);
         ctx.fill();
-
-        // Bottom dot
-        const y_bottom = centerY - p.y_amp * dottedWaveAmpMultiplier + yOsc;
         ctx.beginPath();
         ctx.arc(p.x, y_bottom, 1.5, 0, Math.PI * 2);
         ctx.fill();
@@ -300,80 +339,82 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     ctx.restore();
 };
 
-const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
 
-    // --- Create Mirrored Base Wave Data ---
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+    }
+    
     const numPoints = Math.floor(width / 2);
     const dataSliceLength = dataArray.length * 0.35;
     const wave_base_data: { x: number, y_amp: number }[] = [];
 
-    // Generate data for the left half
     for (let i = 0; i <= numPoints / 2; i++) {
         const progress = i / (numPoints / 2);
         const x = centerX - (progress * centerX);
-        
         const dataIndex = Math.floor(progress * dataSliceLength);
         const audioAmp = Math.pow(dataArray[dataIndex] / 255, 2) * 150 * sensitivity;
-
         wave_base_data.push({ x, y_amp: audioAmp });
     }
-
-    // Mirror to create the right half
-    const right_half = wave_base_data.slice(1).reverse().map(p => ({
-        x: width - p.x,
-        y_amp: p.y_amp
-    }));
+    const right_half = wave_base_data.slice(1).reverse().map(p => ({ x: width - p.x, y_amp: p.y_amp }));
     const full_wave_data = [...wave_base_data, ...right_half];
 
-    // --- Draw the overlapping waves with different amplitudes ---
+    const solidWaveAmpMultiplier = 0.6;
+    const dottedWaveAmpMultiplier = 1.2;
 
-    // Sensitivity multipliers for each wave
-    const solidWaveAmpMultiplier = 0.6; // Less sensitive
-    const dottedWaveAmpMultiplier = 1.2; // More sensitive, will have bigger amplitude
-
-    // Draw Solid Wave (Less Sensitive)
+    // Draw Solid Wave
     ctx.strokeStyle = colors.primary;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = colors.primary;
-    ctx.shadowBlur = 15;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.primary;
+        ctx.shadowBlur = 15;
+    }
+
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
     const yOscSolid_first = Math.sin(firstPoint.x * 0.05 + frame * 0.02) * 5; 
     ctx.moveTo(firstPoint.x, centerY + firstPoint.y_amp * solidWaveAmpMultiplier + yOscSolid_first);
-
-    // Top path
     for (const p of full_wave_data) {
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY + p.y_amp * solidWaveAmpMultiplier + yOsc);
     }
-    // Mirrored bottom path
     for (let i = full_wave_data.length - 1; i >= 0; i--) {
         const p = full_wave_data[i];
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
     }
     ctx.closePath();
+
+    if (graphicEffect === GraphicEffectType.STROKE) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+        ctx.lineWidth = ctx.lineWidth + 2;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke();
+        ctx.restore();
+    }
     ctx.stroke();
 
-    // Draw Dotted Wave (More Sensitive)
+    // Draw Dotted Wave
     ctx.fillStyle = colors.secondary;
-    ctx.shadowColor = colors.secondary;
-    ctx.shadowBlur = 10;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.secondary;
+        ctx.shadowBlur = 10;
+    }
     for (const p of full_wave_data) {
-        // A different oscillation makes it more dynamic and appear to "float" around the solid wave
         const yOsc = Math.sin(p.x * 0.08 + frame * -0.03) * 8; 
-        
-        // Top dot
         const y_top = centerY + p.y_amp * dottedWaveAmpMultiplier + yOsc;
+        const y_bottom = centerY - p.y_amp * dottedWaveAmpMultiplier + yOsc;
+        
         ctx.beginPath();
         ctx.arc(p.x, y_top, 1.5, 0, Math.PI * 2);
         ctx.fill();
-
-        // Bottom dot
-        const y_bottom = centerY - p.y_amp * dottedWaveAmpMultiplier + yOsc;
         ctx.beginPath();
         ctx.arc(p.x, y_bottom, 1.5, 0, Math.PI * 2);
         ctx.fill();
@@ -382,7 +423,7 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -394,7 +435,7 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     
     let color;
     if (colors.name === ColorPaletteType.WHITE) {
-        color = colors.primary; // Use a single solid color for the white theme
+        color = colors.primary;
     } else {
         const hue = startHue + ((frame / 2) % hueRangeSpan);
         color = `hsl(${hue}, 80%, 60%)`;
@@ -402,8 +443,17 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
 
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = color;
+    
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+    } else if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+    }
+
 
     for (let i = 0; i < bars; i++) {
         const barHeight = dataArray[i] * 0.5 * sensitivity;
@@ -417,12 +467,21 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
+        
+        if (graphicEffect === GraphicEffectType.STROKE) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = ctx.lineWidth + 2;
+            ctx.shadowColor = 'transparent';
+            ctx.stroke();
+            ctx.restore();
+        }
         ctx.stroke();
     }
     ctx.restore();
 };
 
-const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -438,12 +497,22 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
     
-    // 2. Frequency "Tendrils" using Bezier Curves
+    ctx.save();
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 4;
+    }
+
+    // 2. Frequency "Tendrils"
     const spikes = 180;
     const spikeBaseRadius = Math.min(width, height) * 0.15;
     ctx.strokeStyle = colors.primary;
-    ctx.shadowColor = colors.primary;
-    ctx.shadowBlur = 10;
+    if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowColor = colors.primary;
+        ctx.shadowBlur = 10;
+    }
     ctx.lineWidth = 1.5;
 
     for (let i = 0; i < spikes; i++) {
@@ -452,30 +521,32 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         if (spikeHeight < 1) continue;
         
         const angle = (i / spikes) * Math.PI * 2;
-        
-        // Start point on the base circle
         const x1 = centerX + Math.cos(angle) * spikeBaseRadius;
         const y1 = centerY + Math.sin(angle) * spikeBaseRadius;
-
-        // End point at the tip of the tendril
         const x2 = centerX + Math.cos(angle) * (spikeBaseRadius + spikeHeight);
         const y2 = centerY + Math.sin(angle) * (spikeBaseRadius + spikeHeight);
-
-        // Control point to create the curve
-        // Place it halfway along the spike, but shifted perpendicularly to create a swirl
+        
         const controlPointRadius = spikeBaseRadius + spikeHeight / 2;
-        const swirlAngle = angle + Math.PI / 2; // Perpendicular direction
-        // The amount of swirl will have a base value and an oscillating part for a more organic feel
+        const swirlAngle = angle + Math.PI / 2;
         const swirlAmount = (spikeHeight / 10) + Math.sin(frame * 0.05 + i * 0.1) * 10;
-
         const controlX = centerX + Math.cos(angle) * controlPointRadius + Math.cos(swirlAngle) * swirlAmount;
         const controlY = centerY + Math.sin(angle) * controlPointRadius + Math.sin(swirlAngle) * swirlAmount;
         
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.quadraticCurveTo(controlX, controlY, x2, y2);
+        
+        if (graphicEffect === GraphicEffectType.STROKE) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = ctx.lineWidth + 2;
+            ctx.shadowColor = 'transparent';
+            ctx.stroke();
+            ctx.restore();
+        }
         ctx.stroke();
     }
+    ctx.restore(); // Restore from tendril shadow/glow effect
     
     // 3. Central Core
     const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 30;
@@ -495,69 +566,59 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
 };
 
 
-const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, isBeat?: boolean) => {
+const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
-
     const color = isBeat ? colors.accent : colors.primary;
-
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = color;
+    
+    if (graphicEffect === GraphicEffectType.SHADOW) {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 3;
+        ctx.shadowOffsetY = 3;
+    } else if (graphicEffect === GraphicEffectType.GLOW) {
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = color;
+    }
     ctx.strokeStyle = color;
 
     const innerRadius = Math.min(width, height) * 0.22;
     const outerRadius = innerRadius + (width * 0.015);
 
-    // --- Inner Circle (Bass spikes pointing INWARDS, now thinner) ---
-    const innerSpikes = 128; // Increased for a spikier look
-    const maxInnerHeight = Math.min(width, height) * 0.08; // Reduced amplitude
-    
-    ctx.lineWidth = 2; // Thinner lines, same as outer circle
+    const drawSpikes = (radius: number, spikes: number, maxHeight: number, dataStart: number, dataEnd: number, direction: number, lineWidth: number) => {
+        ctx.lineWidth = lineWidth;
+        for (let i = 0; i < spikes; i++) {
+            const dataIndex = Math.floor(dataStart + (i / spikes) * (dataEnd - dataStart));
+            const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 2) * maxHeight * sensitivity;
+            if (spikeHeight < 1) continue;
+            
+            const angle = (i / spikes) * Math.PI * 2 - Math.PI / 2;
+            const x1 = centerX + Math.cos(angle) * radius;
+            const y1 = centerY + Math.sin(angle) * radius;
+            const x2 = centerX + Math.cos(angle) * (radius + spikeHeight * direction);
+            const y2 = centerY + Math.sin(angle) * (radius + spikeHeight * direction);
 
-    for (let i = 0; i < innerSpikes; i++) {
-        // Still reacting to bass frequencies (lower part of dataArray)
-        const dataIndex = Math.floor(i / innerSpikes * 64); // Sample from bass range
-        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 2) * maxInnerHeight * sensitivity;
-        if (spikeHeight < 1) continue;
-        
-        const angle = (i / innerSpikes) * Math.PI * 2 - Math.PI / 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            
+            if (graphicEffect === GraphicEffectType.STROKE) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                ctx.lineWidth = ctx.lineWidth + 2;
+                ctx.shadowColor = 'transparent';
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.stroke();
+        }
+    };
 
-        const x1 = centerX + Math.cos(angle) * innerRadius;
-        const y1 = centerY + Math.sin(angle) * innerRadius;
-        const x2 = centerX + Math.cos(angle) * (innerRadius - spikeHeight);
-        const y2 = centerY + Math.sin(angle) * (innerRadius - spikeHeight);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-    }
-
-    // --- Outer Circle (Treble spikes pointing OUTWARDS, more exaggerated) ---
-    const outerSpikes = 128;
-    const maxOuterHeight = Math.min(width, height) * 0.28; // Increased amplitude significantly
-
-    ctx.lineWidth = 2;
-    
-    for (let i = 0; i < outerSpikes; i++) {
-        const dataIndex = Math.floor(100 + (i / outerSpikes) * (dataArray.length / 4));
-        // Using a stronger power function to make spikes more dramatic
-        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 1.5) * maxOuterHeight * sensitivity;
-        if (spikeHeight < 1) continue;
-
-        const angle = (i / outerSpikes) * Math.PI * 2 - Math.PI / 2;
-
-        const x1 = centerX + Math.cos(angle) * outerRadius;
-        const y1 = centerY + Math.sin(angle) * outerRadius;
-        const x2 = centerX + Math.cos(angle) * (outerRadius + spikeHeight);
-        const y2 = centerY + Math.sin(angle) * (outerRadius + spikeHeight);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-    }
+    // Inner Circle (Bass spikes pointing INWARDS)
+    drawSpikes(innerRadius, 128, Math.min(width, height) * 0.08, 0, 64, -1, 2);
+    // Outer Circle (Treble spikes pointing OUTWARDS)
+    drawSpikes(outerRadius, 128, Math.min(width, height) * 0.28, 100, dataArray.length / 4, 1, 2);
 
     ctx.restore();
 };
@@ -569,8 +630,7 @@ const drawPulsingText = (
     width: number,
     height: number,
     color: string,
-    fontFamily: string,
-    textEffect: TextEffectType
+    fontFamily: string
 ) => {
     if (!text) return;
 
@@ -589,24 +649,8 @@ const drawPulsingText = (
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round';
-
-    // 2. Draw Shadow (if selected)
-    if (textEffect === TextEffectType.SHADOW) {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 4;
-        ctx.shadowOffsetY = 4;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)'; // Draw only the shadow, not the fill
-        ctx.fillText(text, centerX, centerY);
-        
-        // Reset shadow for next layers
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-    }
-
-    // 3. Draw Neon Glow Layers (background auras)
+    
+    // 2. Draw Neon Glow Layers (background auras)
     ctx.fillStyle = 'rgba(0,0,0,0)'; // We only want the shadow, not the fill itself
     ctx.shadowColor = color;
     ctx.shadowBlur = 30;
@@ -620,14 +664,7 @@ const drawPulsingText = (
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     
-    // 4. Draw Stroke (if selected)
-    if (textEffect === TextEffectType.STROKE) {
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.lineWidth = fontSize * 0.04;
-        ctx.strokeText(text, centerX, centerY);
-    }
-    
-    // 5. Draw the main text fill on top of everything
+    // 3. Draw the main text fill on top of everything
     const gradient = ctx.createLinearGradient(0, centerY - fontSize / 2, 0, centerY + fontSize / 2);
     gradient.addColorStop(0, '#FFFFFF');
     gradient.addColorStop(0.8, color);
@@ -676,6 +713,7 @@ type DrawFunction = (
     frame: number,
     sensitivity: number,
     colors: Palette,
+    graphicEffect: GraphicEffectType,
     isBeat?: boolean
 ) => void;
 
@@ -712,7 +750,7 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, textEffect, sensitivity, smoothing, equalization, backgroundColor, colors }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -774,7 +812,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     ctx.fillStyle = bgGradient;
                     ctx.fillRect(0, 0, width, height);
                 }
-                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, colors, isBeat);
+                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, colors, graphicEffect, isBeat);
             }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves) ---
@@ -873,7 +911,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
 
             if (customText) {
-                drawPulsingText(ctx, customText, smoothedData, width, height, textColor, fontFamily, textEffect);
+                drawPulsingText(ctx, customText, smoothedData, width, height, textColor, fontFamily);
             }
             
             if (isPlaying) {
@@ -890,7 +928,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, textEffect, sensitivity, smoothing, equalization, backgroundColor, colors]);
+    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;

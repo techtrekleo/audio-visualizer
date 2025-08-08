@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, TextEffectType } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 
@@ -18,8 +18,8 @@ interface ControlsProps {
     onTextColorChange: (color: string) => void;
     fontFamily: FontType;
     onFontFamilyChange: (font: FontType) => void;
-    textEffect: TextEffectType;
-    onTextEffectChange: (effect: TextEffectType) => void;
+    graphicEffect: GraphicEffectType;
+    onGraphicEffectChange: (effect: GraphicEffectType) => void;
     sensitivity: number;
     onSensitivityChange: (value: number) => void;
     smoothing: number;
@@ -73,8 +73,8 @@ const Controls: React.FC<ControlsProps> = ({
     onTextColorChange,
     fontFamily,
     onFontFamilyChange,
-    textEffect,
-    onTextEffectChange,
+    graphicEffect,
+    onGraphicEffectChange,
     sensitivity,
     onSensitivityChange,
     smoothing,
@@ -193,15 +193,15 @@ const Controls: React.FC<ControlsProps> = ({
                     </select>
                 </div>
                 <div className="flex flex-col items-center">
-                    <label htmlFor="effect-select" className="text-sm text-gray-400 mb-1">Text Effect</label>
+                    <label htmlFor="effect-select" className="text-sm text-gray-400 mb-1">Graphic Effect</label>
                     <select
                         id="effect-select"
-                        value={textEffect}
-                        onChange={(e) => onTextEffectChange(e.target.value as TextEffectType)}
+                        value={graphicEffect}
+                        onChange={(e) => onGraphicEffectChange(e.target.value as GraphicEffectType)}
                         className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none w-36"
                         disabled={isRecording}
                     >
-                        {Object.values(TextEffectType).map(v => <option key={v} value={v}>{v}</option>)}
+                        {Object.values(GraphicEffectType).map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                 </div>
                 <div className="flex flex-col items-center">

@@ -6,7 +6,7 @@ import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, TextEffectType } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
@@ -20,7 +20,7 @@ function App() {
     const [customText, setCustomText] = useState<string>('口袋裡有貓');
     const [textColor, setTextColor] = useState<string>('#67E8F9');
     const [fontFamily, setFontFamily] = useState<FontType>(FontType.POPPINS);
-    const [textEffect, setTextEffect] = useState<TextEffectType>(TextEffectType.SHADOW);
+    const [graphicEffect, setGraphicEffect] = useState<GraphicEffectType>(GraphicEffectType.GLOW);
     const [sensitivity, setSensitivity] = useState<number>(1.0);
     const [smoothing, setSmoothing] = useState<number>(0);
     const [equalization, setEqualization] = useState<number>(0.25);
@@ -153,7 +153,7 @@ function App() {
                                     customText={customText}
                                     textColor={textColor}
                                     fontFamily={fontFamily}
-                                    textEffect={textEffect}
+                                    graphicEffect={graphicEffect}
                                     sensitivity={sensitivity}
                                     smoothing={smoothing}
                                     equalization={equalization}
@@ -187,8 +187,8 @@ function App() {
                             onTextColorChange={setTextColor}
                             fontFamily={fontFamily}
                             onFontFamilyChange={setFontFamily}
-                            textEffect={textEffect}
-                            onTextEffectChange={setTextEffect}
+                            graphicEffect={graphicEffect}
+                            onGraphicEffectChange={setGraphicEffect}
                             sensitivity={sensitivity}
                             onSensitivityChange={setSensitivity}
                             smoothing={smoothing}
