@@ -37,6 +37,7 @@ export enum ColorPaletteType {
     LAVA = 'Lava',
     MIDNIGHT = 'Midnight',
     WHITE = 'White',
+    RAINBOW = 'Rainbow',
 }
 
 export enum GraphicEffectType {

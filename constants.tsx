@@ -1,3 +1,4 @@
+
 import { ColorPaletteType, Palette, Resolution } from './types';
 
 export const ICON_PATHS = {
@@ -73,5 +74,13 @@ export const COLOR_PALETTES: Record<ColorPaletteType, Palette> = {
         accent: '#FFFFFF',
         backgroundGlow: 'rgba(220, 220, 230, 0.2)',
         hueRange: [0, 0], // Not used, logic is handled in visualizer
+    },
+    [ColorPaletteType.RAINBOW]: {
+        name: ColorPaletteType.RAINBOW,
+        primary: '#FF0000', // Placeholder, will be generated dynamically
+        secondary: '#00FF00', // Placeholder
+        accent: '#0000FF', // Placeholder
+        backgroundGlow: 'rgba(128, 128, 128, 0.2)',
+        hueRange: [0, 360], // Full spectrum
     },
 };

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, forwardRef } from 'react';
 import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType } from '../types';
 
@@ -16,6 +15,22 @@ interface AudioVisualizerProps {
     backgroundColor: string;
     colors: Palette;
 }
+
+/**
+ * Applies an alpha value to a given color string (hex or hsl).
+ * @param color The color string (e.g., '#RRGGBB' or 'hsl(...)').
+ * @param alpha The alpha value (0 to 1).
+ * @returns A color string with alpha (e.g., '#RRGGBBAA' or 'hsla(...)').
+ */
+const applyAlphaToColor = (color: string, alpha: number): string => {
+    const clampedAlpha = Math.max(0, Math.min(1, alpha));
+    if (color.startsWith('hsl')) {
+        return color.replace('hsl', 'hsla').replace(')', `, ${clampedAlpha})`);
+    }
+    const alphaHex = Math.round(clampedAlpha * 255).toString(16).padStart(2, '0');
+    return `${color.substring(0, 7)}${alphaHex}`;
+};
+
 
 const createRoundedRectPath = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
     if (width < 2 * radius) radius = width / 2;
@@ -119,9 +134,9 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     // 1. Draw central light beam
     const beamGradient = ctx.createLinearGradient(0, centerY, width, centerY);
     beamGradient.addColorStop(0, 'rgba(0, 255, 255, 0)');
-    beamGradient.addColorStop(0.2, `${colors.accent}40`);
+    beamGradient.addColorStop(0.2, applyAlphaToColor(colors.accent, 0x40 / 255));
     beamGradient.addColorStop(0.5, colors.accent);
-    beamGradient.addColorStop(0.8, `${colors.accent}40`);
+    beamGradient.addColorStop(0.8, applyAlphaToColor(colors.accent, 0x40 / 255));
     beamGradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
     ctx.fillStyle = beamGradient;
     ctx.shadowBlur = 30;
@@ -130,11 +145,11 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     
     // 2. Setup for the mirrored waves
     const waveGradient = ctx.createLinearGradient(centerX, centerY - maxAmplitude, centerX, centerY + maxAmplitude);
-    waveGradient.addColorStop(0, `${colors.secondary}cc`);
+    waveGradient.addColorStop(0, applyAlphaToColor(colors.secondary, 0xcc / 255));
     waveGradient.addColorStop(0.4, colors.primary);
     waveGradient.addColorStop(0.5, colors.accent);
     waveGradient.addColorStop(0.6, colors.primary);
-    waveGradient.addColorStop(1, `${colors.secondary}cc`);
+    waveGradient.addColorStop(1, applyAlphaToColor(colors.secondary, 0xcc / 255));
 
     ctx.strokeStyle = waveGradient;
     ctx.lineWidth = 2.5;
@@ -664,7 +679,7 @@ const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     const glowRadius = width * 0.2 + normalizedBass * width * 0.2;
 
     const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowRadius);
-    bgGradient.addColorStop(0, `${colors.secondary}33`);
+    bgGradient.addColorStop(0, applyAlphaToColor(colors.secondary, 0x33 / 255));
     bgGradient.addColorStop(1, 'transparent');
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
@@ -911,6 +926,22 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             const centerX = width / 2;
             const centerY = height / 2;
             
+            // --- Dynamic Color Generation for Rainbow Theme ---
+            let finalColors = { ...colors }; // Make a mutable copy for this frame
+            if (finalColors.name === ColorPaletteType.RAINBOW) {
+                const currentHue = (frame.current * 0.1) % 360;
+                const hueRangeStart = currentHue;
+                const hueRangeEnd = currentHue + 80; 
+                
+                finalColors = {
+                    ...finalColors,
+                    primary: `hsl(${currentHue}, 90%, 60%)`,
+                    secondary: `hsl(${(currentHue + 120) % 360}, 80%, 60%)`,
+                    accent: `hsl(${(currentHue + 40) % 360}, 100%, 80%)`,
+                    hueRange: [hueRangeStart, hueRangeEnd]
+                };
+            }
+            
             // Clear canvas based on background type
             if (backgroundColor === 'transparent') {
                 ctx.clearRect(0, 0, width, height);
@@ -927,12 +958,12 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     const normalizedBass = bass / 255;
                     const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
                     const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
-                    bgGradient.addColorStop(0, colors.backgroundGlow);
+                    bgGradient.addColorStop(0, finalColors.backgroundGlow);
                     bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
                     ctx.fillStyle = bgGradient;
                     ctx.fillRect(0, 0, width, height);
                 }
-                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, colors, graphicEffect, isBeat);
+                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat);
             }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
@@ -949,7 +980,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                             baseOrbitRadius: baseOrbitRadius,
                             radius: Math.random() * 1.5 + 0.5,
                             opacity: Math.random() * 0.5 + 0.5,
-                            color: Math.random() > 0.3 ? colors.primary : colors.secondary,
+                            color: Math.random() > 0.3 ? finalColors.primary : finalColors.secondary,
                             angleVelocity: 0.005,
                         });
                     }
@@ -967,7 +998,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `${p.color}${Math.round(p.opacity * 255).toString(16).padStart(2, '0')}`;
+                    ctx.fillStyle = applyAlphaToColor(p.color, p.opacity);
                     ctx.fill();
                 });
                 
@@ -989,7 +1020,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                             angleVelocity: 0.001 + (1 / (baseOrbitRadius + 10)) * 0.2,
                             radius: Math.random() * 1.5 + 0.2,
                             opacity: Math.random() * 0.8 + 0.2,
-                            color: Math.random() > 0.5 ? colors.primary : colors.secondary,
+                            color: Math.random() > 0.5 ? finalColors.primary : finalColors.secondary,
                         });
                     }
                 }
@@ -1006,7 +1037,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     const lightness = 60 + flare * 40;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `hsla(${colors.hueRange[0]}, 90%, ${lightness}%, ${p.opacity})`;
+                    const currentHue = (finalColors.hueRange[0] + (p.baseOrbitRadius / (width * 0.4)) * 60) % 360;
+                    ctx.fillStyle = `hsla(${currentHue}, 90%, ${lightness}%, ${p.opacity})`;
                     ctx.fill();
                 });
             
@@ -1043,9 +1075,10 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
                     const dynamicRadius = p.radius * (0.7 + energy * 0.5 + bass * 0.5);
                     const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, dynamicRadius);
-                    g.addColorStop(0, `${colors.primary}ff`);
-                    g.addColorStop(0.5, `${colors.secondary}88`);
-                    g.addColorStop(1, `${colors.secondary}00`);
+                    
+                    g.addColorStop(0, applyAlphaToColor(finalColors.primary, 1));
+                    g.addColorStop(0.5, applyAlphaToColor(finalColors.secondary, 0.53));
+                    g.addColorStop(1, applyAlphaToColor(finalColors.secondary, 0));
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, dynamicRadius, 0, Math.PI * 2);
@@ -1064,7 +1097,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `${colors.accent}${Math.round(p.opacity * 255).toString(16).padStart(2, '0')}`;
+                    ctx.fillStyle = applyAlphaToColor(finalColors.accent, p.opacity);
                     ctx.fill();
                 });
                 particlesRef.current = particlesRef.current.filter(p => p.opacity > 0);
@@ -1075,7 +1108,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                         x: centerX, y: centerY,
                         vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
                         radius: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.5,
-                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent, angleVelocity: 0,
+                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: finalColors.accent, angleVelocity: 0,
                     });
                 } else if (visualizationType === VisualizationType.FUSION) {
                     const bass = smoothedData.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
@@ -1085,7 +1118,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                                 x: Math.random() * width, y: height,
                                 vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
                                 radius: Math.random() * 2 + 1, opacity: 1,
-                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: colors.accent, angleVelocity: 0,
+                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: finalColors.accent, angleVelocity: 0,
                             });
                         }
                     }
