@@ -1,69 +1,70 @@
 # Audio Visualizer Pro
 
-This project is a real-time audio visualizer built with React, TypeScript, and Tailwind CSS. You can upload an audio file, choose from various visualization styles, customize the appearance, and record the output as a video file.
+This project is a real-time audio visualizer built with React, TypeScript, and Tailwind CSS. You can upload an audio file, choose from various visualization styles, customize the appearance, and record the output as a video file. This version uses the Gemini API for AI-powered subtitle generation.
 
 ## Features
 
 -   **Multiple Visualization Styles**: Choose from styles like 'Monstercat', 'Luminous Wave', 'Fusion', and more.
+-   **AI Subtitle Generation**: Automatically generate time-synced LRC subtitles from your audio using the Gemini API.
 -   **Real-time Customization**: Adjust sensitivity, balance, smoothing, text, fonts, and colors on the fly.
--   **Audio Upload**: Supports drag-and-drop and file browsing for your audio tracks.
 -   **Video Recording**: Record the canvas animation combined with the audio into a downloadable MP4/WebM file.
--   **Responsive Design**: Looks great on both desktop and mobile devices.
 
-## Running Locally / Development Setup
+## Setup and Running
 
-Before loading as an extension, you can run this project on your own computer for development and testing.
+Follow these steps to set up the project on your own computer for development, deployment, or use as a Chrome extension.
 
 ### Prerequisites
 
-Make sure you have the following software installed on your machine:
-
--   **[Node.js](https://nodejs.org/)**: LTS (Long-Term Support) version is recommended. `npm` (Node Package Manager) is included with the installation.
--   **[Git](https://git-scm.com/)**: For cloning the repository from GitHub.
+-   **[Node.js](https://nodejs.org/)**: LTS (Long-Term Support) version is recommended. `npm` is included.
+-   **[Git](https://git-scm.com/)**: For cloning the repository.
+-   **Gemini API Key**: You need an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### Step-by-Step Guide
 
 1.  **Clone the repository:**
-    Open your terminal or command prompt and run the following command to download the project files:
     ```bash
     git clone https://github.com/techtrekleo/audio-visualizer.git
-    ```
-
-2.  **Navigate into the project directory:**
-    ```bash
     cd audio-visualizer-pro
     ```
 
-3.  **Install dependencies:**
-    This command reads the `package.json` file and downloads all the necessary libraries (like React, Vite, etc.) for the project to run.
+2.  **Install dependencies:**
+    This command downloads all necessary libraries.
     ```bash
     npm install
     ```
 
-4.  **Run the development server:**
-    This will start a local server, and you'll see a URL in the terminal.
+3.  **Create an Environment File:**
+    Create a new file named `.env` in the root of the project folder. Add your Gemini API key to this file like so:
+    ```
+    API_KEY=YOUR_GEMINI_API_KEY_HERE
+    ```
+    Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key. This file is ignored by Git and keeps your key private.
+
+4.  **Run for Local Development:**
+    This will start a local server. Open the URL shown in your terminal (usually `http://localhost:5173`).
     ```bash
     npm run dev
     ```
 
-5.  **Open your browser:**
-    Open your web browser and navigate to the local URL provided in the terminal (usually `http://localhost:5173`). You should now see the application running!
-
 ## How to Load as a Chrome Extension
 
-This project is configured to run as a Google Chrome extension. Follow these steps to load it for testing.
+1.  **Build the Project:**
+    First, you must build the project. This command creates a production-ready `dist` folder with your API key securely embedded.
+    ```bash
+    npm run build
+    ```
 
-1.  **Open Chrome Extensions Page:**
+2.  **Open Chrome Extensions Page:**
     Navigate to `chrome://extensions` in your Chrome browser.
 
-2.  **Enable Developer Mode:**
-    In the top-right corner of the Extensions page, toggle the "Developer mode" switch to the "on" position.
+3.  **Enable Developer Mode:**
+    In the top-right corner, toggle the "Developer mode" switch on.
 
-3.  **Load the Extension:**
-    Three new buttons will appear. Click on the **"Load unpacked"** button.
+4.  **Load the Extension:**
+    Click the **"Load unpacked"** button.
 
-4.  **Select Project Folder:**
-    A file selection dialog will open. Navigate to and select the root directory of this project (the `audio-visualizer-pro` folder).
+5.  **Select the `dist` Folder:**
+    A file selection dialog will open. Navigate to your project folder and select the **`dist`** folder that was created in step 1. **Do not select the whole project folder.**
 
-5.  **Done!**
-    The "Audio Visualizer Pro" extension will now appear in your list of extensions. You can find its icon in the Chrome toolbar (you might need to click the puzzle piece icon to pin it). Click the icon to open the visualizer in a new tab!
+6.  **Done!**
+    The extension will now appear in your list. Click its icon in the Chrome toolbar to use it.

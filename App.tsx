@@ -1,4 +1,5 @@
 
+
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -287,7 +288,7 @@ function App() {
 
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-gray-100">
+        <div className="h-full flex flex-col">
             {audioUrl && (
                 <audio
                     key={audioUrl}
@@ -299,22 +300,25 @@ function App() {
                     onLoadedMetadata={handleMetadataLoaded}
                     onTimeUpdate={handleTimeUpdate}
                     crossOrigin="anonymous"
+                    className="hidden"
                 />
             )}
 
-            <header className="w-full max-w-7xl mx-auto flex items-center justify-between p-4 border-b border-gray-700 mb-4">
+            <header className="w-full max-w-7xl mx-auto flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
                 <div className="flex items-center space-x-3">
                     <Icon path={ICON_PATHS.MUSIC_NOTE} className="w-8 h-8 text-cyan-400" />
                     <h1 className="text-2xl font-bold tracking-wider">音訊視覺化工具 Pro</h1>
                 </div>
             </header>
 
-            <main className="w-full flex-grow flex flex-col items-center justify-center">
+            <main className="flex-1 flex flex-col p-4 overflow-y-auto">
                 {!audioFile ? (
-                    <AudioUploader onFileSelect={handleFileSelect} />
+                    <div className="flex-1 flex items-center justify-center">
+                      <AudioUploader onFileSelect={handleFileSelect} />
+                    </div>
                 ) : (
-                    <div className="w-full max-w-7xl flex flex-col items-center space-y-4">
-                         <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-auto">
+                    <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
+                         <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
                             <div 
                                 style={{
                                     ...visualizerContainerStyle,
@@ -421,7 +425,7 @@ function App() {
                     </div>
                 )}
             </main>
-            <footer className="w-full text-center p-4 mt-4 text-gray-500 text-sm">
+            <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
                 一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
             </footer>
         </div>

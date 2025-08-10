@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Orbitron:wght@700&family=Lobster&family=Bungee&family=Press+Start+2P&family=Pacifico&family=Dancing+Script:wght@700&family=RocknRoll+One&family=Reggae+One&family=VT323&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       /* Custom scrollbar for a more modern look */
       ::-webkit-scrollbar {
@@ -24,21 +23,42 @@
         background: #718096; /* bg-gray-500 */
       }
     </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              poppins: ['Poppins', 'sans-serif'],
+              orbitron: ['Orbitron', 'sans-serif'],
+              lobster: ['Lobster', 'cursive'],
+              bungee: ['Bungee', 'cursive'],
+              'press-start-2p': ['"Press Start 2P"', 'cursive'],
+              pacifico: ['Pacifico', 'cursive'],
+              'dancing-script': ['"Dancing Script"', 'cursive'],
+              'rocknroll-one': ['"RocknRoll One"', 'sans-serif'],
+              'reggae-one': ['"Reggae One"', 'cursive'],
+              vt323: ['VT323', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
 <script type="importmap">
 {
   "imports": {
-    "vite": "https://esm.sh/vite@^7.1.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.0.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "react": "https://esm.sh/react@^19.1.1",
-    "@google/genai": "https://esm.sh/@google/genai@^1.13.0"
+    "react": "https://esm.sh/react@^18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
+    "react/": "https://esm.sh/react@^18.2.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^0.14.1",
+    "vite": "https://esm.sh/vite@^5.2.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^4.2.1"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased">
+<body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
