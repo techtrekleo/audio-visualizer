@@ -17,7 +17,6 @@ Follow these steps to set up the project on your own computer for development, d
 
 -   **[Node.js](https://nodejs.org/)**: LTS (Long-Term Support) version is recommended. `npm` is included.
 -   **[Git](https://git-scm.com/)**: For cloning the repository.
--   **Gemini API Key**: You need an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### Step-by-Step Guide
 
@@ -33,12 +32,14 @@ Follow these steps to set up the project on your own computer for development, d
     npm install
     ```
 
-3.  **Create an Environment File:**
-    Create a new file named `.env` in the root of the project folder. Add your Gemini API key to this file like so:
-    ```
-    API_KEY=YOUR_GEMINI_API_KEY_HERE
-    ```
-    Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key. This file is ignored by Git and keeps your key private.
+3.  **Set up your API Key:**
+    This project uses the Google Gemini API for subtitle generation. You'll need an API key.
+    - Copy the example environment file:
+      ```bash
+      cp .env.example .env
+      ```
+    - Open the newly created `.env` file in a text editor.
+    - Replace `"YOUR_API_KEY"` with your actual Google Gemini API key.
 
 4.  **Run for Local Development:**
     This will start a local server. Open the URL shown in your terminal (usually `http://localhost:5173`).
@@ -49,7 +50,7 @@ Follow these steps to set up the project on your own computer for development, d
 ## How to Load as a Chrome Extension
 
 1.  **Build the Project:**
-    First, you must build the project. This command creates a production-ready `dist` folder with your API key securely embedded.
+    First, you must build the project. This command creates a production-ready `dist` folder.
     ```bash
     npm run build
     ```

@@ -1,5 +1,6 @@
 
 
+declare const process: any;
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -85,11 +86,14 @@ function App() {
             alert('請先載入音訊檔案。');
             return;
         }
-
+        
         const apiKey = process.env.API_KEY;
+
         if (!apiKey) {
-            console.error("API Key is not configured. Please set the 'API_KEY' environment variable in your .env file and restart the development server.");
-            alert("API Key 未設定，無法使用 AI 功能。請確認您已在專案根目錄下的 .env 檔案中設定 API_KEY，並重新啟動伺服器。");
+            console.error("API Key is not configured. Please create a .env file and add your API_KEY.");
+            alert("API 金鑰未設定。請在專案根目錄建立一個 .env 檔案，並在其中加入一行 `API_KEY=YOUR_API_KEY`。");
+            setIsGeneratingSubtitles(false);
+            setSubtitlesRawText('API 金鑰未設定，無法產生字幕。');
             return;
         }
 
