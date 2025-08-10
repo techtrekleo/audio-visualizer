@@ -86,9 +86,10 @@ function App() {
             return;
         }
 
-        if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
-            console.error("API Key is not configured. Please set the 'API_KEY' environment variable.");
-            alert("API Key 未設定，無法使用 AI 功能。");
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            console.error("API Key is not configured. Please set the 'API_KEY' environment variable in your .env file and restart the development server.");
+            alert("API Key 未設定，無法使用 AI 功能。請確認您已在專案根目錄下的 .env 檔案中設定 API_KEY，並重新啟動伺服器。");
             return;
         }
 
@@ -108,7 +109,7 @@ function App() {
                 reader.readAsDataURL(audioFile);
             });
 
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey });
             
             const audioPart = {
                 inlineData: {
