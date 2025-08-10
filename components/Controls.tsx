@@ -1,5 +1,5 @@
 import React from 'react';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 
@@ -42,6 +42,23 @@ interface ControlsProps {
     onWatermarkPositionChange: (position: WatermarkPosition) => void;
     waveformStroke: boolean;
     onWaveformStrokeChange: (value: boolean) => void;
+    // Subtitle props
+    subtitlesRawText: string;
+    onSubtitlesRawTextChange: (text: string) => void;
+    onGenerateSubtitles: () => void;
+    isGeneratingSubtitles: boolean;
+    showSubtitles: boolean;
+    onShowSubtitlesChange: (show: boolean) => void;
+    subtitleFontSize: number;
+    onSubtitleFontSizeChange: (size: number) => void;
+    subtitleFontFamily: FontType;
+    onSubtitleFontFamilyChange: (font: FontType) => void;
+    subtitleColor: string;
+    onSubtitleColorChange: (color: string) => void;
+    subtitleEffect: GraphicEffectType;
+    onSubtitleEffectChange: (effect: GraphicEffectType) => void;
+    subtitleBgStyle: SubtitleBgStyle;
+    onSubtitleBgStyleChange: (style: SubtitleBgStyle) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
@@ -105,6 +122,22 @@ const Controls: React.FC<ControlsProps> = ({
     onWatermarkPositionChange,
     waveformStroke,
     onWaveformStrokeChange,
+    subtitlesRawText,
+    onSubtitlesRawTextChange,
+    onGenerateSubtitles,
+    isGeneratingSubtitles,
+    showSubtitles,
+    onShowSubtitlesChange,
+    subtitleFontSize,
+    onSubtitleFontSizeChange,
+    subtitleFontFamily,
+    onSubtitleFontFamilyChange,
+    subtitleColor,
+    onSubtitleColorChange,
+    subtitleEffect,
+    onSubtitleEffectChange,
+    subtitleBgStyle,
+    onSubtitleBgStyleChange,
 }) => {
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
 
@@ -130,7 +163,6 @@ const Controls: React.FC<ControlsProps> = ({
                 alert('請上傳有效的圖片檔案。');
             }
         }
-        // By resetting the value, we ensure the onChange event fires even if the same file is selected again.
         e.target.value = '';
     };
 
@@ -142,7 +174,11 @@ const Controls: React.FC<ControlsProps> = ({
                     <Button onClick={onPlayPause} className="bg-cyan-600 hover:bg-cyan-500 text-white w-12 h-12 text-2xl !p-0">
                         <Icon path={isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-6 h-6" />
                     </Button>
-                    <Button onClick={onRecordToggle} className={`${isRecording ? 'bg-red-500 hover:bg-red-400 animate-pulse' : 'bg-gray-600 hover:bg-gray-500'}`}>
+                    <Button 
+                        onClick={onRecordToggle} 
+                        className={`${isRecording ? 'bg-red-500 hover:bg-red-400 animate-pulse' : 'bg-gray-600 hover:bg-gray-500'}`}
+                        disabled={isLoading || isGeneratingSubtitles}
+                    >
                         {isLoading ? 
                             <>
                                 <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
@@ -421,6 +457,120 @@ const Controls: React.FC<ControlsProps> = ({
                     />
                 </div>
             </div>
+            
+            <hr className="border-gray-700"/>
+
+            {/* --- Subtitle Section --- */}
+            <details className="w-full bg-gray-900/50 p-4 rounded-lg border border-gray-700" open>
+                <summary className="cursor-pointer font-semibold text-lg flex items-center gap-2">
+                    <Icon path={ICON_PATHS.SUBTITLES} className="w-6 h-6 text-cyan-400" />
+                    字幕設定
+                </summary>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="flex flex-col col-span-full">
+                        <label htmlFor="subtitle-text" className="text-sm text-gray-400 mb-1">字幕文字 (在此貼上或由 AI 生成)</label>
+                        <textarea 
+                            id="subtitle-text"
+                            value={subtitlesRawText}
+                            onChange={(e) => onSubtitlesRawTextChange(e.target.value)}
+                            rows={5}
+                            className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none w-full font-mono text-sm"
+                            placeholder="點擊「AI 產生字幕」按鈕自動產生歌詞..."
+                        />
+                    </div>
+                    
+                    <div className="flex flex-col justify-end">
+                       <div className="relative group">
+                           <Button 
+                                onClick={onGenerateSubtitles}
+                                disabled={isGeneratingSubtitles || !audioFile}
+                                className="bg-purple-600 hover:bg-purple-500 text-white w-full"
+                            >
+                                {isGeneratingSubtitles ? 
+                                    <>
+                                     <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                     <span>產生中...</span>
+                                    </>
+                                    : <>
+                                       <Icon path={ICON_PATHS.AI_SPARKLE} className="w-5 h-5" />
+                                       <span>AI 產生字幕</span>
+                                      </>
+                                }
+                            </Button>
+                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                直接分析音訊檔並使用 AI 產生字幕。過程可能需要一些時間，請耐心等候。結果的準確度取決於音訊的清晰度。
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-400 mb-1">顯示字幕</label>
+                         <button
+                            onClick={() => onShowSubtitlesChange(!showSubtitles)}
+                            type="button"
+                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${showSubtitles ? 'bg-cyan-600' : 'bg-gray-600'}`}
+                            aria-pressed={showSubtitles}
+                        >
+                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${showSubtitles ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex flex-col col-span-full md:col-span-1">
+                        <label htmlFor="subtitle-size-slider" className="text-sm text-gray-400 mb-1">字幕大小 ({subtitleFontSize.toFixed(1)}vw)</label>
+                        <input
+                            id="subtitle-size-slider"
+                            type="range" min="1" max="10" step="0.1"
+                            value={subtitleFontSize}
+                            onChange={(e) => onSubtitleFontSizeChange(parseFloat(e.target.value))}
+                            className="w-full cursor-pointer accent-cyan-500"
+                            aria-label="Subtitle font size"
+                        />
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-400 mb-1">字幕字體</label>
+                        <select
+                            value={subtitleFontFamily}
+                            onChange={(e) => onSubtitleFontFamilyChange(e.target.value as FontType)}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        >
+                            {Object.values(FontType).map(v => <option key={v} value={v}>{FONT_MAP[v]}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-400 mb-1">字幕顏色</label>
+                        <div className="flex items-center gap-2">
+                            <input type="color" value={subtitleColor} onChange={(e) => onSubtitleColorChange(e.target.value)} className="bg-gray-700 border border-gray-600 rounded-md p-1 h-10 w-12 cursor-pointer" />
+                            <div className="flex items-center gap-1.5 p-1 rounded-md bg-gray-900/50 flex-wrap">
+                                {PRESET_COLORS.map(color => <SwatchButton key={color} color={color} onClick={onSubtitleColorChange} isActive={subtitleColor.toLowerCase() === color.toLowerCase()} />)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <div className="flex flex-col">
+                        <label className="text-sm text-gray-400 mb-1">字幕特效</label>
+                        <select
+                            value={subtitleEffect}
+                            onChange={(e) => onSubtitleEffectChange(e.target.value as GraphicEffectType)}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        >
+                            {Object.values(GraphicEffectType).map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col">
+                        <label className="text-sm text-gray-400 mb-1">字幕背景</label>
+                        <select
+                            value={subtitleBgStyle}
+                            onChange={(e) => onSubtitleBgStyleChange(e.target.value as SubtitleBgStyle)}
+                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        >
+                            {Object.values(SubtitleBgStyle).map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                    </div>
+                </div>
+            </details>
         </div>
     );
 };

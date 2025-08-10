@@ -66,6 +66,17 @@ export enum WatermarkPosition {
     CENTER = '正中心',
 }
 
+export enum SubtitleBgStyle {
+    NONE = '無',
+    SEMI_TRANSPARENT = '半透明',
+    SOLID = '實色',
+}
+
+export type Subtitle = {
+    time: number;
+    text: string;
+};
+
 export type Palette = {
     name: ColorPaletteType;
     primary: string;

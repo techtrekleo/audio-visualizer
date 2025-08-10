@@ -2,18 +2,21 @@
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
 import Controls from './components/Controls';
 import Icon from './components/Icon';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [audioUrl, setAudioUrl] = useState<string>('');
+    const [audioDuration, setAudioDuration] = useState<number>(0);
+    const [currentTime, setCurrentTime] = useState<number>(0);
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [videoExtension, setVideoExtension] = useState<string>('webm');
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -33,6 +36,17 @@ function App() {
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
     const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
+
+    // Subtitle State
+    const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
+    const [subtitlesRawText, setSubtitlesRawText] = useState<string>('');
+    const [isGeneratingSubtitles, setIsGeneratingSubtitles] = useState<boolean>(false);
+    const [showSubtitles, setShowSubtitles] = useState<boolean>(true);
+    const [subtitleFontSize, setSubtitleFontSize] = useState<number>(4); // Relative vw unit
+    const [subtitleFontFamily, setSubtitleFontFamily] = useState<FontType>(FontType.POPPINS);
+    const [subtitleColor, setSubtitleColor] = useState<string>('#FFFFFF');
+    const [subtitleEffect, setSubtitleEffect] = useState<GraphicEffectType>(GraphicEffectType.SHADOW);
+    const [subtitleBgStyle, setSubtitleBgStyle] = useState<SubtitleBgStyle>(SubtitleBgStyle.SEMI_TRANSPARENT);
     
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -44,6 +58,85 @@ function App() {
         [BackgroundColorType.TRANSPARENT]: 'transparent',
     };
     
+    useEffect(() => {
+        const lines = subtitlesRawText.split('\n');
+        const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+        const newSubtitles: Subtitle[] = [];
+
+        lines.forEach(line => {
+            const match = line.match(timeRegex);
+            if (match) {
+                const minutes = parseInt(match[1], 10);
+                const seconds = parseInt(match[2], 10);
+                const milliseconds = parseInt(match[3].padEnd(3, '0'), 10) / 1000;
+                const time = minutes * 60 + seconds + milliseconds;
+                const text = line.replace(timeRegex, '').trim();
+                if (text) {
+                    newSubtitles.push({ time, text });
+                }
+            }
+        });
+        setSubtitles(newSubtitles.sort((a, b) => a.time - b.time));
+    }, [subtitlesRawText]);
+
+    const handleGenerateSubtitles = async () => {
+        if (!audioFile) {
+            alert('請先載入音訊檔案。');
+            return;
+        }
+
+        if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
+            console.error("API Key is not configured. Please set the 'API_KEY' environment variable.");
+            alert("API Key 未設定，無法使用 AI 功能。");
+            return;
+        }
+
+        setIsGeneratingSubtitles(true);
+        setSubtitlesRawText('正在分析音訊檔案並請求 AI 產生字幕，這可能需要一些時間...');
+
+        try {
+            const audioAsBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    // result is "data:audio/mpeg;base64,...."
+                    // we only need the part after the comma
+                    resolve(result.split(',')[1]);
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(audioFile);
+            });
+
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            
+            const audioPart = {
+                inlineData: {
+                    mimeType: audioFile.type,
+                    data: audioAsBase64,
+                },
+            };
+
+            const textPart = {
+                text: `You are an expert in transcribing audio and synchronizing lyrics. Your task is to transcribe the provided audio file and format the entire transcription into the standard LRC file format. Each line must have a timestamp \`[mm:ss.xx]\`. Ensure the timestamps are accurate and distributed logically throughout the audio's duration. The transcription should be clean, with correct punctuation. The final line's timestamp must not exceed the total audio duration.\n\nTotal audio duration: ${audioDuration.toFixed(2)} seconds. Respond only with the LRC formatted text. Do not add any introductory text or summaries.`
+            };
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: { parts: [textPart, audioPart] },
+            });
+
+            setSubtitlesRawText(response.text.trim());
+
+        } catch (error) {
+            console.error("Error generating subtitles with AI:", error);
+            alert("AI 字幕生成失敗。請檢查您的 API Key、網路連線或稍後再試。");
+            setSubtitlesRawText(''); // Clear text on failure
+        } finally {
+            setIsGeneratingSubtitles(false);
+        }
+    };
+
+
     const handleSetResolution = (newRes: Resolution) => {
         setResolution(newRes);
     };
@@ -96,31 +189,31 @@ function App() {
     };
 
     const handleClearAudio = useCallback(() => {
-        // Stop playback
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.removeAttribute('src'); // Detach src to prevent memory leaks
-            audioRef.current.load(); // Reset media element state
+        if (isPlaying) {
+             if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            setIsPlaying(false);
         }
-        
-        // Clean up object URLs to prevent memory leaks
+       
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
         }
         if (videoUrl) {
             URL.revokeObjectURL(videoUrl);
         }
-
-        // Reset all related state
+        
         setAudioFile(null);
         setAudioUrl('');
         setVideoUrl('');
-        setIsPlaying(false);
-        setShowWarning(false); // Hide recording warning if it was shown
+        setShowWarning(false);
+        setSubtitlesRawText('');
+        setAudioDuration(0);
+        setCurrentTime(0);
         
-        // Tear down the audio context and analysis graph
         resetAudioAnalysis();
-    }, [audioUrl, videoUrl, resetAudioAnalysis]);
+
+    }, [audioUrl, videoUrl, isPlaying, resetAudioAnalysis]);
 
 
     const handlePlayPause = useCallback(() => {
@@ -138,12 +231,21 @@ function App() {
         }
         setIsPlaying(newIsPlaying);
     }, [isPlaying, isAudioInitialized, initializeAudio]);
+    
+    const handleMetadataLoaded = () => {
+        if (audioRef.current) {
+            setAudioDuration(audioRef.current.duration);
+        }
+    };
 
     const handleTimeUpdate = () => {
-        if (audioRef.current && audioRef.current.ended) {
-            setIsPlaying(false);
-            if (isRecording) {
-                stopRecording();
+        if (audioRef.current) {
+            setCurrentTime(audioRef.current.currentTime);
+            if (audioRef.current.ended) {
+                setIsPlaying(false);
+                if (isRecording) {
+                    stopRecording();
+                }
             }
         }
     };
@@ -153,6 +255,11 @@ function App() {
             stopRecording();
             setIsLoading(true);
         } else {
+            if (showSubtitles && subtitles.length === 0) {
+                alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 LRC 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
+                return;
+            }
+            
             const audioStream = getAudioStream();
             if (canvasRef.current && audioStream && audioRef.current) {
                 setShowWarning(true);
@@ -181,15 +288,19 @@ function App() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-900 text-gray-100">
-            <audio
-                ref={audioRef}
-                src={audioUrl}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                onTimeUpdate={handleTimeUpdate}
-                crossOrigin="anonymous"
-            />
+            {audioUrl && (
+                <audio
+                    key={audioUrl}
+                    ref={audioRef}
+                    src={audioUrl}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onEnded={() => setIsPlaying(false)}
+                    onLoadedMetadata={handleMetadataLoaded}
+                    onTimeUpdate={handleTimeUpdate}
+                    crossOrigin="anonymous"
+                />
+            )}
 
             <header className="w-full max-w-7xl mx-auto flex items-center justify-between p-4 border-b border-gray-700 mb-4">
                 <div className="flex items-center space-x-3">
@@ -215,6 +326,7 @@ function App() {
                                <AudioVisualizer 
                                     ref={canvasRef}
                                     analyser={analyser} 
+                                    audioRef={audioRef}
                                     visualizationType={visualizationType} 
                                     isPlaying={isPlaying}
                                     customText={customText}
@@ -229,6 +341,13 @@ function App() {
                                     backgroundImage={backgroundImage}
                                     watermarkPosition={watermarkPosition}
                                     waveformStroke={waveformStroke}
+                                    subtitles={subtitles}
+                                    showSubtitles={showSubtitles}
+                                    subtitleFontSize={subtitleFontSize}
+                                    subtitleFontFamily={subtitleFontFamily}
+                                    subtitleColor={subtitleColor}
+                                    subtitleEffect={subtitleEffect}
+                                    subtitleBgStyle={subtitleBgStyle}
                                 />
                             </div>
                         </div>
@@ -282,6 +401,22 @@ function App() {
                             onWatermarkPositionChange={handleWatermarkPositionChange}
                             waveformStroke={waveformStroke}
                             onWaveformStrokeChange={setWaveformStroke}
+                            subtitlesRawText={subtitlesRawText}
+                            onSubtitlesRawTextChange={setSubtitlesRawText}
+                            onGenerateSubtitles={handleGenerateSubtitles}
+                            isGeneratingSubtitles={isGeneratingSubtitles}
+                            showSubtitles={showSubtitles}
+                            onShowSubtitlesChange={setShowSubtitles}
+                            subtitleFontSize={subtitleFontSize}
+                            onSubtitleFontSizeChange={setSubtitleFontSize}
+                            subtitleFontFamily={subtitleFontFamily}
+                            onSubtitleFontFamilyChange={setSubtitleFontFamily}
+                            subtitleColor={subtitleColor}
+                            onSubtitleColorChange={setSubtitleColor}
+                            subtitleEffect={subtitleEffect}
+                            onSubtitleEffectChange={setSubtitleEffect}
+                            subtitleBgStyle={subtitleBgStyle}
+                            onSubtitleBgStyleChange={setSubtitleBgStyle}
                         />
                     </div>
                 )}

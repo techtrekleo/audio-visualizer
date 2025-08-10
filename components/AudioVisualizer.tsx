@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, forwardRef } from 'react';
-import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType } from '../types';
+import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
 
 interface AudioVisualizerProps {
     analyser: AnalyserNode | null;
+    audioRef: React.RefObject<HTMLAudioElement>;
     visualizationType: VisualizationType;
     isPlaying: boolean;
     customText: string;
@@ -17,6 +18,14 @@ interface AudioVisualizerProps {
     backgroundImage: string | null;
     watermarkPosition: WatermarkPosition;
     waveformStroke: boolean;
+    // Subtitle props
+    subtitles: Subtitle[];
+    showSubtitles: boolean;
+    subtitleFontSize: number;
+    subtitleFontFamily: FontType;
+    subtitleColor: string;
+    subtitleEffect: GraphicEffectType;
+    subtitleBgStyle: SubtitleBgStyle;
 }
 
 /**
@@ -693,6 +702,95 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.restore();
 };
 
+const drawSubtitles = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    currentSubtitle: Subtitle | undefined,
+    { fontSizeVw, fontFamily, color, effect, bgStyle, isBeat }: {
+        fontSizeVw: number;
+        fontFamily: string;
+        color: string;
+        effect: GraphicEffectType;
+        bgStyle: SubtitleBgStyle;
+        isBeat?: boolean;
+    }
+) => {
+    if (!currentSubtitle || !currentSubtitle.text) return;
+    
+    ctx.save();
+    
+    const { text } = currentSubtitle;
+    
+    const fontSize = (fontSizeVw / 100) * width;
+    ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    
+    const positionX = width / 2;
+    const positionY = height - (height * 0.08);
+
+    const metrics = ctx.measureText(text);
+    const textHeight = metrics.fontBoundingBoxAscent ?? fontSize;
+    const textWidth = metrics.width;
+
+    // Handle background for readability
+    if (bgStyle !== SubtitleBgStyle.NONE) {
+        const bgPaddingX = fontSize * 0.4;
+        const bgPaddingY = fontSize * 0.2;
+        const bgWidth = textWidth + bgPaddingX * 2;
+        const bgHeight = textHeight + bgPaddingY * 2;
+        const bgX = positionX - bgWidth / 2;
+        const bgY = positionY - textHeight - bgPaddingY;
+        
+        ctx.fillStyle = bgStyle === SubtitleBgStyle.SOLID ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)';
+        createRoundedRectPath(ctx, bgX, bgY, bgWidth, bgHeight, 5);
+        ctx.fill();
+    }
+
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = fontSize * 0.1;
+    
+    const drawTextWithEffect = (offsetX = 0, offsetY = 0) => {
+        ctx.fillText(text, positionX + offsetX, positionY + offsetY);
+        if (effect === GraphicEffectType.STROKE) {
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.strokeText(text, positionX + offsetX, positionY + offsetY);
+        }
+    };
+
+    // Handle text effects
+    switch (effect) {
+        case GraphicEffectType.GLOW:
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            break;
+        case GraphicEffectType.SHADOW:
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = fontSize * 0.04;
+            ctx.shadowOffsetY = fontSize * 0.04;
+            break;
+        case GraphicEffectType.GLITCH:
+            if (isBeat) {
+                ctx.globalCompositeOperation = 'lighter';
+                const glitchAmount = fontSize * 0.1;
+                ctx.fillStyle = 'rgba(255, 0, 100, 0.7)';
+                drawTextWithEffect((Math.random() - 0.5) * glitchAmount, (Math.random() - 0.5) * glitchAmount);
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+                drawTextWithEffect((Math.random() - 0.5) * glitchAmount, (Math.random() - 0.5) * glitchAmount);
+                ctx.globalCompositeOperation = 'source-over';
+            }
+            break;
+    }
+    
+    ctx.fillStyle = color;
+    drawTextWithEffect();
+    
+    ctx.restore();
+};
+
+
 const drawCustomText = (
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -886,7 +984,7 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -1180,7 +1278,38 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             });
             shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
 
+            // Get current time directly from the audio element for perfect sync
+            const currentTime = audioRef.current?.currentTime ?? 0;
 
+            // Find current subtitle to display
+            let currentSubtitle: Subtitle | undefined = undefined;
+            if (showSubtitles && subtitles.length > 0) {
+                // Find the last subtitle whose time is less than or equal to the current time
+                for (let i = subtitles.length - 1; i >= 0; i--) {
+                    if (currentTime >= subtitles[i].time) {
+                        const nextTime = i + 1 < subtitles.length ? subtitles[i+1].time : Infinity;
+                        // To prevent subtitle from disappearing, we can keep showing it until the next one or for a duration
+                        // Simple approach: show if current time is between this sub and the next.
+                        // Better approach for lyrics: keep it on screen.
+                        currentSubtitle = subtitles[i];
+                        break;
+                    }
+                }
+            }
+            
+            // Draw Subtitles
+            if (currentSubtitle) {
+                drawSubtitles(ctx, width, height, currentSubtitle, {
+                    fontSizeVw: subtitleFontSize,
+                    fontFamily: subtitleFontFamily,
+                    color: subtitleColor,
+                    effect: subtitleEffect,
+                    bgStyle: subtitleBgStyle,
+                    isBeat,
+                });
+            }
+
+            // Draw watermark/custom text on top of everything
             if (customText) {
                 drawCustomText(ctx, customText, smoothedData, {
                     width,
@@ -1211,7 +1340,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke]);
+    }, [isPlaying, analyser, audioRef, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
