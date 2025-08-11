@@ -1,6 +1,4 @@
 
-
-declare const process: any;
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -86,14 +84,10 @@ function App() {
             alert('請先載入音訊檔案。');
             return;
         }
-        
-        const apiKey = process.env.API_KEY;
 
-        if (!apiKey) {
-            console.error("API Key is not configured. Please create a .env file and add your API_KEY.");
-            alert("API 金鑰未設定。請在專案根目錄建立一個 .env 檔案，並在其中加入一行 `API_KEY=YOUR_API_KEY`。");
-            setIsGeneratingSubtitles(false);
-            setSubtitlesRawText('API 金鑰未設定，無法產生字幕。');
+        if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
+            console.error("API Key is not configured. Please set the 'API_KEY' environment variable.");
+            alert("API Key 未設定，無法使用 AI 功能。");
             return;
         }
 
@@ -113,7 +107,7 @@ function App() {
                 reader.readAsDataURL(audioFile);
             });
 
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const audioPart = {
                 inlineData: {
@@ -123,7 +117,7 @@ function App() {
             };
 
             const textPart = {
-                text: `You are an expert in transcribing audio and synchronizing lyrics. Your task is to transcribe the provided audio file and format the entire transcription into the standard LRC file format. Each line must have a timestamp \`[mm:ss.xx]\`. Ensure the timestamps are accurate and distributed logically throughout the audio's duration. The transcription should be clean, with correct punctuation. The final line's timestamp must not exceed the total audio duration.\n\nTotal audio duration: ${audioDuration.toFixed(2)} seconds. Respond only with the LRC formatted text. Do not add any introductory text or summaries.`
+                text: `你是一位專業的音訊轉錄和歌詞同步專家。你的任務是轉錄提供的音訊檔案，並將整個轉錄內容格式化為標準的 LRC 檔案格式。請確保所有轉錄文字都使用**繁體中文**。每一行都必須有時間戳 \`[mm:ss.xx]\`。請確保時間戳準確，並在音訊的整個長度內邏輯分佈。轉錄內容應清晰、標點符號正確。最後一行的時間戳不得超過音訊總長度。\n\n音訊總長度：${audioDuration.toFixed(2)} 秒。請僅回應 LRC 格式的文字，不要添加任何介紹性文字或摘要。`
             };
             
             const response = await ai.models.generateContent({
