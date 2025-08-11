@@ -1,4 +1,5 @@
 
+
 declare const chrome: any;
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -84,10 +85,12 @@ function App() {
             alert('請先載入音訊檔案。');
             return;
         }
+        
+        const apiKey = process.env.VITE_API_KEY;
 
-        if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
-            console.error("API Key is not configured. Please set the 'API_KEY' environment variable.");
-            alert("API Key 未設定，無法使用 AI 功能。");
+        if (!apiKey) {
+            console.error("API Key is not configured. Please set 'VITE_API_KEY' in your deployment environment variables and redeploy.");
+            alert("API Key 未設定，無法使用 AI 功能。\n\n請確認您已在 Railway 的 Variables 設定中，新增一個名為 VITE_API_KEY 的變數並填入您的金鑰。如果您已設定，請務必重新部署 (redeploy) 專案以讓變更生效。");
             return;
         }
 
@@ -107,7 +110,7 @@ function App() {
                 reader.readAsDataURL(audioFile);
             });
 
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey });
             
             const audioPart = {
                 inlineData: {
