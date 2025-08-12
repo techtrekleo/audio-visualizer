@@ -1,3 +1,5 @@
+
+
 import React, { useRef, useEffect, forwardRef } from 'react';
 import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
 
@@ -630,9 +632,71 @@ const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
+const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    
+    const centerY = height / 2;
+
+    const wavePath = new Path2D();
+    const sliceWidth = width / (dataArray.length * 0.5);
+    let x = 0;
+     for (let i = 0; i < dataArray.length * 0.5; i++) {
+        const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
+        const y = centerY + amp;
+        if (i === 0) {
+            wavePath.moveTo(x, y);
+        } else {
+            wavePath.lineTo(x, y);
+        }
+        x += sliceWidth;
+    }
+    
+    if (waveformStroke) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 4.5;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke(wavePath);
+        ctx.restore();
+    }
+    
+    ctx.strokeStyle = colors.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 10;
+    ctx.stroke(wavePath);
+
+    // Add classic scanlines for the retro feel
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    for (let i = 0; i < height; i += 3) {
+        ctx.fillRect(0, i, width, 1);
+    }
+    
+    // The key "wave" effect: horizontal slipping on beat
+    if (isBeat) {
+        const numSlices = Math.floor(Math.random() * 5) + 3; // 3 to 7 slices
+        for (let i = 0; i < numSlices; i++) {
+            const sy = Math.random() * height;
+            const sh = (Math.random() * height) / 10 + 5; // A bit of height
+            const sx = 0;
+            const sw = width;
+            const dx = (Math.random() - 0.5) * 50;
+            const dy = sy;
+            try {
+               ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
+            } catch(e) { /* ignored, can happen on cross-origin canvas */ }
+        }
+    }
+    
+    ctx.restore();
+};
+
+
 const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
+    // Original effect: Screen shake
     if (isBeat) {
         ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
     }
@@ -645,8 +709,8 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
 
         ctx.beginPath();
         const sliceWidth = width / (dataArray.length * 0.5);
+        let x = 0;
         for (let i = 0; i < dataArray.length * 0.5; i++) {
-            const x = i * sliceWidth + offsetX;
             const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
             const y = centerY + amp + offsetY;
             if (i === 0) {
@@ -654,15 +718,19 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
             } else {
                 ctx.lineTo(x, y);
             }
+            x += sliceWidth;
         }
         ctx.stroke();
     };
 
-    // Glitch effect on beat
-    if (isBeat) {
+    // Modified effect: Dynamic Chromatic Aberration
+    // Happens occasionally without a beat, and intensely on a beat.
+    const isGlitching = isBeat || Math.random() > 0.9;
+    if (isGlitching) {
         ctx.globalCompositeOperation = 'lighter';
-        drawWave('rgba(255, 0, 100, 0.7)', -12, 0, 2); // Magenta
-        drawWave('rgba(0, 255, 255, 0.7)', 12, 0, 2);  // Cyan
+        const intensity = isBeat ? 12 : 4;
+        drawWave('rgba(255, 0, 100, 0.7)', (Math.random() - 0.5) * intensity, 0, 2); // Magenta
+        drawWave('rgba(0, 255, 255, 0.7)', (Math.random() - 0.5) * intensity, 0, 2);  // Cyan
     }
     
     ctx.globalCompositeOperation = 'source-over';
@@ -679,23 +747,383 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.shadowBlur = 10;
     drawWave(colors.primary, 0, 0, 2.5);
 
-    // Scanlines effect
+    // Original effect: Scanlines
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
     for (let i = 0; i < height; i += 4) {
         ctx.fillRect(0, i, width, 2);
     }
     
-    // Horizontal slip glitch on beat
+    // NEW effect: Vertical Roll
+    if (isBeat && Math.random() > 0.7) {
+        const rollAmount = Math.floor((Math.random() - 0.5) * height * 0.1);
+        try {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            ctx.clearRect(0, 0, width, height);
+            ctx.putImageData(imageData, 0, rollAmount);
+        } catch(e) { /* ignore */ }
+    }
+
+    // Modified effect: Block Corruption (replaces simple horizontal slip)
     if (isBeat) {
-        const slipY = Math.random() * height * 0.8;
-        const slipHeight = Math.random() * height * 0.1;
-        const slipShift = (Math.random() - 0.5) * 80;
-        try { // getImageData can throw security errors on tainted canvases
-            const slice = ctx.getImageData(0, slipY, width, slipHeight);
-            ctx.clearRect(0, slipY, width, slipHeight);
-            ctx.putImageData(slice, slipShift, slipY);
-        } catch(e) {
-            // Ignore error
+        const numBlocks = Math.floor(Math.random() * 4) + 1; // 1 to 4 blocks
+        for (let i = 0; i < numBlocks; i++) {
+            const sx = Math.random() * width * 0.9;
+            const sy = Math.random() * height * 0.9;
+            const sw = Math.random() * width * 0.3 + 10;
+            const sh = Math.random() * height * 0.1 + 5;
+            const dx = sx + (Math.random() - 0.5) * 60;
+            const dy = sy + (Math.random() - 0.5) * 30;
+            try {
+                // We draw from the canvas onto itself to create the glitch
+                ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
+            } catch(e) { /* ignore */ }
+        }
+    }
+    
+    ctx.restore();
+};
+
+const drawMonstercatGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    // 1. Draw the base Monstercat visual
+    drawMonstercat(ctx, dataArray, width, height, frame, sensitivity, colors, graphicEffect, isBeat, waveformStroke);
+
+    // 2. Apply glitch effects on top if there's a beat
+    if (isBeat) {
+        ctx.save();
+        // Vertical Roll
+        if (Math.random() > 0.8) {
+            const rollAmount = Math.floor((Math.random() - 0.5) * height * 0.05);
+            try {
+                // To prevent smearing, we must capture, clear, then redraw the original visual shifted.
+                const imageData = ctx.getImageData(0, 0, width, height);
+                ctx.clearRect(0, 0, width, height);
+                ctx.putImageData(imageData, 0, rollAmount);
+            } catch(e) { /* ignore */ }
+        }
+
+        // Block Corruption
+        const numBlocks = Math.floor(Math.random() * 6) + 2;
+        for (let i = 0; i < numBlocks; i++) {
+            const sx = Math.random() * width * 0.9;
+            const sy = Math.random() * height * 0.9;
+            const sw = Math.random() * width * 0.25 + 10;
+            const sh = Math.random() * height * 0.1 + 5;
+            const dx = sx + (Math.random() - 0.5) * 40;
+            const dy = sy; // Only horizontal displacement
+            try {
+                ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
+            } catch(e) { /* ignore */ }
+        }
+        ctx.restore();
+    }
+};
+
+// Module-level state for effects that need persistence across frames
+const dataMoshState: { imageData: ImageData | null, framesLeft: number } = {
+    imageData: null,
+    framesLeft: 0,
+};
+
+const drawDataMosh = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    
+    // If a mosh is active from a previous frame, draw the "ghost" frame first.
+    // This creates the smearing/feedback effect.
+    if (dataMoshState.framesLeft > 0 && dataMoshState.imageData) {
+        ctx.putImageData(dataMoshState.imageData, 0, 0);
+        dataMoshState.framesLeft--;
+    }
+    
+    // Draw the main, live visual on top of the ghost (or on the clean canvas if no ghost)
+    const centerY = height / 2;
+    const wavePath = new Path2D();
+    const sliceWidth = width / (dataArray.length * 0.5);
+    let x = 0;
+    for (let i = 0; i < dataArray.length * 0.5; i++) {
+        const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
+        const y = centerY + amp;
+        if (i === 0) {
+            wavePath.moveTo(x, y);
+        } else {
+            wavePath.lineTo(x, y);
+        }
+        x += sliceWidth;
+    }
+    
+    if (waveformStroke) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 4.5;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke(wavePath);
+        ctx.restore();
+    }
+    
+    ctx.strokeStyle = colors.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 10;
+    ctx.stroke(wavePath);
+
+    // If a beat happens, we capture the *current* result (ghost + live wave)
+    // to be the *next* ghost frame, continuing the feedback loop.
+    if (isBeat) {
+        try {
+            dataMoshState.imageData = ctx.getImageData(0, 0, width, height);
+            dataMoshState.framesLeft = 5; // Linger for 5 frames
+        } catch (e) { /* ignore */ }
+    }
+
+    ctx.restore();
+};
+
+const drawSignalScramble = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    
+    // Base wave with intense chromatic aberration
+    const centerY = height / 2;
+    ctx.globalCompositeOperation = 'lighter';
+    const intensity = isBeat ? 15 : 5;
+    const drawSubWave = (color: string, offset: number) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const sliceWidth = width / (dataArray.length * 0.5);
+        let x = 0;
+        for (let i = 0; i < dataArray.length * 0.5; i++) {
+            const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
+            ctx.lineTo(x, centerY + amp + (Math.random() - 0.5) * offset);
+            x += sliceWidth;
+        }
+        ctx.stroke();
+    };
+    drawSubWave('rgba(255, 0, 100, 0.6)', intensity);
+    drawSubWave('rgba(0, 255, 255, 0.6)', intensity);
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Main wave on top
+    ctx.strokeStyle = colors.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 10;
+    const mainWavePath = new Path2D();
+    let x = 0;
+    const sliceWidth = width / (dataArray.length * 0.5);
+    for (let i = 0; i < dataArray.length * 0.5; i++) {
+        const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
+        mainWavePath.lineTo(x, centerY + amp);
+        x += sliceWidth;
+    }
+    ctx.stroke(mainWavePath);
+
+    // Static, snow, and tracking lines
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    for (let i = 0; i < 200; i++) {
+        ctx.fillRect(Math.random() * width, Math.random() * height, Math.random() * 2, Math.random() * 2);
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+        const y = height * Math.random();
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Screen Tearing on beat
+    if (isBeat && Math.random() > 0.5) {
+        const tearY = Math.random() * height;
+        const tearHeight = Math.random() * 50 + 20;
+        const tearShift = (Math.random() - 0.5) * 80;
+        try {
+            ctx.drawImage(ctx.canvas, 0, tearY, width, tearHeight, tearShift, tearY, width, tearHeight);
+        } catch(e) {}
+    }
+
+    ctx.restore();
+};
+
+// State for the Pixel Rain effect, kept separate to not interfere with other particle systems.
+const pixelRainState: {
+    particles: {
+        x: number;
+        y: number;
+        vy: number;
+        opacity: number;
+        color: string;
+        length: number;
+    }[];
+} = {
+    particles: [],
+};
+
+const drawPixelSort = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    // 1. Always draw the base visual first. This provides the source for our particles.
+    drawMonstercat(ctx, dataArray, width, height, frame, sensitivity, colors, graphicEffect, isBeat, waveformStroke);
+
+    // 2. On a strong beat, sample the canvas and create new "rain" particles.
+    if (isBeat) {
+        try {
+            // Reading from the canvas can be slow, but it's the most direct way to sample the generated visual.
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const pixels = imageData.data;
+            const step = 4; // Performance: check every Nth pixel.
+            for (let y = 0; y < height; y += step) {
+                for (let x = 0; x < width; x += step) {
+                    const i = (y * width + x) * 4;
+                    // Check alpha channel to ensure we're sampling a drawn pixel
+                    if (pixels[i + 3] > 200) {
+                        const brightness = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
+                        // Spawn from bright areas with a bit of randomness
+                        if (brightness > 120 && Math.random() > 0.92) {
+                            pixelRainState.particles.push({
+                                x: x,
+                                y: y,
+                                vy: Math.random() * 5 + 7, // High initial downward velocity for "fast" effect
+                                opacity: 1,
+                                color: `rgba(${pixels[i]}, ${pixels[i+1]}, ${pixels[i+2]}, 1)`,
+                                length: Math.random() * 25 + 15, // Trail length
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // This can happen if a cross-origin background image taints the canvas.
+            console.warn("Pixel Sort effect was blocked from reading canvas data, likely due to a cross-origin image.");
+        }
+    }
+
+    // 3. Update and draw all active particles.
+    const gravity = 0.6; // Increased gravity for a faster feel
+    ctx.lineCap = 'round';
+    
+    // Iterate backwards to safely remove items while looping
+    for (let i = pixelRainState.particles.length - 1; i >= 0; i--) {
+        const p = pixelRainState.particles[i];
+
+        // Apply physics
+        p.y += p.vy;
+        p.vy += gravity;
+
+        // Draw the particle as a motion-blurred trail
+        ctx.strokeStyle = applyAlphaToColor(p.color, p.opacity);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - p.length);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // Fade out
+        p.opacity -= 0.02;
+
+        // Remove particle if it's invisible or off-screen
+        if (p.opacity <= 0 || (p.y - p.length) > height) {
+            pixelRainState.particles.splice(i, 1);
+        }
+    }
+};
+
+const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+    ctx.save();
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // The particle updates happen in the main loop, so we just draw here.
+    if (particles) {
+        particles.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = applyAlphaToColor(p.color, p.opacity * 0.8);
+            ctx.fill();
+        });
+    }
+
+    // Draw central core
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const normalizedBass = bass / 255;
+    const coreRadius = width * 0.02 + normalizedBass * 40 * sensitivity;
+
+    const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+    coreGradient.addColorStop(0, applyAlphaToColor(colors.accent, 0.9));
+    coreGradient.addColorStop(0.5, applyAlphaToColor(colors.primary, 0.7));
+    coreGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = coreGradient;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = isBeat ? 40 : 20;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+};
+
+const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    
+    const centerX = width / 2;
+    const centerY = height * 0.6; // Push the horizon up
+    const fov = width * 0.8; // Field of view
+    
+    // Grid properties
+    const gridSizeX = 40;
+    const gridSizeZ = 30;
+    const spacing = width / gridSizeX * 1.2;
+    const maxTerrainHeight = height * 0.2;
+
+    const angle = frame * 0.002; // Slow rotation
+
+    const project = (x3d: number, y3d: number, z3d: number) => {
+        // Rotate around Y axis
+        const rotX = x3d * Math.cos(angle) - z3d * Math.sin(angle);
+        const rotZ = x3d * Math.sin(angle) + z3d * Math.cos(angle);
+        
+        const scale = fov / (fov + rotZ);
+        const x2d = rotX * scale + centerX;
+        const y2d = y3d * scale + centerY;
+        return { x: x2d, y: y2d, scale };
+    };
+
+    ctx.strokeStyle = colors.primary;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 5;
+    ctx.lineWidth = 1.5;
+
+    for (let z = 0; z < gridSizeZ; z++) {
+        ctx.beginPath();
+        let firstPointProjected = null;
+
+        for (let x = 0; x < gridSizeX; x++) {
+            const dataIndex = Math.floor((x / gridSizeX) * (dataArray.length * 0.6));
+            const terrainHeight = Math.pow(dataArray[dataIndex] / 255.0, 2) * maxTerrainHeight * sensitivity;
+            
+            const x3d = (x - gridSizeX / 2) * spacing;
+            const y3d = -terrainHeight;
+            const z3d = (z - gridSizeZ / 2) * spacing;
+
+            const p = project(x3d, y3d, z3d);
+            
+            if (p.scale <= 0) continue; // Clip points behind the camera
+
+            if (firstPointProjected === null) {
+                ctx.moveTo(p.x, p.y);
+                firstPointProjected = p;
+            } else {
+                ctx.lineTo(p.x, p.y);
+            }
+        }
+        
+        if (firstPointProjected) {
+            const zProgress = z / gridSizeZ;
+            const [startHue, endHue] = colors.hueRange;
+            const hue = startHue + (zProgress * (endHue - startHue));
+            const lightness = 40 + zProgress * 30;
+            ctx.strokeStyle = `hsla(${hue}, 90%, ${lightness}%, ${1 - zProgress * 0.7})`;
+            ctx.shadowColor = `hsla(${hue}, 90%, ${lightness}%, ${1 - zProgress * 0.7})`;
+            ctx.stroke();
         }
     }
     
@@ -943,11 +1371,13 @@ type DrawFunction = (
     colors: Palette,
     graphicEffect: GraphicEffectType,
     isBeat?: boolean,
-    waveformStroke?: boolean
+    waveformStroke?: boolean,
+    particles?: Particle[]
 ) => void;
 
 const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.MONSTERCAT]: drawMonstercat,
+    [VisualizationType.MONSTERCAT_GLITCH]: drawMonstercatGlitch,
     [VisualizationType.NEBULA_WAVE]: drawNebulaWave,
     [VisualizationType.LUMINOUS_WAVE]: drawLuminousWave,
     [VisualizationType.FUSION]: drawFusion,
@@ -957,15 +1387,21 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.PARTICLE_GALAXY]: drawParticleGalaxy,
     [VisualizationType.LIQUID_METAL]: drawLiquidMetal,
     [VisualizationType.CRT_GLITCH]: drawCrtGlitch,
+    [VisualizationType.GLITCH_WAVE]: drawGlitchWave,
+    [VisualizationType.DATA_MOSH]: drawDataMosh,
+    [VisualizationType.SIGNAL_SCRAMBLE]: drawSignalScramble,
+    [VisualizationType.PIXEL_SORT]: drawPixelSort,
+    [VisualizationType.REPULSOR_FIELD]: drawRepulsorField,
+    [VisualizationType.AUDIO_LANDSCAPE]: drawAudioLandscape,
 };
 
 type Particle = {
     x: number;
     y: number;
-    // Linear motion (for Fusion, Luminous Wave)
+    // Linear motion
     vx: number;
     vy: number;
-    // Orbital motion (for Stellar Core, Particle Galaxy)
+    // Orbital motion
     angle: number;
     orbitRadius: number;
     baseOrbitRadius: number;
@@ -995,6 +1431,11 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         // Clear dynamic elements when visualization changes to prevent artifacts
         particlesRef.current = [];
         shockwavesRef.current = [];
+        // Also clear stateful visualizer data
+        dataMoshState.imageData = null;
+        dataMoshState.framesLeft = 0;
+        pixelRainState.particles = [];
+
     }, [visualizationType]);
     
     useEffect(() => {
@@ -1101,7 +1542,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     ctx.fillStyle = bgGradient;
                     ctx.fillRect(0, 0, width, height);
                 }
-                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke);
+                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
             }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
@@ -1261,7 +1702,66 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                         }
                     }
                 }
+            } else if (visualizationType === VisualizationType.REPULSOR_FIELD) {
+                if (particlesRef.current.length === 0) {
+                    const numParticles = 500;
+                    for (let i = 0; i < numParticles; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const radius = Math.random() * (width * 0.1); // Start near the center
+                        particlesRef.current.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius,
+                            vx: (Math.random() - 0.5) * 15, // High initial velocity
+                            vy: (Math.random() - 0.5) * 15, // High initial velocity
+                            radius: Math.random() * 2 + 0.8, // Slightly larger particles
+                            opacity: Math.random() * 0.6 + 0.4,
+                            color: Math.random() > 0.3 ? finalColors.primary : finalColors.secondary,
+                            angle: 0, orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
+                        });
+                    }
+                }
+
+                const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+                const normalizedBass = bass / 255;
+                const boundaryRadius = 150;
+                const repulsorStrength = isBeat ? normalizedBass * 80 : 0; // Increased strength
+
+                particlesRef.current.forEach(p => {
+                    const dx = p.x - centerX;
+                    const dy = p.y - centerY;
+                    const distSq = dx * dx + dy * dy;
+                    const dist = Math.sqrt(distSq);
+
+                    // Repulsion force on beat
+                    if (repulsorStrength > 0 && dist > 1) {
+                        const forceX = (dx / dist) * repulsorStrength;
+                        const forceY = (dy / dist) * repulsorStrength;
+                        p.vx += forceX / 10; // Increased acceleration
+                        p.vy += forceY / 10;
+                    }
+                    
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // Boundary check and bounce
+                    const newDist = Math.sqrt((p.x - centerX)**2 + (p.y - centerY)**2);
+                    if (newDist > boundaryRadius) {
+                        // Normal vector at the point of collision
+                        const nx = (p.x - centerX) / newDist;
+                        const ny = (p.y - centerY) / newDist;
+                        
+                        // Reflect velocity vector and apply energy loss
+                        const dotProduct = p.vx * nx + p.vy * ny;
+                        p.vx = (p.vx - 2 * dotProduct * nx) * 0.85; 
+                        p.vy = (p.vy - 2 * dotProduct * ny) * 0.85;
+
+                        // Place particle back on the boundary
+                        p.x = centerX + nx * boundaryRadius;
+                        p.y = centerY + ny * boundaryRadius;
+                    }
+                });
             }
+
 
             // --- Handle Shared Dynamic Elements ---
             // Update and draw shockwaves (used by Stellar Core, etc.)

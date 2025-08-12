@@ -1,6 +1,8 @@
 
+
 export enum VisualizationType {
     MONSTERCAT = 'Monstercat',
+    MONSTERCAT_GLITCH = 'Monstercat (故障版)',
     NEBULA_WAVE = 'Nebula Wave',
     LUMINOUS_WAVE = 'Luminous Wave',
     FUSION = 'Fusion',
@@ -10,6 +12,12 @@ export enum VisualizationType {
     PARTICLE_GALAXY = 'Particle Galaxy',
     LIQUID_METAL = 'Liquid Metal',
     CRT_GLITCH = 'CRT Glitch',
+    GLITCH_WAVE = 'Glitch Wave',
+    DATA_MOSH = '數據熔接 (Data Mosh)',
+    SIGNAL_SCRAMBLE = '訊號干擾 (Signal Scramble)',
+    PIXEL_SORT = '像素排序 (Pixel Sort)',
+    REPULSOR_FIELD = '排斥力場',
+    AUDIO_LANDSCAPE = '音訊地貌',
 }
 
 export enum FontType {
