@@ -1130,6 +1130,64 @@ const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     ctx.restore();
 };
 
+const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+    ctx.save();
+    const keyboardHeight = height * 0.2;
+    const keyboardY = height - keyboardHeight;
+
+    const numWhiteKeys = 28; // 4 octaves
+    const whiteKeyWidth = width / numWhiteKeys;
+    const blackKeyWidth = whiteKeyWidth * 0.6;
+    const blackKeyHeight = keyboardHeight * 0.6;
+
+    const keyDataPoints = Math.floor(dataArray.length * 0.7 / numWhiteKeys);
+
+    // Draw white keys and handle presses
+    for (let i = 0; i < numWhiteKeys; i++) {
+        const keyX = i * whiteKeyWidth;
+
+        let pressAmount = 0;
+        const dataStart = i * keyDataPoints;
+        const dataEnd = dataStart + keyDataPoints;
+        for (let j = dataStart; j < dataEnd; j++) {
+            pressAmount += dataArray[j] || 0;
+        }
+        pressAmount /= (keyDataPoints * 255); // Normalize
+
+        const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
+
+        ctx.fillStyle = isPressed ? '#cccccc' : '#ffffff';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.fillRect(keyX, keyboardY, whiteKeyWidth, keyboardHeight);
+        ctx.strokeRect(keyX, keyboardY, whiteKeyWidth, keyboardHeight);
+    }
+
+    // Draw black keys
+    const blackKeyPattern = [1, 1, 0, 1, 1, 1, 0]; // C#, D#, F#, G#, A#
+    for (let i = 0; i < numWhiteKeys - 1; i++) {
+         const patternIndex = i % 7;
+         if (blackKeyPattern[patternIndex] === 1) {
+            const keyX = (i + 1) * whiteKeyWidth - (blackKeyWidth / 2);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(keyX, keyboardY, blackKeyWidth, blackKeyHeight);
+         }
+    }
+
+    // Draw particles (musical notes)
+    if (particles) {
+        particles.forEach(p => {
+            ctx.font = `bold ${p.radius}px "Arial"`;
+            ctx.fillStyle = applyAlphaToColor(p.color, p.opacity);
+            ctx.textAlign = 'center';
+            // Simple note symbol '♪' or '♫'
+            ctx.fillText(p.angle > 0.5 ? '♪' : '♫', p.x, p.y);
+        });
+    }
+
+    ctx.restore();
+};
+
 const drawSubtitles = (
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -1393,6 +1451,7 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.PIXEL_SORT]: drawPixelSort,
     [VisualizationType.REPULSOR_FIELD]: drawRepulsorField,
     [VisualizationType.AUDIO_LANDSCAPE]: drawAudioLandscape,
+    [VisualizationType.PIANO_VIRTUOSO]: drawPianoVirtuoso,
 };
 
 type Particle = {
@@ -1760,6 +1819,46 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                         p.y = centerY + ny * boundaryRadius;
                     }
                 });
+            } else if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
+                const keyboardHeight = height * 0.2;
+                const numWhiteKeys = 28;
+                const whiteKeyWidth = width / numWhiteKeys;
+                const keyDataPoints = Math.floor(smoothedData.length * 0.7 / numWhiteKeys);
+
+                for (let i = 0; i < numWhiteKeys; i++) {
+                    let pressAmount = 0;
+                    const dataStart = i * keyDataPoints;
+                    const dataEnd = dataStart + keyDataPoints;
+                    for (let j = dataStart; j < dataEnd; j++) {
+                        pressAmount += smoothedData[j] || 0;
+                    }
+                    pressAmount /= (keyDataPoints * 255);
+
+                    const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
+
+                    if (isPressed && Math.random() > 0.85) { // Add some randomness to avoid too many particles
+                        particlesRef.current.push({
+                            x: i * whiteKeyWidth + whiteKeyWidth / 2,
+                            y: height - keyboardHeight,
+                            vy: -Math.random() * 2 - 2, // Upward velocity
+                            vx: (Math.random() - 0.5) * 0.5,
+                            opacity: 1,
+                            radius: Math.random() * 20 + 20, // Font size for the note
+                            color: finalColors.accent,
+                            angle: Math.random(), // Used to select note symbol
+                            orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
+                        });
+                    }
+                }
+
+                // Update particles
+                particlesRef.current.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.vy += 0.05; // gravity
+                    p.opacity -= 0.015;
+                });
+                particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height);
             }
 
 

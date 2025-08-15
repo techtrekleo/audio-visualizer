@@ -18,6 +18,7 @@ export enum VisualizationType {
     PIXEL_SORT = '像素排序 (Pixel Sort)',
     REPULSOR_FIELD = '排斥力場',
     AUDIO_LANDSCAPE = '音訊地貌',
+    PIANO_VIRTUOSO = '鋼琴演奏家',
 }
 
 export enum FontType {
