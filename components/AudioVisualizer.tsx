@@ -28,6 +28,9 @@ interface AudioVisualizerProps {
     subtitleColor: string;
     subtitleEffect: GraphicEffectType;
     subtitleBgStyle: SubtitleBgStyle;
+    effectScale: number;
+    effectOffsetX: number;
+    effectOffsetY: number;
 }
 
 /**
@@ -1514,7 +1517,7 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -1625,6 +1628,12 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
             const drawFunction = VISUALIZATION_MAP[visualizationType];
             if (drawFunction) {
+                ctx.save();
+                // Apply global transformations
+                ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
+                ctx.scale(effectScale, effectScale);
+                ctx.translate(-centerX, -centerY);
+
                 // For Stellar Core, draw the glow on top of the base background
                 if (visualizationType === VisualizationType.STELLAR_CORE) {
                     const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
@@ -1637,6 +1646,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     ctx.fillRect(0, 0, width, height);
                 }
                 drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
+
+                ctx.restore();
             }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---

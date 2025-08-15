@@ -59,6 +59,12 @@ interface ControlsProps {
     onSubtitleEffectChange: (effect: GraphicEffectType) => void;
     subtitleBgStyle: SubtitleBgStyle;
     onSubtitleBgStyleChange: (style: SubtitleBgStyle) => void;
+    effectScale: number;
+    onEffectScaleChange: (value: number) => void;
+    effectOffsetX: number;
+    onEffectOffsetXChange: (value: number) => void;
+    effectOffsetY: number;
+    onEffectOffsetYChange: (value: number) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
@@ -138,6 +144,12 @@ const Controls: React.FC<ControlsProps> = ({
     onSubtitleEffectChange,
     subtitleBgStyle,
     onSubtitleBgStyleChange,
+    effectScale,
+    onEffectScaleChange,
+    effectOffsetX,
+    onEffectOffsetXChange,
+    effectOffsetY,
+    onEffectOffsetYChange,
 }) => {
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
 
@@ -454,6 +466,50 @@ const Controls: React.FC<ControlsProps> = ({
                         onChange={(e) => onSmoothingChange(parseInt(e.target.value, 10))}
                         className="w-full cursor-pointer accent-cyan-500"
                         aria-label="Visualization smoothing"
+                    />
+                </div>
+
+                {/* --- Effect Transform Controls --- */}
+                <div className="flex flex-col">
+                    <label htmlFor="scale-slider" className="text-sm text-gray-400 mb-1">特效大小 ({effectScale.toFixed(2)})</label>
+                    <input
+                        id="scale-slider"
+                        type="range"
+                        min="0.1"
+                        max="2.0"
+                        step="0.05"
+                        value={effectScale}
+                        onChange={(e) => onEffectScaleChange(parseFloat(e.target.value))}
+                        className="w-full cursor-pointer accent-cyan-500"
+                        aria-label="Effect scale"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label htmlFor="offsetx-slider" className="text-sm text-gray-400 mb-1">水平位移 ({effectOffsetX}px)</label>
+                    <input
+                        id="offsetx-slider"
+                        type="range"
+                        min="-500"
+                        max="500"
+                        step="10"
+                        value={effectOffsetX}
+                        onChange={(e) => onEffectOffsetXChange(parseInt(e.target.value, 10))}
+                        className="w-full cursor-pointer accent-cyan-500"
+                        aria-label="Effect X offset"
+                    />
+                </div>
+                <div className="flex flex-col">
+                    <label htmlFor="offsety-slider" className="text-sm text-gray-400 mb-1">垂直位移 ({effectOffsetY}px)</label>
+                    <input
+                        id="offsety-slider"
+                        type="range"
+                        min="-500"
+                        max="500"
+                        step="10"
+                        value={effectOffsetY}
+                        onChange={(e) => onEffectOffsetYChange(parseInt(e.target.value, 10))}
+                        className="w-full cursor-pointer accent-cyan-500"
+                        aria-label="Effect Y offset"
                     />
                 </div>
             </div>
