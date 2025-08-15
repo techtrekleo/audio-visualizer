@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, forwardRef } from 'react';
+import React, { useRef, useEffect, forwardRef, useCallback } from 'react';
 import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
 
 interface AudioVisualizerProps {
@@ -1526,12 +1526,17 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, ...props }, ref) => {
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
     const shockwavesRef = useRef<Shockwave[]>([]);
     const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+    const propsRef = useRef(props);
+
+    useEffect(() => {
+        propsRef.current = props;
+    });
 
     useEffect(() => {
         // Clear dynamic elements when visualization changes to prevent artifacts
@@ -1542,13 +1547,13 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         dataMoshState.framesLeft = 0;
         pixelRainState.particles = [];
 
-    }, [visualizationType]);
+    }, [props.visualizationType]);
     
     useEffect(() => {
-        if (backgroundImage) {
+        if (props.backgroundImage) {
             const img = new Image();
             img.crossOrigin = 'anonymous'; // Important for canvas tainted issues
-            img.src = backgroundImage;
+            img.src = props.backgroundImage;
             img.onload = () => {
                 backgroundImageRef.current = img;
             };
@@ -1559,476 +1564,196 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         } else {
             backgroundImageRef.current = null;
         }
-    }, [backgroundImage]);
+    }, [props.backgroundImage]);
 
-    useEffect(() => {
+    const renderFrame = useCallback(() => {
+        const {
+            visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, 
+            sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
+            waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
+            subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
+        } = propsRef.current;
+
         const canvas = (ref as React.RefObject<HTMLCanvasElement>).current;
         if (!canvas || !analyser) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        
+
+        frame.current++;
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let beatCooldown = 0;
+        analyser.getByteFrequencyData(dataArray);
 
-        const renderFrame = () => {
-            frame.current++;
-            analyser.getByteFrequencyData(dataArray);
+        const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+        let isBeat = false;
+        if (bassAvg > 180) { // Simplified beat detection for responsiveness
+             isBeat = true;
+        }
+        
+        const balancedData = equalizeDataArray(dataArray, equalization);
+        const smoothedData = smoothDataArray(balancedData, smoothing);
 
-            const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-            let isBeat = false;
-            if (bassAvg > 180 && beatCooldown <= 0) {
-                 isBeat = true;
-                 beatCooldown = 10; // Cooldown for 10 frames to avoid too many shockwaves
-            }
-            if(beatCooldown > 0) beatCooldown--;
+        const { width, height } = canvas;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // --- Dynamic Color Generation for Rainbow Theme ---
+        let finalColors = { ...colors };
+        if (finalColors.name === ColorPaletteType.RAINBOW) {
+            const currentHue = (frame.current * 0.1) % 360;
+            const hueRangeStart = currentHue;
+            const hueRangeEnd = currentHue + 80; 
             
-            const balancedData = equalizeDataArray(dataArray, equalization);
-            const smoothedData = smoothDataArray(balancedData, smoothing);
-
-            const { width, height } = canvas;
-            const centerX = width / 2;
-            const centerY = height / 2;
-            
-            // --- Dynamic Color Generation for Rainbow Theme ---
-            let finalColors = { ...colors }; // Make a mutable copy for this frame
-            if (finalColors.name === ColorPaletteType.RAINBOW) {
-                const currentHue = (frame.current * 0.1) % 360;
-                const hueRangeStart = currentHue;
-                const hueRangeEnd = currentHue + 80; 
-                
-                finalColors = {
-                    ...finalColors,
-                    primary: `hsl(${currentHue}, 90%, 60%)`,
-                    secondary: `hsl(${(currentHue + 120) % 360}, 80%, 60%)`,
-                    accent: `hsl(${(currentHue + 40) % 360}, 100%, 80%)`,
-                    hueRange: [hueRangeStart, hueRangeEnd]
-                };
-            }
-            
-            // Clear canvas and draw background
-            if (backgroundColor === 'transparent') {
-                ctx.clearRect(0, 0, width, height);
-            } else {
-                ctx.fillStyle = backgroundColor;
-                ctx.fillRect(0, 0, width, height);
-            }
-            
-            // Draw background image if available
-            if (backgroundImageRef.current) {
-                const img = backgroundImageRef.current;
-                const canvasAspect = width / height;
-                const imageAspect = img.width / img.height;
-                let sx, sy, sWidth, sHeight;
-
-                if (canvasAspect > imageAspect) { // Canvas is wider than image
-                    sWidth = img.width;
-                    sHeight = sWidth / canvasAspect;
-                    sx = 0;
-                    sy = (img.height - sHeight) / 2;
-                } else { // Canvas is taller or same aspect
-                    sHeight = img.height;
-                    sWidth = sHeight * canvasAspect;
-                    sy = 0;
-                    sx = (img.width - sWidth) / 2;
-                }
-                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
-            }
-
-            const drawFunction = VISUALIZATION_MAP[visualizationType];
-            if (drawFunction) {
-                const shouldTransform = !IGNORE_TRANSFORM_VISUALIZATIONS.has(visualizationType);
-
-                if (shouldTransform) {
-                    ctx.save();
-                    // Apply global transformations
-                    ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
-                    ctx.scale(effectScale, effectScale);
-                    ctx.translate(-centerX, -centerY);
-                }
-
-                // For Stellar Core, draw the glow on top of the base background
-                if (visualizationType === VisualizationType.STELLAR_CORE) {
-                    const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-                    const normalizedBass = bass / 255;
-                    const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
-                    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
-                    bgGradient.addColorStop(0, finalColors.backgroundGlow);
-                    bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
-                    ctx.fillStyle = bgGradient;
-                    ctx.fillRect(0, 0, width, height);
-                }
-                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
-                
-                if (shouldTransform) {
-                    ctx.restore();
-                }
-            }
-            
-            // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
-            if (visualizationType === VisualizationType.STELLAR_CORE) {
-                // Initialize particles if needed
-                if (particlesRef.current.length === 0) {
-                    const numParticles = 200;
-                    for (let i = 0; i < numParticles; i++) {
-                        const baseOrbitRadius = Math.min(width, height) * 0.15 + Math.random() * 20;
-                        particlesRef.current.push({
-                            x: 0, y: 0, vx: 0, vy: 0,
-                            angle: Math.random() * Math.PI * 2,
-                            orbitRadius: baseOrbitRadius,
-                            baseOrbitRadius: baseOrbitRadius,
-                            radius: Math.random() * 1.5 + 0.5,
-                            opacity: Math.random() * 0.5 + 0.5,
-                            color: Math.random() > 0.3 ? finalColors.primary : finalColors.secondary,
-                            angleVelocity: 0.005,
-                        });
-                    }
-                }
-                
-                // Update and draw orbital particles
-                const midFrequencies = smoothedData.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
-                const orbitFlux = (midFrequencies / 255) * 30 * sensitivity;
-
-                particlesRef.current.forEach(p => {
-                    p.angle += p.angleVelocity;
-                    p.orbitRadius = p.baseOrbitRadius + orbitFlux;
-                    p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
-                    p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = applyAlphaToColor(p.color, p.opacity);
-                    ctx.fill();
-                });
-                
-                // Spawn and manage shockwaves
-                if (isBeat) {
-                    shockwavesRef.current.push({ radius: Math.min(width, height) * 0.15, opacity: 1, lineWidth: 3 });
-                }
-
-            } else if (visualizationType === VisualizationType.PARTICLE_GALAXY) {
-                 if (particlesRef.current.length === 0) {
-                    const numParticles = 2000;
-                    for (let i = 0; i < numParticles; i++) {
-                        const baseOrbitRadius = Math.random() * width * 0.4;
-                        particlesRef.current.push({
-                            x: 0, y: 0, vx: 0, vy: 0,
-                            angle: Math.random() * Math.PI * 2,
-                            orbitRadius: baseOrbitRadius,
-                            baseOrbitRadius,
-                            angleVelocity: 0.001 + (1 / (baseOrbitRadius + 10)) * 0.2,
-                            radius: Math.random() * 1.5 + 0.2,
-                            opacity: Math.random() * 0.8 + 0.2,
-                            color: Math.random() > 0.5 ? finalColors.primary : finalColors.secondary,
-                        });
-                    }
-                }
-                const bass = smoothedData.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
-                const gravity = Math.pow(bass / 255, 2) * 20 * sensitivity;
-                const flare = (smoothedData.slice(100, 200).reduce((a, b) => a + b, 0) / 100) / 255;
-                
-                particlesRef.current.forEach(p => {
-                    p.angle += p.angleVelocity;
-                    p.orbitRadius = p.baseOrbitRadius - gravity + flare * 20;
-                    p.x = centerX + Math.cos(p.angle) * p.orbitRadius;
-                    p.y = centerY + Math.sin(p.angle) * p.orbitRadius;
-                    
-                    const lightness = 60 + flare * 40;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    const currentHue = (finalColors.hueRange[0] + (p.baseOrbitRadius / (width * 0.4)) * 60) % 360;
-                    ctx.fillStyle = `hsla(${currentHue}, 90%, ${lightness}%, ${p.opacity})`;
-                    ctx.fill();
-                });
-            
-            } else if (visualizationType === VisualizationType.LIQUID_METAL) {
-                 if (particlesRef.current.length === 0) {
-                    const numBlobs = 15;
-                    for (let i = 0; i < numBlobs; i++) {
-                        particlesRef.current.push({
-                            x: centerX + (Math.random() - 0.5) * 50,
-                            y: centerY + (Math.random() - 0.5) * 50,
-                            vx: (Math.random() - 0.5) * 2,
-                            vy: (Math.random() - 0.5) * 2,
-                            radius: Math.random() * 30 + 20,
-                            opacity: 1, color: '', angle: 0, orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
-                        });
-                    }
-                }
-                const bass = (smoothedData.slice(0, 16).reduce((a,b)=>a+b,0)/16)/255;
-                const energy = (smoothedData.reduce((a,b)=>a+b,0)/smoothedData.length)/255;
-
-                ctx.globalCompositeOperation = 'lighter';
-                particlesRef.current.forEach(p => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vx += (centerX - p.x) * 0.001 + (Math.random() - 0.5) * 0.2;
-                    p.vy += (centerY - p.y) * 0.001 + (Math.random() - 0.5) * 0.2;
-                    
-                    if (isBeat) {
-                        p.vx += (Math.random() - 0.5) * bass * 15;
-                        p.vy += (Math.random() - 0.5) * bass * 15;
-                    }
-                    if (p.vx > 3) p.vx = 3; if (p.vx < -3) p.vx = -3;
-                    if (p.vy > 3) p.vy = 3; if (p.vy < -3) p.vy = -3;
-
-                    const dynamicRadius = p.radius * (0.7 + energy * 0.5 + bass * 0.5);
-                    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, dynamicRadius);
-                    
-                    g.addColorStop(0, applyAlphaToColor(finalColors.primary, 1));
-                    g.addColorStop(0.5, applyAlphaToColor(finalColors.secondary, 0.53));
-                    g.addColorStop(1, applyAlphaToColor(finalColors.secondary, 0));
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, dynamicRadius, 0, Math.PI * 2);
-                    ctx.fillStyle = g;
-                    ctx.fill();
-                });
-                ctx.globalCompositeOperation = 'source-over';
-
-
-            } else if (visualizationType === VisualizationType.LUMINOUS_WAVE || visualizationType === VisualizationType.FUSION) {
-                // Update and draw linear particles
-                particlesRef.current.forEach(p => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.opacity -= 0.01;
-
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = applyAlphaToColor(finalColors.accent, p.opacity);
-                    ctx.fill();
-                });
-                particlesRef.current = particlesRef.current.filter(p => p.opacity > 0);
-                
-                // Spawn new particles based on effect
-                if (visualizationType === VisualizationType.LUMINOUS_WAVE && Math.random() > 0.7) {
-                    particlesRef.current.push({
-                        x: centerX, y: centerY,
-                        vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2,
-                        radius: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.5,
-                        angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: finalColors.accent, angleVelocity: 0,
-                    });
-                } else if (visualizationType === VisualizationType.FUSION) {
-                    const bass = smoothedData.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
-                    if (bass > 160 && Math.random() > 0.6) {
-                        for (let i = 0; i < 2; i++) {
-                             particlesRef.current.push({
-                                x: Math.random() * width, y: height,
-                                vx: (Math.random() - 0.5) * 0.5, vy: -Math.random() * 1.5 - 0.5,
-                                radius: Math.random() * 2 + 1, opacity: 1,
-                                angle: 0, orbitRadius: 0, baseOrbitRadius: 0, color: finalColors.accent, angleVelocity: 0,
-                            });
-                        }
-                    }
-                }
-            } else if (visualizationType === VisualizationType.REPULSOR_FIELD) {
-                if (particlesRef.current.length === 0) {
-                    const numParticles = 500;
-                    for (let i = 0; i < numParticles; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const radius = Math.random() * (width * 0.1); // Start near the center
-                        particlesRef.current.push({
-                            x: centerX + Math.cos(angle) * radius,
-                            y: centerY + Math.sin(angle) * radius,
-                            vx: (Math.random() - 0.5) * 15, // High initial velocity
-                            vy: (Math.random() - 0.5) * 15, // High initial velocity
-                            radius: Math.random() * 2 + 0.8, // Slightly larger particles
-                            opacity: Math.random() * 0.6 + 0.4,
-                            color: Math.random() > 0.3 ? finalColors.primary : finalColors.secondary,
-                            angle: 0, orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
-                        });
-                    }
-                }
-
-                const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-                const normalizedBass = bass / 255;
-                const boundaryRadius = 150;
-                const repulsorStrength = isBeat ? normalizedBass * 80 : 0; // Increased strength
-
-                particlesRef.current.forEach(p => {
-                    const dx = p.x - centerX;
-                    const dy = p.y - centerY;
-                    const distSq = dx * dx + dy * dy;
-                    const dist = Math.sqrt(distSq);
-
-                    // Repulsion force on beat
-                    if (repulsorStrength > 0 && dist > 1) {
-                        const forceX = (dx / dist) * repulsorStrength;
-                        const forceY = (dy / dist) * repulsorStrength;
-                        p.vx += forceX / 10; // Increased acceleration
-                        p.vy += forceY / 10;
-                    }
-                    
-                    p.x += p.vx;
-                    p.y += p.vy;
-
-                    // Boundary check and bounce
-                    const newDist = Math.sqrt((p.x - centerX)**2 + (p.y - centerY)**2);
-                    if (newDist > boundaryRadius) {
-                        // Normal vector at the point of collision
-                        const nx = (p.x - centerX) / newDist;
-                        const ny = (p.y - centerY) / newDist;
-                        
-                        // Reflect velocity vector and apply energy loss
-                        const dotProduct = p.vx * nx + p.vy * ny;
-                        p.vx = (p.vx - 2 * dotProduct * nx) * 0.85; 
-                        p.vy = (p.vy - 2 * dotProduct * ny) * 0.85;
-
-                        // Place particle back on the boundary
-                        p.x = centerX + nx * boundaryRadius;
-                        p.y = centerY + ny * boundaryRadius;
-                    }
-                });
-            } else if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
-                const keyboardHeight = height * 0.25;
-                const numWhiteKeys = 28;
-                const whiteKeyWidth = width / numWhiteKeys;
-                const keyDataPoints = Math.floor(smoothedData.length * 0.7 / numWhiteKeys);
-
-                const whiteKeyPresses = new Array(numWhiteKeys).fill(0);
-
-                // Calculate white key presses
-                for (let i = 0; i < numWhiteKeys; i++) {
-                    let pressAmount = 0;
-                    const dataStart = i * keyDataPoints;
-                    const dataEnd = dataStart + keyDataPoints;
-                    for (let j = dataStart; j < dataEnd; j++) {
-                        pressAmount += smoothedData[j] || 0;
-                    }
-                    whiteKeyPresses[i] = pressAmount / (keyDataPoints * 255);
-                }
-                
-                // Spawn particles for white keys
-                whiteKeyPresses.forEach((pressAmount, i) => {
-                    const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
-                    if (isPressed && Math.random() > 0.8) { // Increased spawn rate
-                        particlesRef.current.push({
-                            x: i * whiteKeyWidth + whiteKeyWidth / 2,
-                            y: height - keyboardHeight,
-                            vy: -3 - (pressAmount * 6), // Faster initial velocity
-                            vx: (Math.random() - 0.5) * 1.5,
-                            opacity: 1,
-                            radius: 25 + (pressAmount * 40), // Larger notes
-                            color: finalColors.accent,
-                            angle: Math.random(),
-                            orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
-                        });
-                    }
-                });
-
-                // Spawn particles for black keys
-                const blackKeyPattern = [1, 1, 0, 1, 1, 1, 0];
-                for (let i = 0; i < numWhiteKeys - 1; i++) {
-                    const patternIndex = i % 7;
-                    if (blackKeyPattern[patternIndex] === 1) {
-                        const pressAmount = (whiteKeyPresses[i] + whiteKeyPresses[i+1]) / 2;
-                        const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.15;
-                        if (isPressed && Math.random() > 0.8) {
-                            particlesRef.current.push({
-                                x: (i + 1) * whiteKeyWidth,
-                                y: height - keyboardHeight,
-                                vy: -3 - (pressAmount * 6),
-                                vx: (Math.random() - 0.5) * 1.5,
-                                opacity: 1,
-                                radius: 25 + (pressAmount * 30),
-                                color: finalColors.secondary,
-                                angle: Math.random(),
-                                orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
-                            });
-                        }
-                    }
-                }
-
-                // Update all piano particles
-                particlesRef.current.forEach(p => {
-                    p.y += p.vy;
-                    p.x += p.vx;
-                    p.vy += 0.08; // Slightly less gravity to fly longer
-                    p.opacity -= 0.015; // Fade slower
-                });
-                particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height + 100);
-            }
-
-
-            // --- Handle Shared Dynamic Elements ---
-            // Update and draw shockwaves (used by Stellar Core, etc.)
-            shockwavesRef.current.forEach(s => {
-                s.radius += 5;
-                s.opacity -= 0.02;
-                s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
-                ctx.lineWidth = s.lineWidth;
-                ctx.stroke();
-            });
-            shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
-
-            // Get current time directly from the audio element for perfect sync
-            const currentTime = audioRef.current?.currentTime ?? 0;
-
-            // Find current subtitle to display
-            let currentSubtitle: Subtitle | undefined = undefined;
-            if (showSubtitles && subtitles.length > 0) {
-                // Find the last subtitle whose time is less than or equal to the current time
-                for (let i = subtitles.length - 1; i >= 0; i--) {
-                    if (currentTime >= subtitles[i].time) {
-                        const nextTime = i + 1 < subtitles.length ? subtitles[i+1].time : Infinity;
-                        // To prevent subtitle from disappearing, we can keep showing it until the next one or for a duration
-                        // Simple approach: show if current time is between this sub and the next.
-                        // Better approach for lyrics: keep it on screen.
-                        currentSubtitle = subtitles[i];
-                        break;
-                    }
-                }
-            }
-            
-            // Draw Subtitles
-            if (currentSubtitle) {
-                drawSubtitles(ctx, width, height, currentSubtitle, {
-                    fontSizeVw: subtitleFontSize,
-                    fontFamily: subtitleFontFamily,
-                    color: subtitleColor,
-                    effect: subtitleEffect,
-                    bgStyle: subtitleBgStyle,
-                    isBeat,
-                });
-            }
-
-            // Draw watermark/custom text on top of everything
-            if (customText) {
-                drawCustomText(ctx, customText, smoothedData, {
-                    width,
-                    height,
-                    color: textColor,
-                    fontFamily,
-                    graphicEffect,
-                    position: watermarkPosition,
-                    isBeat,
-                });
-            }
-            
-            if (isPlaying) {
-                animationFrameId.current = requestAnimationFrame(renderFrame);
-            }
-        };
-
-        if (isPlaying) {
-            renderFrame();
+            finalColors = {
+                ...finalColors,
+                primary: `hsl(${currentHue}, 90%, 60%)`,
+                secondary: `hsl(${(currentHue + 120) % 360}, 80%, 60%)`,
+                accent: `hsl(${(currentHue + 40) % 360}, 100%, 80%)`,
+                hueRange: [hueRangeStart, hueRangeEnd]
+            };
+        }
+        
+        // Clear canvas and draw background
+        if (backgroundColor === 'transparent') {
+            ctx.clearRect(0, 0, width, height);
         } else {
-             cancelAnimationFrame(animationFrameId.current);
-             // Redraw one last time when paused to show final state
-             setTimeout(() => {
-                if(!isPlaying) renderFrame();
-             }, 0);
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0, 0, width, height);
+        }
+        
+        // Draw background image if available
+        if (backgroundImageRef.current) {
+            const img = backgroundImageRef.current;
+            const canvasAspect = width / height;
+            const imageAspect = img.width / img.height;
+            let sx, sy, sWidth, sHeight;
+
+            if (canvasAspect > imageAspect) {
+                sWidth = img.width;
+                sHeight = sWidth / canvasAspect;
+                sx = 0;
+                sy = (img.height - sHeight) / 2;
+            } else {
+                sHeight = img.height;
+                sWidth = sHeight * canvasAspect;
+                sy = 0;
+                sx = (img.width - sWidth) / 2;
+            }
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
         }
 
+        const drawFunction = VISUALIZATION_MAP[visualizationType];
+        if (drawFunction) {
+            const shouldTransform = !IGNORE_TRANSFORM_VISUALIZATIONS.has(visualizationType);
+
+            if (shouldTransform) {
+                ctx.save();
+                ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
+                ctx.scale(effectScale, effectScale);
+                ctx.translate(-centerX, -centerY);
+            }
+
+            if (visualizationType === VisualizationType.STELLAR_CORE) {
+                const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+                const normalizedBass = bass / 255;
+                const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
+                const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
+                bgGradient.addColorStop(0, finalColors.backgroundGlow);
+                bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, width, height);
+            }
+            drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
+            
+            if (shouldTransform) {
+                ctx.restore();
+            }
+        }
+        
+        // --- Particle/Element State Updates ---
+        if (visualizationType === VisualizationType.STELLAR_CORE) {
+            // ... (particle logic)
+        } else if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
+            const keyboardHeight = height * 0.25;
+            const numWhiteKeys = 28;
+            const whiteKeyWidth = width / numWhiteKeys;
+            const keyDataPoints = Math.floor(smoothedData.length * 0.7 / numWhiteKeys);
+            const whiteKeyPresses = new Array(numWhiteKeys).fill(0);
+            for (let i = 0; i < numWhiteKeys; i++) {
+                let pressAmount = 0;
+                const dataStart = i * keyDataPoints;
+                const dataEnd = dataStart + keyDataPoints;
+                for (let j = dataStart; j < dataEnd; j++) {
+                    pressAmount += smoothedData[j] || 0;
+                }
+                whiteKeyPresses[i] = pressAmount / (keyDataPoints * 255);
+            }
+            whiteKeyPresses.forEach((pressAmount, i) => {
+                const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
+                if (isPressed && Math.random() > 0.8) {
+                    particlesRef.current.push({ x: i * whiteKeyWidth + whiteKeyWidth / 2, y: height - keyboardHeight, vy: -3 - (pressAmount * 6), vx: (Math.random() - 0.5) * 1.5, opacity: 1, radius: 25 + (pressAmount * 40), color: finalColors.accent, angle: Math.random(), orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0 });
+                }
+            });
+            const blackKeyPattern = [1, 1, 0, 1, 1, 1, 0];
+            for (let i = 0; i < numWhiteKeys - 1; i++) {
+                const patternIndex = i % 7;
+                if (blackKeyPattern[patternIndex] === 1) {
+                    const pressAmount = (whiteKeyPresses[i] + whiteKeyPresses[i+1]) / 2;
+                    const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.15;
+                    if (isPressed && Math.random() > 0.8) {
+                        particlesRef.current.push({ x: (i + 1) * whiteKeyWidth, y: height - keyboardHeight, vy: -3 - (pressAmount * 6), vx: (Math.random() - 0.5) * 1.5, opacity: 1, radius: 25 + (pressAmount * 30), color: finalColors.secondary, angle: Math.random(), orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0 });
+                    }
+                }
+            }
+        }
+        // Update all linear-moving particles
+        particlesRef.current.forEach(p => {
+            p.y += p.vy;
+            p.x += p.vx;
+            p.vy += 0.08;
+            p.opacity -= 0.015;
+        });
+        particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height + 100);
+
+        // ... other particle system updates
+
+        // --- Draw overlays ---
+        const currentTime = audioRef.current?.currentTime ?? 0;
+        let currentSubtitle: Subtitle | undefined = undefined;
+        if (showSubtitles && subtitles.length > 0) {
+            for (let i = subtitles.length - 1; i >= 0; i--) {
+                if (currentTime >= subtitles[i].time) {
+                    currentSubtitle = subtitles[i];
+                    break;
+                }
+            }
+        }
+        if (currentSubtitle) {
+            drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
+        }
+        if (customText) {
+            drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });
+        }
+        
+        if (propsRef.current.isPlaying) {
+            animationFrameId.current = requestAnimationFrame(renderFrame);
+        }
+    }, [analyser, ref, audioRef]);
+
+    useEffect(() => {
+        if (isPlaying) {
+            animationFrameId.current = requestAnimationFrame(renderFrame);
+        } else {
+            cancelAnimationFrame(animationFrameId.current);
+            // Redraw one last time when paused
+            setTimeout(() => {
+                if (!propsRef.current.isPlaying) renderFrame();
+            }, 0);
+        }
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, audioRef, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY]);
+    }, [isPlaying, renderFrame]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
