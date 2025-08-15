@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useEffect, forwardRef } from 'react';
 import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
 
@@ -1166,10 +1164,10 @@ const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
         whiteKeyPresses[i] = pressAmount;
 
         const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
-
+        
         const keyX = i * whiteKeyWidth;
         const keyYOffset = isPressed ? 2 : 0; // Key press down animation
-
+        
         // Add gradient for 3D effect
         const whiteKeyGradient = ctx.createLinearGradient(keyX, keyboardY, keyX, keyboardY + keyboardHeight);
         whiteKeyGradient.addColorStop(0, isPressed ? '#bbb' : '#fff');
@@ -1214,7 +1212,7 @@ const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
             ctx.font = `bold ${p.radius}px "Arial"`;
             ctx.fillStyle = applyAlphaToColor(p.color, p.opacity);
             ctx.textAlign = 'center';
-
+            
             // Add glow to particles
             ctx.shadowColor = applyAlphaToColor(p.color, p.opacity * 0.8);
             ctx.shadowBlur = 15;
@@ -1646,7 +1644,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     ctx.fillRect(0, 0, width, height);
                 }
                 drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
-
+                
                 ctx.restore();
             }
             
@@ -1883,7 +1881,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     }
                     whiteKeyPresses[i] = pressAmount / (keyDataPoints * 255);
                 }
-
+                
                 // Spawn particles for white keys
                 whiteKeyPresses.forEach((pressAmount, i) => {
                     const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
@@ -2013,7 +2011,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, audioRef, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle]);
+    }, [isPlaying, analyser, audioRef, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
