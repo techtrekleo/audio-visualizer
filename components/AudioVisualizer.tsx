@@ -1490,6 +1490,17 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.PIANO_VIRTUOSO]: drawPianoVirtuoso,
 };
 
+// A list of visualizations that should not be affected by the global transform controls.
+const IGNORE_TRANSFORM_VISUALIZATIONS = new Set([
+    VisualizationType.PIANO_VIRTUOSO,
+    VisualizationType.MONSTERCAT_GLITCH,
+    VisualizationType.CRT_GLITCH,
+    VisualizationType.GLITCH_WAVE,
+    VisualizationType.DATA_MOSH,
+    VisualizationType.SIGNAL_SCRAMBLE,
+    VisualizationType.PIXEL_SORT,
+]);
+
 type Particle = {
     x: number;
     y: number;
@@ -1626,11 +1637,15 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
             const drawFunction = VISUALIZATION_MAP[visualizationType];
             if (drawFunction) {
-                ctx.save();
-                // Apply global transformations
-                ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
-                ctx.scale(effectScale, effectScale);
-                ctx.translate(-centerX, -centerY);
+                const shouldTransform = !IGNORE_TRANSFORM_VISUALIZATIONS.has(visualizationType);
+
+                if (shouldTransform) {
+                    ctx.save();
+                    // Apply global transformations
+                    ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
+                    ctx.scale(effectScale, effectScale);
+                    ctx.translate(-centerX, -centerY);
+                }
 
                 // For Stellar Core, draw the glow on top of the base background
                 if (visualizationType === VisualizationType.STELLAR_CORE) {
@@ -1645,7 +1660,9 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 }
                 drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
                 
-                ctx.restore();
+                if (shouldTransform) {
+                    ctx.restore();
+                }
             }
             
             // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
