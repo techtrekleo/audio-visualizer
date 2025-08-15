@@ -1490,7 +1490,6 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.PIANO_VIRTUOSO]: drawPianoVirtuoso,
 };
 
-// A list of visualizations that should not be affected by the global transform controls.
 const IGNORE_TRANSFORM_VISUALIZATIONS = new Set([
     VisualizationType.PIANO_VIRTUOSO,
     VisualizationType.MONSTERCAT_GLITCH,
@@ -1526,7 +1525,8 @@ type Shockwave = {
 };
 
 
-const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ analyser, audioRef, ...props }, ref) => {
+const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((props, ref) => {
+    const { analyser, audioRef, isPlaying } = props;
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
@@ -1568,7 +1568,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
     const renderFrame = useCallback(() => {
         const {
-            visualizationType, isPlaying, customText, textColor, fontFamily, graphicEffect, 
+            visualizationType, customText, textColor, fontFamily, graphicEffect, 
             sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
             waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
             subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
@@ -1586,7 +1586,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
 
         const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
         let isBeat = false;
-        if (bassAvg > 180) { // Simplified beat detection for responsiveness
+        if (bassAvg > 180) {
              isBeat = true;
         }
         
@@ -1597,7 +1597,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         const centerX = width / 2;
         const centerY = height / 2;
         
-        // --- Dynamic Color Generation for Rainbow Theme ---
         let finalColors = { ...colors };
         if (finalColors.name === ColorPaletteType.RAINBOW) {
             const currentHue = (frame.current * 0.1) % 360;
@@ -1613,7 +1612,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             };
         }
         
-        // Clear canvas and draw background
         if (backgroundColor === 'transparent') {
             ctx.clearRect(0, 0, width, height);
         } else {
@@ -1621,7 +1619,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             ctx.fillRect(0, 0, width, height);
         }
         
-        // Draw background image if available
         if (backgroundImageRef.current) {
             const img = backgroundImageRef.current;
             const canvasAspect = width / height;
@@ -1670,10 +1667,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             }
         }
         
-        // --- Particle/Element State Updates ---
-        if (visualizationType === VisualizationType.STELLAR_CORE) {
-            // ... (particle logic)
-        } else if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
+        if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
             const keyboardHeight = height * 0.25;
             const numWhiteKeys = 28;
             const whiteKeyWidth = width / numWhiteKeys;
@@ -1706,7 +1700,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 }
             }
         }
-        // Update all linear-moving particles
         particlesRef.current.forEach(p => {
             p.y += p.vy;
             p.x += p.vx;
@@ -1715,9 +1708,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         });
         particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height + 100);
 
-        // ... other particle system updates
-
-        // --- Draw overlays ---
         const currentTime = audioRef.current?.currentTime ?? 0;
         let currentSubtitle: Subtitle | undefined = undefined;
         if (showSubtitles && subtitles.length > 0) {
@@ -1745,7 +1735,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             animationFrameId.current = requestAnimationFrame(renderFrame);
         } else {
             cancelAnimationFrame(animationFrameId.current);
-            // Redraw one last time when paused
             setTimeout(() => {
                 if (!propsRef.current.isPlaying) renderFrame();
             }, 0);
