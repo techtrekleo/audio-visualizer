@@ -38,6 +38,11 @@ function App() {
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
     const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
 
+    // Effect Transform State
+    const [effectScale, setEffectScale] = useState<number>(1.0);
+    const [effectOffsetX, setEffectOffsetX] = useState<number>(0);
+    const [effectOffsetY, setEffectOffsetY] = useState<number>(0);
+
     // Subtitle State
     const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
     const [subtitlesRawText, setSubtitlesRawText] = useState<string>('');
@@ -354,6 +359,9 @@ function App() {
                                     subtitleColor={subtitleColor}
                                     subtitleEffect={subtitleEffect}
                                     subtitleBgStyle={subtitleBgStyle}
+                                    effectScale={effectScale}
+                                    effectOffsetX={effectOffsetX}
+                                    effectOffsetY={effectOffsetY}
                                 />
                             </div>
                         </div>
@@ -423,6 +431,12 @@ function App() {
                             onSubtitleEffectChange={setSubtitleEffect}
                             subtitleBgStyle={subtitleBgStyle}
                             onSubtitleBgStyleChange={setSubtitleBgStyle}
+                            effectScale={effectScale}
+                            onEffectScaleChange={setEffectScale}
+                            effectOffsetX={effectOffsetX}
+                            onEffectOffsetXChange={setEffectOffsetX}
+                            effectOffsetY={effectOffsetY}
+                            onEffectOffsetYChange={setEffectOffsetY}
                         />
                     </div>
                 )}
