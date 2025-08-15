@@ -1133,13 +1133,13 @@ const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
 const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
     ctx.save();
 
-    const keyboardHeight = height * 0.2;
+    const keyboardHeight = height * 0.25; // Made keyboard slightly taller
     const keyboardY = height - keyboardHeight;
 
     // --- Keyboard Glow on Beat ---
     if (isBeat) {
         ctx.shadowColor = colors.accent;
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = 40; // Increased glow
     }
 
     // --- Data Mapping ---
@@ -1165,11 +1165,18 @@ const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
         const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
 
         const keyX = i * whiteKeyWidth;
-        ctx.fillStyle = isPressed ? '#cccccc' : '#ffffff';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.fillRect(keyX, keyboardY, whiteKeyWidth, keyboardHeight);
-        ctx.strokeRect(keyX, keyboardY, whiteKeyWidth, keyboardHeight);
+        const keyYOffset = isPressed ? 2 : 0; // Key press down animation
+
+        // Add gradient for 3D effect
+        const whiteKeyGradient = ctx.createLinearGradient(keyX, keyboardY, keyX, keyboardY + keyboardHeight);
+        whiteKeyGradient.addColorStop(0, isPressed ? '#bbb' : '#fff');
+        whiteKeyGradient.addColorStop(1, isPressed ? '#999' : '#e0e0e0');
+
+        ctx.fillStyle = whiteKeyGradient;
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.fillRect(keyX, keyboardY + keyYOffset, whiteKeyWidth, keyboardHeight);
+        ctx.strokeRect(keyX, keyboardY + keyYOffset, whiteKeyWidth, keyboardHeight);
     }
 
     // Reset shadow for subsequent drawings
@@ -1180,26 +1187,35 @@ const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
     for (let i = 0; i < numWhiteKeys - 1; i++) {
          const patternIndex = i % 7;
          if (blackKeyPattern[patternIndex] === 1) {
-            // Average press amount from adjacent white keys
             const pressAmount = (whiteKeyPresses[i] + whiteKeyPresses[i+1]) / 2;
-            const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.15; // Higher threshold for black keys
+            const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.15;
 
             const keyX = (i + 1) * whiteKeyWidth - (blackKeyWidth / 2);
-            ctx.fillStyle = isPressed ? '#555555' : '#000000';
-            ctx.fillRect(keyX, keyboardY, blackKeyWidth, blackKeyHeight);
+            const keyYOffset = isPressed ? 2 : 0;
+
+            const blackKeyGradient = ctx.createLinearGradient(keyX, keyboardY, keyX, keyboardY + blackKeyHeight);
+            blackKeyGradient.addColorStop(0, isPressed ? '#555' : '#333');
+            blackKeyGradient.addColorStop(1, isPressed ? '#333' : '#000');
+
+            ctx.fillStyle = blackKeyGradient;
+            ctx.fillRect(keyX, keyboardY + keyYOffset, blackKeyWidth, blackKeyHeight);
          }
     }
 
     // --- Draw Particles (Musical Notes) ---
     if (particles) {
         particles.forEach(p => {
-            // The 'angle' property is repurposed to store the note symbol index
             const noteSymbols = ['♪', '♫', '♬', '♭', '♯'];
             const symbol = noteSymbols[Math.floor(p.angle * noteSymbols.length)];
 
             ctx.font = `bold ${p.radius}px "Arial"`;
             ctx.fillStyle = applyAlphaToColor(p.color, p.opacity);
             ctx.textAlign = 'center';
+
+            // Add glow to particles
+            ctx.shadowColor = applyAlphaToColor(p.color, p.opacity * 0.8);
+            ctx.shadowBlur = 15;
+
             ctx.fillText(symbol, p.x, p.y);
         });
     }
@@ -1839,7 +1855,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     }
                 });
             } else if (visualizationType === VisualizationType.PIANO_VIRTUOSO) {
-                const keyboardHeight = height * 0.2;
+                const keyboardHeight = height * 0.25;
                 const numWhiteKeys = 28;
                 const whiteKeyWidth = width / numWhiteKeys;
                 const keyDataPoints = Math.floor(smoothedData.length * 0.7 / numWhiteKeys);
@@ -1860,16 +1876,16 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 // Spawn particles for white keys
                 whiteKeyPresses.forEach((pressAmount, i) => {
                     const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.1;
-                    if (isPressed && Math.random() > 0.9) {
+                    if (isPressed && Math.random() > 0.8) { // Increased spawn rate
                         particlesRef.current.push({
                             x: i * whiteKeyWidth + whiteKeyWidth / 2,
                             y: height - keyboardHeight,
-                            vy: -2 - (pressAmount * 4), // More power, faster note
-                            vx: (Math.random() - 0.5) * 1,
+                            vy: -3 - (pressAmount * 6), // Faster initial velocity
+                            vx: (Math.random() - 0.5) * 1.5,
                             opacity: 1,
-                            radius: 20 + (pressAmount * 30), // Bigger note for more power
+                            radius: 25 + (pressAmount * 40), // Larger notes
                             color: finalColors.accent,
-                            angle: Math.random(), // Used for selecting note symbol
+                            angle: Math.random(),
                             orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
                         });
                     }
@@ -1882,15 +1898,15 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                     if (blackKeyPattern[patternIndex] === 1) {
                         const pressAmount = (whiteKeyPresses[i] + whiteKeyPresses[i+1]) / 2;
                         const isPressed = (Math.pow(pressAmount, 2) * sensitivity) > 0.15;
-                        if (isPressed && Math.random() > 0.9) {
+                        if (isPressed && Math.random() > 0.8) {
                             particlesRef.current.push({
                                 x: (i + 1) * whiteKeyWidth,
                                 y: height - keyboardHeight,
-                                vy: -2 - (pressAmount * 4),
-                                vx: (Math.random() - 0.5) * 1,
+                                vy: -3 - (pressAmount * 6),
+                                vx: (Math.random() - 0.5) * 1.5,
                                 opacity: 1,
-                                radius: 20 + (pressAmount * 20),
-                                color: finalColors.secondary, // Different color for black key notes
+                                radius: 25 + (pressAmount * 30),
+                                color: finalColors.secondary,
                                 angle: Math.random(),
                                 orbitRadius: 0, baseOrbitRadius: 0, angleVelocity: 0,
                             });
@@ -1902,10 +1918,10 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
                 particlesRef.current.forEach(p => {
                     p.y += p.vy;
                     p.x += p.vx;
-                    p.vy += 0.1; // gravity
-                    p.opacity -= 0.02;
+                    p.vy += 0.08; // Slightly less gravity to fly longer
+                    p.opacity -= 0.015; // Fade slower
                 });
-                particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height);
+                particlesRef.current = particlesRef.current.filter(p => p.opacity > 0 && p.y < height + 100);
             }
 
 
