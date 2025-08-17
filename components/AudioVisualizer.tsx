@@ -406,54 +406,88 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
 
 const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
+
     const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.15;
-    const bars = 128;
+    const centerY = height * 0.55;
+    const fov = width * 0.7;
     
-    const [startHue, endHue] = colors.hueRange;
-    const hueRangeSpan = endHue - startHue;
+    const gridSizeX = 30;
+    const gridSizeZ = 40;
+    const spacingX = width / gridSizeX * 2.5;
+    const spacingZ = height / gridSizeZ * 1.5;
+    const terrainHeight = height * 0.2;
     
-    let color;
-    if (colors.name === ColorPaletteType.WHITE) {
-        color = colors.primary;
-    } else {
-        const hue = startHue + ((frame / 2) % hueRangeSpan);
-        color = `hsl(${hue}, 80%, 60%)`;
-    }
+    const zOffset = (frame * 2) % spacingZ;
 
-    for (let i = 0; i < bars; i++) {
-        const barHeight = dataArray[i] * 0.5 * sensitivity;
-        const angle = (i / bars) * Math.PI * 2;
-        
-        const x1 = centerX + Math.cos(angle) * radius;
-        const y1 = centerY + Math.sin(angle) * radius;
-        const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-        const y2 = centerY + Math.sin(angle) * (radius + barHeight);
+    const project = (x3d: number, y3d: number, z3d: number) => {
+        const scale = fov / (fov + z3d);
+        const x2d = x3d * scale + centerX;
+        const y2d = y3d * scale + centerY;
+        return { x: x2d, y: y2d, scale };
+    };
 
-        const drawLine = () => {
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-        };
+    const drawGrid = (yMultiplier: number, dataStart: number, dataEnd: number) => {
+        const gridPoints: ({ x: number; y: number; scale: number } | null)[][] = [];
 
-        if (waveformStroke) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = 'transparent';
-            drawLine();
-            ctx.restore();
+        // Calculate grid points with audio data
+        for (let z = 0; z < gridSizeZ; z++) {
+            gridPoints[z] = [];
+            for (let x = 0; x < gridSizeX; x++) {
+                const dataIndex = Math.floor(dataStart + (x / gridSizeX) * (dataEnd - dataStart));
+                const audioAmp = Math.pow(dataArray[dataIndex] / 255.0, 2.5) * terrainHeight * sensitivity;
+
+                const x3d = (x - gridSizeX / 2) * spacingX;
+                const y3d = audioAmp * yMultiplier;
+                const z3d = z * spacingZ - zOffset;
+
+                const p = project(x3d, y3d, z3d);
+                gridPoints[z][x] = (p.scale > 0) ? p : null;
+            }
         }
 
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = color;
-        drawLine();
-    }
+        // Draw grid lines
+        for (let z = 0; z < gridSizeZ - 1; z++) {
+            const zProgress = z / gridSizeZ;
+            const [startHue, endHue] = colors.hueRange;
+            const hue = startHue + (zProgress * (endHue - startHue));
+            const lightness = 30 + zProgress * 40;
+            const opacity = 1 - zProgress;
+
+            ctx.strokeStyle = `hsla(${hue}, 90%, ${lightness}%, ${opacity})`;
+            ctx.shadowColor = `hsla(${hue}, 100%, 70%, ${opacity * 0.7})`;
+            ctx.shadowBlur = 10;
+
+            // Draw horizontal lines connecting points at the same Z
+            ctx.beginPath();
+            for (let x = 0; x < gridSizeX; x++) {
+                const p1 = gridPoints[z][x];
+                if (p1) {
+                    if (x === 0) ctx.moveTo(p1.x, p1.y);
+                    else ctx.lineTo(p1.x, p1.y);
+                }
+            }
+            ctx.stroke();
+
+            // Draw vertical lines connecting points at the same X
+            ctx.beginPath();
+            for (let x = 0; x < gridSizeX; x++) {
+                const p1 = gridPoints[z][x];
+                const p2 = gridPoints[z + 1][x];
+                if (p1 && p2) {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                }
+            }
+            ctx.stroke();
+        }
+    };
+
+    // Draw bottom grid (floor) - reacts to bass
+    drawGrid(1, 0, Math.floor(dataArray.length * 0.2));
+
+    // Draw top grid (ceiling) - reacts to treble
+    drawGrid(-1, Math.floor(dataArray.length * 0.3), Math.floor(dataArray.length * 0.7));
+
     ctx.restore();
 };
 
@@ -1523,6 +1557,23 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
     const particlesRef = useRef<Particle[]>([]);
     const shockwavesRef = useRef<Shockwave[]>([]);
     const backgroundImageRef = useRef<HTMLImageElement | null>(null);
+    const beatCooldownRef = useRef<number>(0);
+
+    // Use a ref to hold all dynamic props to prevent re-creating the render function.
+    const propsRef = useRef({
+        analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily,
+        graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors,
+        backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles,
+        subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle,
+        effectScale, effectOffsetX, effectOffsetY
+    });
+    propsRef.current = {
+        analyser, audioRef, visualizationType, isPlaying, customText, textColor, fontFamily,
+        graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors,
+        backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles,
+        subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle,
+        effectScale, effectOffsetX, effectOffsetY
+    };
 
     useEffect(() => {
         // Clear dynamic elements when visualization changes to prevent artifacts
@@ -1552,105 +1603,108 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
         }
     }, [backgroundImage]);
 
-    useEffect(() => {
+    const renderFrame = useCallback(() => {
+        const {
+            analyser, audioRef, visualizationType, customText, textColor, fontFamily,
+            graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors,
+            watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize,
+            subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle, effectScale,
+            effectOffsetX, effectOffsetY
+        } = propsRef.current;
+
         const canvas = (ref as React.RefObject<HTMLCanvasElement>).current;
-        if (!canvas || !analyser) return;
+        if (!canvas || !analyser) {
+            animationFrameId.current = requestAnimationFrame(renderFrame);
+            return;
+        };
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         
+        frame.current++;
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let beatCooldown = 0;
+        analyser.getByteFrequencyData(dataArray);
 
-        const renderFrame = () => {
-            frame.current++;
-            analyser.getByteFrequencyData(dataArray);
+        const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+        let isBeat = false;
+        if (bassAvg > 180 && beatCooldownRef.current <= 0) {
+             isBeat = true;
+             beatCooldownRef.current = 10; // Cooldown for 10 frames
+        }
+        if(beatCooldownRef.current > 0) beatCooldownRef.current--;
 
-            const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-            let isBeat = false;
-            if (bassAvg > 180 && beatCooldown <= 0) {
-                 isBeat = true;
-                 beatCooldown = 10; // Cooldown for 10 frames to avoid too many shockwaves
-            }
-            if(beatCooldown > 0) beatCooldown--;
-            
-            const balancedData = equalizeDataArray(dataArray, equalization);
-            const smoothedData = smoothDataArray(balancedData, smoothing);
+        const balancedData = equalizeDataArray(dataArray, equalization);
+        const smoothedData = smoothDataArray(balancedData, smoothing);
 
-            const { width, height } = canvas;
-            const centerX = width / 2;
-            const centerY = height / 2;
-            
-            // --- Dynamic Color Generation for Rainbow Theme ---
-            let finalColors = { ...colors }; // Make a mutable copy for this frame
-            if (finalColors.name === ColorPaletteType.RAINBOW) {
-                const currentHue = (frame.current * 0.1) % 360;
-                const hueRangeStart = currentHue;
-                const hueRangeEnd = currentHue + 80; 
-                
-                finalColors = {
-                    ...finalColors,
-                    primary: `hsl(${currentHue}, 90%, 60%)`,
-                    secondary: `hsl(${(currentHue + 120) % 360}, 80%, 60%)`,
-                    accent: `hsl(${(currentHue + 40) % 360}, 100%, 80%)`,
-                    hueRange: [hueRangeStart, hueRangeEnd]
-                };
-            }
-            
-            // Clear canvas and draw background
-            if (backgroundColor === 'transparent') {
-                ctx.clearRect(0, 0, width, height);
+        const { width, height } = canvas;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        let finalColors = { ...colors };
+        if (finalColors.name === ColorPaletteType.RAINBOW) {
+            const currentHue = (frame.current * 0.1) % 360;
+            finalColors = {
+                ...finalColors,
+                primary: `hsl(${currentHue}, 90%, 60%)`,
+                secondary: `hsl(${(currentHue + 120) % 360}, 80%, 60%)`,
+                accent: `hsl(${(currentHue + 40) % 360}, 100%, 80%)`,
+                hueRange: [currentHue, currentHue + 80]
+            };
+        }
+
+        if (backgroundColor === 'transparent') {
+            ctx.clearRect(0, 0, width, height);
+        } else {
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        if (backgroundImageRef.current) {
+            const img = backgroundImageRef.current;
+            const canvasAspect = width / height;
+            const imageAspect = img.width / img.height;
+            let sx, sy, sWidth, sHeight;
+            if (canvasAspect > imageAspect) {
+                sWidth = img.width; sHeight = sWidth / canvasAspect; sx = 0; sy = (img.height - sHeight) / 2;
             } else {
-                ctx.fillStyle = backgroundColor;
-                ctx.fillRect(0, 0, width, height);
+                sHeight = img.height; sWidth = sHeight * canvasAspect; sy = 0; sx = (img.width - sWidth) / 2;
             }
-            
-            // Draw background image if available
-            if (backgroundImageRef.current) {
-                const img = backgroundImageRef.current;
-                const canvasAspect = width / height;
-                const imageAspect = img.width / img.height;
-                let sx, sy, sWidth, sHeight;
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
+        }
 
-                if (canvasAspect > imageAspect) { // Canvas is wider than image
-                    sWidth = img.width;
-                    sHeight = sWidth / canvasAspect;
-                    sx = 0;
-                    sy = (img.height - sHeight) / 2;
-                } else { // Canvas is taller or same aspect
-                    sHeight = img.height;
-                    sWidth = sHeight * canvasAspect;
-                    sy = 0;
-                    sx = (img.width - sWidth) / 2;
-                }
-                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
-            }
+        const IGNORE_TRANSFORM_VISUALIZATIONS = new Set([
+            VisualizationType.PIANO_VIRTUOSO,
+            VisualizationType.CRT_GLITCH,
+            VisualizationType.GLITCH_WAVE,
+            VisualizationType.DATA_MOSH,
+            VisualizationType.SIGNAL_SCRAMBLE,
+            VisualizationType.PIXEL_SORT
+        ]);
 
-            const drawFunction = VISUALIZATION_MAP[visualizationType];
-            if (drawFunction) {
-                ctx.save();
-                // Apply global transformations
+        const drawFunction = VISUALIZATION_MAP[visualizationType];
+        if (drawFunction) {
+            ctx.save();
+            if (!IGNORE_TRANSFORM_VISUALIZATIONS.has(visualizationType)) {
                 ctx.translate(centerX + effectOffsetX, centerY + effectOffsetY);
                 ctx.scale(effectScale, effectScale);
                 ctx.translate(-centerX, -centerY);
-
-                // For Stellar Core, draw the glow on top of the base background
-                if (visualizationType === VisualizationType.STELLAR_CORE) {
-                    const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-                    const normalizedBass = bass / 255;
-                    const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
-                    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
-                    bgGradient.addColorStop(0, finalColors.backgroundGlow);
-                    bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
-                    ctx.fillStyle = bgGradient;
-                    ctx.fillRect(0, 0, width, height);
-                }
-                drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
-
-                ctx.restore();
             }
-            
-            // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
+
+            if (visualizationType === VisualizationType.STELLAR_CORE) {
+                const bass = smoothedData.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+                const normalizedBass = bass / 255;
+                const bgGlowRadius = Math.min(width, height) * 0.5 + normalizedBass * 50;
+                const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bgGlowRadius);
+                bgGradient.addColorStop(0, finalColors.backgroundGlow);
+                bgGradient.addColorStop(1, 'rgba(10, 20, 40, 0)');
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, width, height);
+            }
+            drawFunction(ctx, smoothedData, width, height, frame.current, sensitivity, finalColors, graphicEffect, isBeat, waveformStroke, particlesRef.current);
+            ctx.restore();
+        }
+
+        // --- Handle Dynamic Elements (Particles, Shockwaves, etc.) ---
             if (visualizationType === VisualizationType.STELLAR_CORE) {
                 // Initialize particles if needed
                 if (particlesRef.current.length === 0) {
@@ -1936,84 +1990,63 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>(({ a
             }
 
 
-            // --- Handle Shared Dynamic Elements ---
-            // Update and draw shockwaves (used by Stellar Core, etc.)
-            shockwavesRef.current.forEach(s => {
-                s.radius += 5;
-                s.opacity -= 0.02;
-                s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
-                ctx.lineWidth = s.lineWidth;
-                ctx.stroke();
-            });
-            shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
+        shockwavesRef.current.forEach(s => {
+            s.radius += 5;
+            s.opacity -= 0.02;
+            s.lineWidth = Math.max(0.1, s.lineWidth * 0.98);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, s.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${s.opacity})`;
+            ctx.lineWidth = s.lineWidth;
+            ctx.stroke();
+        });
+        shockwavesRef.current = shockwavesRef.current.filter(s => s.opacity > 0);
 
-            // Get current time directly from the audio element for perfect sync
-            const currentTime = audioRef.current?.currentTime ?? 0;
-
-            // Find current subtitle to display
-            let currentSubtitle: Subtitle | undefined = undefined;
-            if (showSubtitles && subtitles.length > 0) {
-                // Find the last subtitle whose time is less than or equal to the current time
-                for (let i = subtitles.length - 1; i >= 0; i--) {
-                    if (currentTime >= subtitles[i].time) {
-                        const nextTime = i + 1 < subtitles.length ? subtitles[i+1].time : Infinity;
-                        // To prevent subtitle from disappearing, we can keep showing it until the next one or for a duration
-                        // Simple approach: show if current time is between this sub and the next.
-                        // Better approach for lyrics: keep it on screen.
-                        currentSubtitle = subtitles[i];
-                        break;
-                    }
+        const currentTime = audioRef.current?.currentTime ?? 0;
+        let currentSubtitle: Subtitle | undefined = undefined;
+        if (showSubtitles && subtitles.length > 0) {
+            for (let i = subtitles.length - 1; i >= 0; i--) {
+                if (currentTime >= subtitles[i].time) {
+                    currentSubtitle = subtitles[i];
+                    break;
                 }
             }
-            
-            // Draw Subtitles
-            if (currentSubtitle) {
-                drawSubtitles(ctx, width, height, currentSubtitle, {
-                    fontSizeVw: subtitleFontSize,
-                    fontFamily: subtitleFontFamily,
-                    color: subtitleColor,
-                    effect: subtitleEffect,
-                    bgStyle: subtitleBgStyle,
-                    isBeat,
-                });
-            }
+        }
 
-            // Draw watermark/custom text on top of everything
-            if (customText) {
-                drawCustomText(ctx, customText, smoothedData, {
-                    width,
-                    height,
-                    color: textColor,
-                    fontFamily,
-                    graphicEffect,
-                    position: watermarkPosition,
-                    isBeat,
-                });
-            }
-            
-            if (isPlaying) {
-                animationFrameId.current = requestAnimationFrame(renderFrame);
-            }
-        };
+        if (currentSubtitle) {
+            drawSubtitles(ctx, width, height, currentSubtitle, {
+                fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor,
+                effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat,
+            });
+        }
 
+        if (customText) {
+            drawCustomText(ctx, customText, smoothedData, {
+                width, height, color: textColor, fontFamily, graphicEffect,
+                position: watermarkPosition, isBeat,
+            });
+        }
+
+        animationFrameId.current = requestAnimationFrame(renderFrame);
+    }, []);
+
+    useEffect(() => {
+        const { isPlaying } = propsRef.current;
         if (isPlaying) {
-            renderFrame();
+            cancelAnimationFrame(animationFrameId.current);
+            animationFrameId.current = requestAnimationFrame(renderFrame);
         } else {
-             cancelAnimationFrame(animationFrameId.current);
-             // Redraw one last time when paused to show final state
-             setTimeout(() => {
-                if(!isPlaying) renderFrame();
-             }, 0);
+            cancelAnimationFrame(animationFrameId.current);
+            // Redraw one last time when paused to show final state
+            setTimeout(() => {
+               if(!propsRef.current.isPlaying) renderFrame();
+            }, 50); // A small delay to ensure state has settled
         }
 
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, analyser, audioRef, visualizationType, ref, customText, textColor, fontFamily, graphicEffect, sensitivity, smoothing, equalization, backgroundColor, colors, backgroundImage, watermarkPosition, waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, subtitleColor, subtitleEffect, subtitleBgStyle]);
+    }, [isPlaying, renderFrame]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;

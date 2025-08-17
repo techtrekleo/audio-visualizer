@@ -180,6 +180,12 @@ function App() {
         setBackgroundImage(null);
     };
 
+    const handleResetTransform = () => {
+        setEffectScale(1.0);
+        setEffectOffsetX(0);
+        setEffectOffsetY(0);
+    };
+
     const handleRecordingComplete = useCallback((url: string, extension: string) => {
         setVideoUrl(url);
         setVideoExtension(extension);
@@ -362,6 +368,7 @@ function App() {
                                     effectScale={effectScale}
                                     effectOffsetX={effectOffsetX}
                                     effectOffsetY={effectOffsetY}
+                            onResetTransform={handleResetTransform}
                                 />
                             </div>
                         </div>
@@ -437,6 +444,7 @@ function App() {
                             onEffectOffsetXChange={setEffectOffsetX}
                             effectOffsetY={effectOffsetY}
                             onEffectOffsetYChange={setEffectOffsetY}
+                            onResetTransform={handleResetTransform}
                         />
                     </div>
                 )}

@@ -65,6 +65,7 @@ interface ControlsProps {
     onEffectOffsetXChange: (value: number) => void;
     effectOffsetY: number;
     onEffectOffsetYChange: (value: number) => void;
+    onResetTransform: () => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
@@ -150,6 +151,7 @@ const Controls: React.FC<ControlsProps> = ({
     onEffectOffsetXChange,
     effectOffsetY,
     onEffectOffsetYChange,
+    onResetTransform,
 }) => {
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
 
@@ -511,6 +513,11 @@ const Controls: React.FC<ControlsProps> = ({
                         className="w-full cursor-pointer accent-cyan-500"
                         aria-label="Effect Y offset"
                     />
+                </div>
+                <div className="flex flex-col justify-end">
+                    <Button onClick={onResetTransform} className="bg-gray-600 hover:bg-gray-500 text-white h-10">
+                        還原位置
+                    </Button>
                 </div>
             </div>
             
