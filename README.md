@@ -68,3 +68,7 @@ Follow these steps to set up the project on your own computer for development, d
 
 6.  **Done!**
     The extension will now appear in your list. Click its icon in the Chrome toolbar to use it.
+
+---
+
+**Last Updated**: August 20, 2025 - Enhanced visual effects and subtitle functionality
