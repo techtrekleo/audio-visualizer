@@ -566,7 +566,7 @@ const Controls: React.FC<ControlsProps> = ({
             <details className="w-full bg-gray-900/50 p-4 rounded-lg border border-gray-700" open>
                 <summary className="cursor-pointer font-semibold text-lg flex items-center gap-2">
                     <Icon path={ICON_PATHS.SUBTITLES} className="w-6 h-6 text-cyan-400" />
-                    字幕設定
+                    字幕設定 - 已更新版本
                 </summary>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="flex flex-col col-span-full">
