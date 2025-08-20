@@ -66,7 +66,7 @@ function App() {
     
     useEffect(() => {
         const lines = subtitlesRawText.split('\n');
-        const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+        const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
         const newSubtitles: Subtitle[] = [];
 
         lines.forEach(line => {
@@ -74,8 +74,8 @@ function App() {
             if (match) {
                 const minutes = parseInt(match[1], 10);
                 const seconds = parseInt(match[2], 10);
-                const milliseconds = parseInt(match[3].padEnd(3, '0'), 10) / 1000;
-                const time = minutes * 60 + seconds + milliseconds;
+                const centiseconds = parseInt(match[3], 10);
+                const time = minutes * 60 + seconds + centiseconds / 100;
                 const text = line.replace(timeRegex, '').trim();
                 if (text) {
                     newSubtitles.push({ time, text });
@@ -264,7 +264,7 @@ function App() {
             setIsLoading(true);
         } else {
             if (showSubtitles && subtitles.length === 0) {
-                alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 LRC 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
+                alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
                 return;
             }
             

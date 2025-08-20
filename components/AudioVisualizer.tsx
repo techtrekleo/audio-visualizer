@@ -591,12 +591,41 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     const centerX = width / 2;
     const centerY = height / 2;
     
-    // Core logic is handled by the particle system in the main component.
-    // This function can draw a static background element if needed, e.g., a central star.
+    // Enhanced spiral galaxy effect
     const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
     const normalizedBass = bass / 255;
     const coreRadius = (Math.min(width, height) * 0.04) + (normalizedBass * 30 * sensitivity);
 
+    // Draw multiple spiral arms
+    const numArms = 4;
+    const armLength = Math.min(width, height) * 0.4;
+    
+    for (let arm = 0; arm < numArms; arm++) {
+        const armAngle = (arm * Math.PI * 2) / numArms + frame * 0.01;
+        const armColor = arm % 2 === 0 ? colors.primary : colors.secondary;
+        
+        ctx.strokeStyle = armColor;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6;
+        
+        ctx.beginPath();
+        for (let i = 0; i < 50; i++) {
+            const t = i / 50;
+            const radius = t * armLength;
+            const angle = armAngle + t * 2 * Math.PI;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+    }
+
+    // Enhanced central core
     const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius * 2);
     gradient.addColorStop(0, '#FFFFFF');
     gradient.addColorStop(0.2, colors.accent);
@@ -604,6 +633,7 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     gradient.addColorStop(1, 'transparent');
 
     ctx.fillStyle = gradient;
+    ctx.globalAlpha = 1;
     ctx.shadowColor = colors.accent;
     ctx.shadowBlur = 30;
     ctx.beginPath();
@@ -615,19 +645,50 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
 
 const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
-    // This effect is fully driven by the particle system ("blobs")
-    // in the main component's render loop.
-    // We can add a background glow here.
+    
     const centerX = width / 2;
     const centerY = height / 2;
     const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
     const normalizedBass = bass / 255;
-    const glowRadius = width * 0.2 + normalizedBass * width * 0.2;
-
-    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, glowRadius);
-    bgGradient.addColorStop(0, applyAlphaToColor(colors.secondary, 0x33 / 255));
-    bgGradient.addColorStop(1, 'transparent');
-    ctx.fillStyle = bgGradient;
+    
+    // Create metallic wave effect
+    const waveCount = 8;
+    const maxAmplitude = height * 0.15;
+    
+    for (let wave = 0; wave < waveCount; wave++) {
+        const waveOffset = (wave * Math.PI * 2) / waveCount;
+        const waveColor = wave % 2 === 0 ? colors.primary : colors.secondary;
+        
+        ctx.strokeStyle = waveColor;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.7;
+        
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 2) {
+            const normalizedX = x / width;
+            const time = frame * 0.02 + waveOffset;
+            const frequency = 3 + normalizedBass * 5;
+            const amplitude = maxAmplitude * (0.5 + normalizedBass * 0.5);
+            
+            const y = centerY + Math.sin(normalizedX * frequency * Math.PI + time) * amplitude;
+            
+            if (x === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+    }
+    
+    // Add metallic shine effect
+    const shineGradient = ctx.createLinearGradient(0, 0, width, height);
+    shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+    shineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+    shineGradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+    
+    ctx.fillStyle = shineGradient;
+    ctx.globalAlpha = 0.4;
     ctx.fillRect(0, 0, width, height);
 
     ctx.restore();
@@ -697,10 +758,7 @@ const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
 const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
-    // Original effect: Screen shake
-    if (isBeat) {
-        ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
-    }
+    // Removed screen shake for better viewing experience
     
     const centerY = height / 2;
 
@@ -788,29 +846,24 @@ const drawMonstercatGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Arr
     // 1. Draw the base Monstercat visual
     drawMonstercat(ctx, dataArray, width, height, frame, sensitivity, colors, graphicEffect, isBeat, waveformStroke);
 
-    // 2. Apply glitch effects on top if there's a beat
+    // 2. Apply subtle glitch effects without screen shake
     if (isBeat) {
         ctx.save();
-        // Vertical Roll
-        if (Math.random() > 0.8) {
-            const rollAmount = Math.floor((Math.random() - 0.5) * height * 0.05);
-            try {
-                // To prevent smearing, we must capture, clear, then redraw the original visual shifted.
-                const imageData = ctx.getImageData(0, 0, width, height);
-                ctx.clearRect(0, 0, width, height);
-                ctx.putImageData(imageData, 0, rollAmount);
-            } catch(e) { /* ignore */ }
+        
+        // Subtle color distortion instead of screen shake
+        if (Math.random() > 0.7) {
+            ctx.filter = `hue-rotate(${(Math.random() - 0.5) * 30}deg) saturate(${1.2 + Math.random() * 0.3})`;
         }
 
-        // Block Corruption
-        const numBlocks = Math.floor(Math.random() * 6) + 2;
+        // Block Corruption (reduced intensity)
+        const numBlocks = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < numBlocks; i++) {
-            const sx = Math.random() * width * 0.9;
-            const sy = Math.random() * height * 0.9;
-            const sw = Math.random() * width * 0.25 + 10;
-            const sh = Math.random() * height * 0.1 + 5;
-            const dx = sx + (Math.random() - 0.5) * 40;
-            const dy = sy; // Only horizontal displacement
+            const sx = Math.random() * width * 0.8;
+            const sy = Math.random() * height * 0.8;
+            const sw = Math.random() * width * 0.15 + 8;
+            const sh = Math.random() * height * 0.08 + 4;
+            const dx = sx + (Math.random() - 0.5) * 20; // Reduced displacement
+            const dy = sy;
             try {
                 ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
             } catch(e) { /* ignore */ }
@@ -1032,9 +1085,37 @@ const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
     const centerX = width / 2;
     const centerY = height / 2;
 
+    // Define the boundary for particles (circular field)
+    const fieldRadius = Math.min(width, height) * 0.4;
+    
+    // Draw field boundary (subtle)
+    ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.3);
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, fieldRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
     // The particle updates happen in the main loop, so we just draw here.
     if (particles) {
         particles.forEach(p => {
+            // Constrain particles to the field boundary
+            const distanceFromCenter = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
+            if (distanceFromCenter > fieldRadius) {
+                // Push particle back to boundary
+                const angle = Math.atan2(p.y - centerY, p.x - centerX);
+                p.x = centerX + Math.cos(angle) * fieldRadius;
+                p.y = centerY + Math.sin(angle) * fieldRadius;
+                
+                // Reverse velocity to bounce back
+                const normalX = Math.cos(angle);
+                const normalY = Math.sin(angle);
+                const dotProduct = p.vx * normalX + p.vy * normalY;
+                p.vx -= 2 * dotProduct * normalX;
+                p.vy -= 2 * dotProduct * normalY;
+            }
+            
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
             ctx.fillStyle = applyAlphaToColor(p.color, p.opacity * 0.8);

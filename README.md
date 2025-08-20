@@ -5,7 +5,7 @@ This project is a real-time audio visualizer built with React, TypeScript, and T
 ## Features
 
 -   **Multiple Visualization Styles**: Choose from styles like 'Monstercat', 'Luminous Wave', 'Fusion', and more.
--   **AI Subtitle Generation**: Automatically generate time-synced LRC subtitles from your audio using the Gemini API.
+-   **AI Subtitle Generation**: Automatically generate time-synced subtitles in [00:00.00] format from your audio using the Gemini API.
 -   **Real-time Customization**: Adjust sensitivity, balance, smoothing, text, fonts, and colors on the fly.
 -   **Video Recording**: Record the canvas animation combined with the audio into a downloadable MP4/WebM file.
 
