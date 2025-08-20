@@ -90,6 +90,52 @@ const SwatchButton: React.FC<{
     />
 );
 
+// Convert custom time format [00:00.00] to SRT format
+const convertToSRT = (timeText: string): string => {
+    const lines = timeText.split('\n');
+    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
+    const subtitles: Array<{ time: number; text: string }> = [];
+    
+    lines.forEach(line => {
+        const match = line.match(timeRegex);
+        if (match) {
+            const minutes = parseInt(match[1], 10);
+            const seconds = parseInt(match[2], 10);
+            const centiseconds = parseInt(match[3], 10);
+            const time = minutes * 60 + seconds + centiseconds / 100;
+            const text = line.replace(timeRegex, '').trim();
+            if (text) {
+                subtitles.push({ time, text });
+            }
+        }
+    });
+    
+    // Sort by time and generate SRT
+    subtitles.sort((a, b) => a.time - b.time);
+    
+    let srtContent = '';
+    subtitles.forEach((subtitle, index) => {
+        const startTime = formatSRTTime(subtitle.time);
+        const endTime = formatSRTTime(subtitle.time + 3); // Default 3 second duration
+        
+        srtContent += `${index + 1}\n`;
+        srtContent += `${startTime} --> ${endTime}\n`;
+        srtContent += `${subtitle.text}\n\n`;
+    });
+    
+    return srtContent;
+};
+
+// Format time for SRT (HH:MM:SS,mmm)
+const formatSRTTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
+};
+
 const Controls: React.FC<ControlsProps> = ({
     isPlaying,
     onPlayPause,
@@ -531,18 +577,18 @@ const Controls: React.FC<ControlsProps> = ({
                 </summary>
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="flex flex-col col-span-full">
-                        <label htmlFor="subtitle-text" className="text-sm text-gray-400 mb-1">字幕文字 (在此貼上或由 AI 生成)</label>
+                        <label htmlFor="subtitle-text" className="text-sm text-gray-400 mb-1">字幕文字 (使用格式 [00:00.00] 或由 AI 生成)</label>
                         <textarea 
                             id="subtitle-text"
                             value={subtitlesRawText}
                             onChange={(e) => onSubtitlesRawTextChange(e.target.value)}
                             rows={5}
                             className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none w-full font-mono text-sm"
-                            placeholder="點擊「AI 產生字幕」按鈕自動產生歌詞..."
+                            placeholder="使用格式 [00:00.00] 歌詞文字，或點擊「AI 產生字幕」按鈕自動產生歌詞..."
                         />
                     </div>
                     
-                    <div className="flex flex-col justify-end">
+                    <div className="flex flex-col justify-end gap-2">
                        <div className="relative group">
                            <Button 
                                 onClick={onGenerateSubtitles}
@@ -564,6 +610,28 @@ const Controls: React.FC<ControlsProps> = ({
                                 直接分析音訊檔並使用 AI 產生字幕。過程可能需要一些時間，請耐心等候。結果的準確度取決於音訊的清晰度。
                             </div>
                         </div>
+                        
+                        <Button 
+                            onClick={() => {
+                                if (subtitlesRawText) {
+                                    const srtContent = convertToSRT(subtitlesRawText);
+                                    const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'subtitles.srt';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }
+                            }}
+                            disabled={!subtitlesRawText}
+                            className="bg-green-600 hover:bg-green-500 text-white w-full"
+                        >
+                            <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
+                            <span>下載 SRT</span>
+                        </Button>
                     </div>
                     
                     <div className="flex flex-col">
