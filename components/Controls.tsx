@@ -413,6 +413,21 @@ const Controls: React.FC<ControlsProps> = ({
                         onChange={(value) => onBackgroundColorChange(value as BackgroundColorType)}
                         options={Object.values(BackgroundColorType).map(v => ({ value: v, label: v }))}
                     />
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">背景圖片</label>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer">
+                                上傳圖片
+                                <input type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
+                            </label>
+                            {backgroundImage && (
+                                <Button onClick={onClearBackgroundImage} variant="danger" className="px-2 py-1 text-sm">
+                                    清除
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </ControlSection>
             
@@ -476,6 +491,13 @@ const Controls: React.FC<ControlsProps> = ({
                         options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
                     />
                     
+                    <SelectControl
+                        label="浮水印位置"
+                        value={watermarkPosition}
+                        onChange={(value) => onWatermarkPositionChange(value as WatermarkPosition)}
+                        options={Object.values(WatermarkPosition).map(v => ({ value: v, label: v }))}
+                    />
+                    
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">文字顏色</label>
                         <div className="flex space-x-2">
@@ -531,29 +553,33 @@ const Controls: React.FC<ControlsProps> = ({
                         </div>
                         
                         <div className="flex items-center space-x-4">
-                            {/* Download Subtitles Button */}
-                            {subtitlesRawText.trim() && (
-                                <Button
-                                    onClick={() => {
-                                        // 將原始字幕文本轉換為標準SRT格式
-                                        const srtContent = convertToSRT(subtitlesRawText);
-                                        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = 'subtitles.srt';
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
-                                    }}
-                                    variant="secondary"
-                                    className="bg-green-600 hover:bg-green-500"
-                                >
-                                    <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
-                                    <span>下載字幕 (SRT)</span>
-                                </Button>
-                            )}
+                            {/* Download Subtitles Button - Always visible */}
+                            <Button
+                                onClick={() => {
+                                    if (!subtitlesRawText.trim()) {
+                                        alert('請先產生字幕！\n\n您可以：\n1. 手動輸入字幕文字\n2. 點擊「AI 產生字幕」按鈕自動產生');
+                                        return;
+                                    }
+                                    
+                                    // 將原始字幕文本轉換為標準SRT格式
+                                    const srtContent = convertToSRT(subtitlesRawText);
+                                    const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'subtitles.srt';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }}
+                                variant="secondary"
+                                className={`${subtitlesRawText.trim() ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-500 hover:bg-gray-400'}`}
+                                disabled={!subtitlesRawText.trim()}
+                            >
+                                <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
+                                <span>下載字幕 (SRT)</span>
+                            </Button>
                             
                             <div className="flex items-center space-x-2">
                                 <input
@@ -612,13 +638,6 @@ const Controls: React.FC<ControlsProps> = ({
             {/* --- Advanced Controls --- */}
             <ControlSection title="進階設定" className="mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <SelectControl
-                        label="浮水印位置"
-                        value={watermarkPosition}
-                        onChange={(value) => onWatermarkPositionChange(value as WatermarkPosition)}
-                        options={Object.values(WatermarkPosition).map(v => ({ value: v, label: v }))}
-                    />
-                    
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">聲波描邊</label>
                         <button
@@ -649,9 +668,7 @@ const Controls: React.FC<ControlsProps> = ({
                         max={500}
                         step={10}
                     />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    
                     <SliderControl
                         label="垂直位移"
                         value={effectOffsetY}
@@ -660,21 +677,6 @@ const Controls: React.FC<ControlsProps> = ({
                         max={500}
                         step={10}
                     />
-                    
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">背景圖片</label>
-                        <div className="flex items-center gap-2">
-                            <label className="flex-grow text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer">
-                                上傳圖片
-                                <input type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
-                            </label>
-                            {backgroundImage && (
-                                <Button onClick={onClearBackgroundImage} variant="danger" className="px-3 py-2">
-                                    清除
-                                </Button>
-                            )}
-                        </div>
-                    </div>
                 </div>
             </ControlSection>
         </div>
