@@ -632,64 +632,34 @@ const Controls: React.FC<ControlsProps> = ({
                         </button>
                     </div>
                     
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">特效大小</label>
-                        <div className="relative">
-                            <SliderControl
-                                label=""
-                                value={effectScale}
-                                onChange={onEffectScaleChange}
-                                min={0.1}
-                                max={2.0}
-                                step={0.05}
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>0.1x</span>
-                                <span className="text-cyan-400 font-medium">{effectScale.toFixed(2)}x</span>
-                                <span>2.0x</span>
-                            </div>
-                        </div>
-                    </div>
+                    <SliderControl
+                        label="特效大小"
+                        value={effectScale}
+                        onChange={onEffectScaleChange}
+                        min={0.1}
+                        max={2.0}
+                        step={0.05}
+                    />
                     
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">水平位移</label>
-                        <div className="relative">
-                            <SliderControl
-                                label=""
-                                value={effectOffsetX}
-                                onChange={onEffectOffsetXChange}
-                                min={-500}
-                                max={500}
-                                step={10}
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>-500px</span>
-                                <span className="text-cyan-400 font-medium">{effectOffsetX}px</span>
-                                <span>+500px</span>
-                            </div>
-                        </div>
-                    </div>
+                    <SliderControl
+                        label="水平位移"
+                        value={effectOffsetX}
+                        onChange={onEffectOffsetXChange}
+                        min={-500}
+                        max={500}
+                        step={10}
+                    />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">垂直位移</label>
-                        <div className="relative">
-                            <SliderControl
-                                label=""
-                                value={effectOffsetY}
-                                onChange={onEffectOffsetYChange}
-                                min={-500}
-                                max={500}
-                                step={10}
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>-500px</span>
-                                <span className="text-cyan-400 font-medium">{effectOffsetY}px</span>
-                                <span>+500px</span>
-                            </div>
-                        </div>
-                    </div>
+                    <SliderControl
+                        label="垂直位移"
+                        value={effectOffsetY}
+                        onChange={onEffectOffsetYChange}
+                        min={-500}
+                        max={500}
+                        step={10}
+                    />
                     
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-300">背景圖片</label>
