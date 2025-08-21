@@ -2,6 +2,7 @@ import React from 'react';
 import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
+import CategorizedEffectSelector from './CategorizedEffectSelector';
 
 interface ControlsProps {
     isPlaying: boolean;
@@ -349,14 +350,13 @@ const Controls: React.FC<ControlsProps> = ({
             
             {/* --- Visual Style Controls --- */}
             <ControlSection title="視覺風格設定" className="mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <SelectControl
-                        label="視覺風格"
-                        value={visualizationType}
-                        onChange={(value) => onVisualizationChange(value as VisualizationType)}
-                        options={Object.values(VisualizationType).map(v => ({ value: v, label: v }))}
-                    />
-                    
+                {/* 分類特效選擇器 */}
+                <CategorizedEffectSelector
+                    currentType={visualizationType}
+                    onTypeChange={onVisualizationChange}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                     <SelectControl
                         label="顏色主題"
                         value={colorPalette}

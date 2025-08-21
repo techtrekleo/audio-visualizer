@@ -21,6 +21,23 @@ export enum VisualizationType {
     PIANO_VIRTUOSO = '鋼琴演奏家',
 }
 
+// 特效分類系統
+export enum EffectCategory {
+    BASIC = '基礎款',
+    ADVANCED = '進階款',
+    EXPERIMENTAL = '實驗款',
+    SPECIAL = '特殊款'
+}
+
+export interface EffectInfo {
+    type: VisualizationType;
+    category: EffectCategory;
+    description: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    performance: 'low' | 'medium' | 'high';
+    tags: string[];
+}
+
 export enum FontType {
     POPPINS = 'Poppins',
     ORBITRON = 'Orbitron',
