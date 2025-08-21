@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, forwardRef, useCallback } from 'react';
 import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
+import ImageBasedVisualizer from './ImageBasedVisualizer';
 
 interface AudioVisualizerProps {
     analyser: AnalyserNode | null;
@@ -119,8 +120,9 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             if (waveformStroke) ctx.stroke();
         };
 
-        drawBars(centerX - (i + 1) * barWidth + barGap / 2);
-        drawBars(centerX + i * barWidth + barGap / 2);
+        // Changed from AB|BA to BA|AB - swapped high/low frequency positions
+        drawBars(centerX - (numBarsOnHalf - i) * barWidth + barGap / 2);
+        drawBars(centerX + (numBarsOnHalf - i - 1) * barWidth + barGap / 2);
     }
 
     ctx.restore();
@@ -404,54 +406,244 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
 
 const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
+    
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.15;
-    const bars = 128;
     
-    const [startHue, endHue] = colors.hueRange;
-    const hueRangeSpan = endHue - startHue;
+    // Audio-reactive parameters
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const mid = dataArray.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
+    const treble = dataArray.slice(96, 128).reduce((a, b) => a + b, 0) / 32;
     
-    let color;
-    if (colors.name === ColorPaletteType.WHITE) {
-        color = colors.primary;
-    } else {
-        const hue = startHue + ((frame / 2) % hueRangeSpan);
-        color = `hsl(${hue}, 80%, 60%)`;
-    }
-
-    for (let i = 0; i < bars; i++) {
-        const barHeight = dataArray[i] * 0.5 * sensitivity;
-        const angle = (i / bars) * Math.PI * 2;
+    const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
+    
+    // Draw quantum field background
+    const fieldRadius = Math.min(width, height) * 0.6;
+    const fieldGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, fieldRadius);
+    fieldGradient.addColorStop(0, applyAlphaToColor(colors.primary, 0.1));
+    fieldGradient.addColorStop(0.5, applyAlphaToColor(colors.secondary, 0.05));
+    fieldGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = fieldGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw quantum energy nodes
+    const nodeCount = 12;
+    for (let i = 0; i < nodeCount; i++) {
+        const nodeAngle = (i / nodeCount) * Math.PI * 2 + frame * 0.02;
+        const nodeRadius = fieldRadius * 0.7;
+        const nodeX = centerX + Math.cos(nodeAngle) * nodeRadius;
+        const nodeY = centerY + Math.sin(nodeAngle) * nodeRadius;
         
-        const x1 = centerX + Math.cos(angle) * radius;
-        const y1 = centerY + Math.sin(angle) * radius;
-        const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-        const y2 = centerY + Math.sin(angle) * (radius + barHeight);
-
-        const drawLine = () => {
+        const nodeSize = 8 + normalizedBass * 6 * sensitivity;
+        const nodeColor = i % 3 === 0 ? colors.primary : i % 3 === 1 ? colors.secondary : colors.accent;
+        
+        // Draw node core
+        ctx.fillStyle = nodeColor;
+        ctx.shadowColor = nodeColor;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(nodeX, nodeY, nodeSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw node pulse rings
+        const pulseCount = 3;
+        for (let j = 0; j < pulseCount; j++) {
+            const pulseRadius = nodeSize + j * 8 + normalizedMid * 10 * sensitivity;
+            const pulseOpacity = 0.4 - j * 0.1;
+            
+            ctx.strokeStyle = applyAlphaToColor(nodeColor, pulseOpacity);
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
+            ctx.arc(nodeX, nodeY, pulseRadius, 0, Math.PI * 2);
             ctx.stroke();
-        };
-
-        if (waveformStroke) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 0;
-            ctx.shadowColor = 'transparent';
-            drawLine();
-            ctx.restore();
         }
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = color;
-        drawLine();
+        ctx.setLineDash([]);
+        
+        // Draw energy connections between nodes
+        const nextNodeIndex = (i + 1) % nodeCount;
+        const nextNodeAngle = (nextNodeIndex / nodeCount) * Math.PI * 2 + frame * 0.02;
+        const nextNodeX = centerX + Math.cos(nextNodeAngle) * nodeRadius;
+        const nextNodeY = centerY + Math.sin(nextNodeAngle) * nodeRadius;
+        
+        const connectionOpacity = 0.3 + normalizedTreble * 0.4;
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, connectionOpacity);
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        
+            ctx.beginPath();
+        ctx.moveTo(nodeX, nodeY);
+        ctx.lineTo(nextNodeX, nextNodeY);
+            ctx.stroke();
     }
+    ctx.setLineDash([]);
+    
+    // Draw central quantum core
+    const coreRadius = 25 + normalizedBass * 40 * sensitivity;
+    
+    // Core layers
+    const coreLayers = 4;
+    for (let i = 0; i < coreLayers; i++) {
+        const layerRadius = coreRadius + i * 8;
+        const layerOpacity = 0.8 - i * 0.2;
+        const layerColor = i % 2 === 0 ? colors.primary : colors.secondary;
+        
+        const layerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, layerRadius);
+        layerGradient.addColorStop(0, applyAlphaToColor(layerColor, layerOpacity));
+        layerGradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = layerGradient;
+        ctx.shadowColor = layerColor;
+        ctx.shadowBlur = 30;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, layerRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw quantum wave functions
+    const waveCount = 6;
+    for (let i = 0; i < waveCount; i++) {
+        const waveAngle = (i / waveCount) * Math.PI * 2 + frame * 0.01;
+        const waveAmplitude = 50 + normalizedMid * 80 * sensitivity;
+        const waveFrequency = 3 + normalizedTreble * 4;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.6);
+        ctx.lineWidth = 2;
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 15;
+        
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 3) {
+            const normalizedX = x / width;
+            const waveHeight = Math.sin(normalizedX * waveFrequency * Math.PI + frame * 0.02) * waveAmplitude;
+            const rotatedX = centerX + (x - centerX) * Math.cos(waveAngle) - waveHeight * Math.sin(waveAngle);
+            const rotatedY = centerY + (x - centerX) * Math.sin(waveAngle) + waveHeight * Math.cos(waveAngle);
+            
+            if (x === 0) {
+                ctx.moveTo(rotatedX, rotatedY);
+            } else {
+                ctx.lineTo(rotatedX, rotatedY);
+            }
+        }
+        ctx.stroke();
+    }
+    
+    // Draw frequency spectrum with quantum distortion
+    const spectrumBars = 64;
+    const barWidth = width / spectrumBars;
+    
+    for (let i = 0; i < spectrumBars; i++) {
+        const dataIndex = Math.floor((i / spectrumBars) * dataArray.length);
+        const amplitude = dataArray[dataIndex] / 255;
+        const barHeight = Math.pow(amplitude, 1.5) * height * 0.3 * sensitivity;
+        
+        if (barHeight < 2) continue;
+        
+        const x = i * barWidth;
+        const y = height - barHeight;
+        
+        // Create quantum distortion effect
+        const distortionX = isBeat && Math.random() > 0.8 ? (Math.random() - 0.5) * 8 : 0;
+        const distortionHeight = isBeat && Math.random() > 0.9 ? Math.random() * 15 : 0;
+        
+        // Dynamic quantum color based on current color palette and audio data
+        let barColor;
+        if (i < spectrumBars * 0.33) {
+            // Low frequencies - use primary color
+            barColor = applyAlphaToColor(colors.primary, 0.8 + amplitude * 0.2);
+        } else if (i < spectrumBars * 0.66) {
+            // Mid frequencies - use secondary color
+            barColor = applyAlphaToColor(colors.secondary, 0.8 + amplitude * 0.2);
+        } else {
+            // High frequencies - use accent color
+            barColor = applyAlphaToColor(colors.accent, 0.8 + amplitude * 0.2);
+        }
+        
+        // Add quantum color variation with current palette influence
+        const hueShift = (i / spectrumBars) * 90 - 45; // -45 to +45 degrees
+        const saturation = 90 + amplitude * 10; // 90% to 100%
+        const lightness = 60 + amplitude * 20; // 60% to 80%
+        
+        // Create dynamic quantum color
+        const dynamicColor = `hsla(${200 + hueShift + (frame * 0.4) % 360}, ${saturation}%, ${lightness}%, ${0.85 + amplitude * 0.15})`;
+        
+        ctx.fillStyle = dynamicColor;
+        
+        // Draw rounded rectangle instead of regular rectangle
+        const barX = x + distortionX;
+        const barY = y;
+        const finalHeight = barHeight + distortionHeight;
+        const radius = Math.min(barWidth * 0.3, finalHeight * 0.2); // Dynamic corner radius
+        
+        // Create rounded rectangle path
+        ctx.beginPath();
+        ctx.moveTo(barX + radius, barY);
+        ctx.lineTo(barX + barWidth - 1 - radius, barY);
+        ctx.quadraticCurveTo(barX + barWidth - 1, barY, barX + barWidth - 1, barY + radius);
+        ctx.lineTo(barX + barWidth - 1, barY + finalHeight - radius);
+        ctx.quadraticCurveTo(barX + barWidth - 1, barY + finalHeight, barX + barWidth - 1 - radius, barY + finalHeight);
+        ctx.lineTo(barX + radius, barY + finalHeight);
+        ctx.quadraticCurveTo(barX, barY + finalHeight, barX, barY + finalHeight - radius);
+        ctx.lineTo(barX, barY + radius);
+        ctx.quadraticCurveTo(barX, barY, barX + radius, barY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add quantum glow effect
+        ctx.shadowColor = dynamicColor;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow
+    }
+    
+    // Draw quantum particles
+    const particleCount = 80 + normalizedBass * 120 * sensitivity;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + frame * 0.005;
+        const radius = 40 + Math.sin(frame * 0.03 + i * 0.1) * 60;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        const particleSize = 2 + normalizedMid * 3 * sensitivity;
+        const particleOpacity = 0.7 + normalizedTreble * 0.3;
+        
+        // Create quantum particle effect
+        const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
+        particleGradient.addColorStop(0, '#FFFFFF');
+        particleGradient.addColorStop(0.5, applyAlphaToColor(colors.accent, particleOpacity));
+        particleGradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = particleGradient;
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw energy field lines
+    const fieldLineCount = 8;
+    for (let i = 0; i < fieldLineCount; i++) {
+        const lineAngle = (i / fieldLineCount) * Math.PI * 2 + frame * 0.015;
+        const lineLength = fieldRadius * 0.4 + normalizedBass * 60 * sensitivity;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.primary, 0.4);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(
+            centerX + Math.cos(lineAngle) * lineLength,
+            centerY + Math.sin(lineAngle) * lineLength
+        );
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
     ctx.restore();
 };
 
@@ -586,59 +778,230 @@ const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
+    
     const centerX = width / 2;
     const centerY = height / 2;
     
-    // Enhanced spiral galaxy effect
-    const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    // Audio-reactive parameters
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const mid = dataArray.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
+    const treble = dataArray.slice(96, 128).reduce((a, b) => a + b, 0) / 32;
+    
     const normalizedBass = bass / 255;
-    const coreRadius = (Math.min(width, height) * 0.04) + (normalizedBass * 30 * sensitivity);
-
-    // Draw multiple spiral arms
-    const numArms = 4;
-    const armLength = Math.min(width, height) * 0.4;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
+    
+    // Fill space background
+    ctx.fillStyle = '#000011'; // Deep space blue
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw simplified nebula background
+    const nebulaRadius = Math.min(width, height) * 0.6;
+    const nebulaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, nebulaRadius);
+    nebulaGradient.addColorStop(0, applyAlphaToColor(colors.primary, 0.08));
+    nebulaGradient.addColorStop(0.5, applyAlphaToColor(colors.secondary, 0.04));
+    nebulaGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = nebulaGradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw simplified spiral arms (reduced from 4 to 2)
+    const numArms = 2;
+    const armLength = nebulaRadius * 0.5;
     
     for (let arm = 0; arm < numArms; arm++) {
-        const armAngle = (arm * Math.PI * 2) / numArms + frame * 0.01;
+        const armAngle = (arm / numArms) * Math.PI * 2 + frame * 0.003;
         const armColor = arm % 2 === 0 ? colors.primary : colors.secondary;
         
-        ctx.strokeStyle = armColor;
-        ctx.lineWidth = 2;
-        ctx.globalAlpha = 0.6;
-        
-        ctx.beginPath();
-        for (let i = 0; i < 50; i++) {
-            const t = i / 50;
+        // Draw spiral arm with fewer stars (reduced from 50 to 25)
+        for (let i = 0; i < 25; i++) {
+            const t = i / 25;
             const radius = t * armLength;
-            const angle = armAngle + t * 2 * Math.PI;
+            const spiralAngle = armAngle + t * 1.5 * Math.PI + Math.sin(t * Math.PI * 3) * 0.2;
+            
+            const x = centerX + radius * Math.cos(spiralAngle);
+            const y = centerY + radius * Math.sin(spiralAngle);
+            
+            const starSize = (1 - t) * 2.5 + normalizedBass * 1.5 * sensitivity;
+            const starOpacity = (1 - t) * 0.7 + normalizedMid * 0.2;
+            
+            if (starSize > 0.5) {
+                ctx.fillStyle = applyAlphaToColor(armColor, starOpacity);
+                ctx.shadowColor = armColor;
+                ctx.shadowBlur = starSize * 1.5;
+        ctx.beginPath();
+                ctx.arc(x, y, starSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+    
+    // Draw simplified asteroid belt (reduced count)
+    const beltRadius = nebulaRadius * 0.35;
+    const beltWidth = 15;
+    const asteroidCount = 40 + normalizedTreble * 20 * sensitivity; // Reduced from 100+50
+    
+    for (let i = 0; i < asteroidCount; i++) {
+        const angle = (i / asteroidCount) * Math.PI * 2 + frame * 0.001;
+        const radius = beltRadius + (Math.random() - 0.5) * beltWidth;
             const x = centerX + radius * Math.cos(angle);
             const y = centerY + radius * Math.sin(angle);
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
+        const asteroidSize = 0.8 + Math.random() * 1.5;
+        const asteroidOpacity = 0.5 + normalizedMid * 0.3;
+        
+        ctx.fillStyle = applyAlphaToColor(colors.accent, asteroidOpacity);
+        ctx.beginPath();
+        ctx.arc(x, y, asteroidSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw solar system planets (reduced from 3 to 2 main planets + sun)
+    const planetCount = 2;
+    for (let i = 0; i < planetCount; i++) {
+        const planetAngle = (i / planetCount) * Math.PI * 2 + frame * 0.008;
+        const planetRadius = 60 + i * 50; // More realistic spacing
+        const planetX = centerX + Math.cos(planetAngle) * planetRadius;
+        const planetY = centerY + Math.sin(planetAngle) * planetRadius;
+        
+        const planetSize = 12 + i * 3 + normalizedBass * 8 * sensitivity;
+        const planetColor = i === 0 ? colors.primary : colors.secondary;
+        
+        // Planet body with more realistic appearance
+        const planetGradient = ctx.createRadialGradient(planetX, planetY, 0, planetX, planetY, planetSize);
+        planetGradient.addColorStop(0, applyAlphaToColor(planetColor, 0.9));
+        planetGradient.addColorStop(0.6, applyAlphaToColor(planetColor, 0.7));
+        planetGradient.addColorStop(1, applyAlphaToColor(planetColor, 0.4));
+        
+        ctx.fillStyle = planetGradient;
+        ctx.shadowColor = planetColor;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(planetX, planetY, planetSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Planet rings (only for the outer planet)
+        if (i === 1) {
+            const ringRadius = planetSize * 1.8;
+            ctx.strokeStyle = applyAlphaToColor(planetColor, 0.5);
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, ringRadius, 0, Math.PI * 2);
         ctx.stroke();
     }
 
-    // Enhanced central core
-    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius * 2);
-    gradient.addColorStop(0, '#FFFFFF');
-    gradient.addColorStop(0.2, colors.accent);
-    gradient.addColorStop(0.6, colors.primary);
-    gradient.addColorStop(1, 'transparent');
-
-    ctx.fillStyle = gradient;
-    ctx.globalAlpha = 1;
-    ctx.shadowColor = colors.accent;
+        // Simplified moons (reduced count)
+        const moonCount = i === 0 ? 1 : 2; // Inner planet 1 moon, outer planet 2 moons
+        for (let j = 0; j < moonCount; j++) {
+            const moonAngle = (j / moonCount) * Math.PI * 2 + frame * 0.015;
+            const moonRadius = planetSize * 2.2;
+            const moonX = planetX + Math.cos(moonAngle) * moonRadius;
+            const moonY = planetY + Math.sin(moonAngle) * moonRadius;
+            const moonSize = 2.5 + normalizedMid * 1.5 * sensitivity;
+            
+            ctx.fillStyle = applyAlphaToColor(colors.accent, 0.7);
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, moonSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    // Draw central sun (replacing black hole)
+    const sunRadius = 25 + normalizedBass * 20 * sensitivity;
+    
+    // Sun glow
+    const sunGlowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, sunRadius * 2);
+    sunGlowGradient.addColorStop(0, applyAlphaToColor('#FFFF00', 0.3)); // Yellow glow
+    sunGlowGradient.addColorStop(0.5, applyAlphaToColor('#FF8800', 0.2)); // Orange glow
+    sunGlowGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = sunGlowGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, sunRadius * 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Sun core
+    const sunGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, sunRadius);
+    sunGradient.addColorStop(0, '#FFFFFF'); // White center
+    sunGradient.addColorStop(0.3, '#FFFF00'); // Yellow
+    sunGradient.addColorStop(0.7, '#FF8800'); // Orange
+    sunGradient.addColorStop(1, '#FF4400'); // Red-orange
+    
+    ctx.fillStyle = sunGradient;
+    ctx.shadowColor = '#FFFF00';
     ctx.shadowBlur = 30;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, coreRadius * 2, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, sunRadius, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Sun energy waves
+    const waveCount = 3; // Reduced from 5
+    for (let i = 0; i < waveCount; i++) {
+        const waveRadius = sunRadius * 1.5 + i * 12 + normalizedBass * 15 * sensitivity;
+        const waveOpacity = 0.25 - i * 0.08;
+        
+        ctx.strokeStyle = applyAlphaToColor('#FFFF00', waveOpacity);
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([8, 8]);
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
+    // Draw rare shooting star (only one, appears occasionally)
+    if (Math.random() > 0.995) { // Very rare - about 0.5% chance per frame
+        const startX = Math.random() * width;
+        const startY = Math.random() * height;
+        const endX = startX + (Math.random() - 0.5) * 150;
+        const endY = startY + (Math.random() - 0.5) * 150;
+        
+        const trailLength = 25 + normalizedTreble * 15 * sensitivity;
+        
+        // Main shooting star line
+        ctx.strokeStyle = applyAlphaToColor('#FFFFFF', 0.9);
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = '#FFFFFF';
+        ctx.shadowBlur = 8;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        
+        // Shooting star trail
+        ctx.strokeStyle = applyAlphaToColor('#FFFFFF', 0.4);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(startX - (endX - startX) * 0.25, startY - (endY - startY) * 0.25);
+        ctx.stroke();
+        
+        // Shooting star glow effect
+        ctx.fillStyle = applyAlphaToColor('#FFFFFF', 0.3);
+        ctx.beginPath();
+        ctx.arc(startX, startY, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw minimal cosmic dust (reduced count)
+    const dustCount = 80 + normalizedMid * 40 * sensitivity; // Reduced from 200+100
+    for (let i = 0; i < dustCount; i++) {
+        const x = (i * 47) % width; // Changed pattern for better distribution
+        const y = (i * 79) % height;
+        const dustSize = 0.4 + Math.random() * 0.8;
+        const dustOpacity = 0.25 + Math.random() * 0.3;
+        
+        ctx.fillStyle = applyAlphaToColor(colors.accent, dustOpacity);
+        ctx.beginPath();
+        ctx.arc(x, y, dustSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     ctx.restore();
 };
@@ -646,50 +1009,194 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
 const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     
+    // Fill black background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+    
     const centerX = width / 2;
     const centerY = height / 2;
+    
+    // Enhanced audio analysis with more sensitive ranges
     const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    const mid = dataArray.slice(16, 64).reduce((a, b) => a + b, 0) / 48;
+    const treble = dataArray.slice(64, 128).reduce((a, b) => a + b, 0) / 64;
+    
     const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
     
-    // Create metallic wave effect
-    const waveCount = 8;
-    const maxAmplitude = height * 0.15;
+    // Enhanced sensitivity multipliers for more dramatic effects
+    const bassMultiplier = 2.0; // Increased from 1.0
+    const midMultiplier = 1.8;  // Increased from 1.0
+    const trebleMultiplier = 1.5; // Increased from 1.0
     
-    for (let wave = 0; wave < waveCount; wave++) {
-        const waveOffset = (wave * Math.PI * 2) / waveCount;
-        const waveColor = wave % 2 === 0 ? colors.primary : colors.secondary;
+    // Create flower blooming effect with enhanced audio response
+    const numPetals = 8 + Math.floor(normalizedMid * 4 * sensitivity); // Dynamic petal count
+    const basePetalLength = Math.min(width, height) * 0.2;
+    const petalLength = basePetalLength + normalizedBass * 150 * sensitivity * bassMultiplier; // Increased response
+    
+    // Draw flower petals with enhanced liquid metal effect
+    for (let i = 0; i < numPetals; i++) {
+        const petalAngle = (i / numPetals) * Math.PI * 2 + frame * 0.01;
+        const petalColor = i % 2 === 0 ? colors.primary : colors.secondary;
         
-        ctx.strokeStyle = waveColor;
-        ctx.lineWidth = 3;
-        ctx.globalAlpha = 0.7;
+        // Enhanced petal positioning based on audio
+        const petalOffset = normalizedBass * 20 * sensitivity; // Petals move with bass
+        const startX = centerX + Math.cos(petalAngle) * (20 + petalOffset);
+        const startY = centerY + Math.sin(petalAngle) * (20 + petalOffset);
+        const endX = centerX + Math.cos(petalAngle) * petalLength;
+        const endY = centerY + Math.sin(petalAngle) * petalLength;
         
+        // Control points for petal curve with audio influence
+        const control1X = startX + Math.cos(petalAngle + 0.3 + normalizedMid * 0.2) * petalLength * 0.3;
+        const control1Y = startY + Math.sin(petalAngle + 0.3 + normalizedMid * 0.2) * petalLength * 0.3;
+        const control2X = startX + Math.cos(petalAngle - 0.3 - normalizedMid * 0.2) * petalLength * 0.3;
+        const control2Y = startY + Math.sin(petalAngle - 0.3 - normalizedMid * 0.2) * petalLength * 0.3;
+        
+        // Dynamic petal width based on mid frequencies
+        const petalWidth = 6 + normalizedMid * 12 * sensitivity * midMultiplier; // Increased range
+        
+        // Draw petal with enhanced liquid metal gradient
+        const petalGradient = ctx.createLinearGradient(startX, startY, endX, endY);
+        petalGradient.addColorStop(0, applyAlphaToColor(petalColor, 0.9 + normalizedBass * 0.1));
+        petalGradient.addColorStop(0.3, applyAlphaToColor(petalColor, 0.7 + normalizedMid * 0.2));
+        petalGradient.addColorStop(0.7, applyAlphaToColor(petalColor, 0.5 + normalizedTreble * 0.2));
+        petalGradient.addColorStop(1, applyAlphaToColor(petalColor, 0.2 + normalizedBass * 0.1));
+        
+        ctx.strokeStyle = petalGradient;
+        ctx.lineWidth = petalWidth;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = petalColor;
+        ctx.shadowBlur = 20 + normalizedBass * 20 * sensitivity; // Dynamic shadow blur
+        
+        // Draw petal curve
         ctx.beginPath();
-        for (let x = 0; x < width; x += 2) {
-            const normalizedX = x / width;
-            const time = frame * 0.02 + waveOffset;
-            const frequency = 3 + normalizedBass * 5;
-            const amplitude = maxAmplitude * (0.5 + normalizedBass * 0.5);
-            
-            const y = centerY + Math.sin(normalizedX * frequency * Math.PI + time) * amplitude;
-            
-            if (x === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
+        ctx.moveTo(startX, startY);
+        ctx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
+        ctx.stroke();
+        
+        // Enhanced petal glow effect
+        ctx.strokeStyle = applyAlphaToColor(petalColor, 0.4 + normalizedTreble * 0.3);
+        ctx.lineWidth = petalWidth * 0.5;
+        ctx.shadowBlur = 15 + normalizedMid * 10 * sensitivity;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
         ctx.stroke();
     }
     
-    // Add metallic shine effect
+    // Enhanced central flower core with more dramatic audio response
+    const coreRadius = 25 + normalizedBass * 80 * sensitivity * bassMultiplier; // Increased range
+    
+    // Inner core with enhanced metallic shine
+    const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+    coreGradient.addColorStop(0, '#FFFFFF');
+    coreGradient.addColorStop(0.2, applyAlphaToColor(colors.accent, 0.9 + normalizedBass * 0.1));
+    coreGradient.addColorStop(0.5, applyAlphaToColor(colors.primary, 0.7 + normalizedMid * 0.2));
+    coreGradient.addColorStop(0.8, applyAlphaToColor(colors.secondary, 0.5 + normalizedTreble * 0.2));
+    coreGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = coreGradient;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 30 + normalizedBass * 20 * sensitivity; // Dynamic shadow
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Enhanced rotating liquid metal rings with audio response
+    const numRings = 3 + Math.floor(normalizedMid * 2 * sensitivity); // Dynamic ring count
+    for (let i = 0; i < numRings; i++) {
+        const ringRadius = coreRadius + 15 + i * 12 + normalizedBass * 15 * sensitivity;
+        const rotationSpeed = frame * (0.02 + i * 0.01 + normalizedBass * 0.02); // Audio-responsive rotation
+        const ringOpacity = 0.6 - i * 0.15 + normalizedTreble * 0.2;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, ringOpacity);
+        ctx.lineWidth = 3 + normalizedMid * 2 * sensitivity;
+        ctx.setLineDash([15, 15]);
+        
+        // Create segmented ring effect with audio influence
+        const segments = 6 + Math.floor(normalizedMid * 4 * sensitivity); // Dynamic segments
+        for (let j = 0; j < segments; j++) {
+            const startAngle = (j / segments) * Math.PI * 2 + rotationSpeed;
+            const endAngle = ((j + 1) / segments) * Math.PI * 2 + rotationSpeed;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, ringRadius, startAngle, endAngle);
+            ctx.stroke();
+        }
+    }
+    ctx.setLineDash([]);
+    
+    // Enhanced liquid metal droplets with better audio response
+    const dropletCount = 15 + normalizedTreble * 50 * sensitivity * trebleMultiplier; // Increased range
+    for (let i = 0; i < dropletCount; i++) {
+        const angle = (i / dropletCount) * Math.PI * 2 + frame * 0.005;
+        const radius = 70 + Math.sin(frame * 0.03 + i * 0.2) * 50 + normalizedBass * 30 * sensitivity;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        const dropletSize = 2 + normalizedMid * 8 * sensitivity * midMultiplier; // Increased range
+        const dropletOpacity = 0.7 + normalizedTreble * 0.3;
+        
+        // Create droplet with enhanced liquid metal effect
+        const dropletGradient = ctx.createRadialGradient(x, y, 0, x, y, dropletSize);
+        dropletGradient.addColorStop(0, '#FFFFFF');
+        dropletGradient.addColorStop(0.5, applyAlphaToColor(colors.accent, dropletOpacity));
+        dropletGradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = dropletGradient;
+        ctx.shadowColor = colors.accent;
+        ctx.shadowBlur = 15 + normalizedMid * 10 * sensitivity; // Dynamic shadow
+        ctx.beginPath();
+        ctx.arc(x, y, dropletSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Enhanced metallic shine effect with audio influence
     const shineGradient = ctx.createLinearGradient(0, 0, width, height);
-    shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-    shineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
-    shineGradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+    const shineIntensity = 0.1 + normalizedBass * 0.2; // Audio-responsive shine
+    shineGradient.addColorStop(0, `rgba(255, 255, 255, ${shineIntensity})`);
+    shineGradient.addColorStop(0.3, `rgba(255, 255, 255, ${shineIntensity * 2})`);
+    shineGradient.addColorStop(0.5, `rgba(255, 255, 255, ${shineIntensity * 3})`);
+    shineGradient.addColorStop(0.7, `rgba(255, 255, 255, ${shineIntensity * 2})`);
+    shineGradient.addColorStop(1, `rgba(255, 255, 255, ${shineIntensity})`);
     
     ctx.fillStyle = shineGradient;
-    ctx.globalAlpha = 0.4;
+    ctx.globalAlpha = 0.3 + normalizedBass * 0.2; // Dynamic alpha
     ctx.fillRect(0, 0, width, height);
+    ctx.globalAlpha = 1;
+    
+    // Enhanced energy waves radiating from center
+    const waveCount = 4 + Math.floor(normalizedBass * 3 * sensitivity); // Dynamic wave count
+    for (let i = 0; i < waveCount; i++) {
+        const waveRadius = 40 + i * 20 + normalizedBass * 50 * sensitivity * bassMultiplier; // Increased range
+        const waveOpacity = 0.4 - i * 0.1 + normalizedBass * 0.2;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, waveOpacity);
+        ctx.lineWidth = 2 + normalizedBass * 2 * sensitivity;
+        ctx.setLineDash([10, 10]);
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
+    // Add beat-triggered effects
+    if (isBeat) {
+        // Beat flash effect
+        ctx.fillStyle = applyAlphaToColor(colors.primary, 0.3);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, coreRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Beat ripple effect
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.6);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, coreRadius * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+    }
 
     ctx.restore();
 };
@@ -729,9 +1236,9 @@ const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.shadowBlur = 10;
     ctx.stroke(wavePath);
 
-    // Add classic scanlines for the retro feel
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    for (let i = 0; i < height; i += 3) {
+    // Add classic scanlines for the retro feel (reduced frequency)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    for (let i = 0; i < height; i += 6) { // Increased from 3 to 6 - reduced frequency by 50%
         ctx.fillRect(0, i, width, 1);
     }
     
@@ -812,15 +1319,7 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
         ctx.fillRect(0, i, width, 2);
     }
     
-    // NEW effect: Vertical Roll
-    if (isBeat && Math.random() > 0.7) {
-        const rollAmount = Math.floor((Math.random() - 0.5) * height * 0.1);
-        try {
-            const imageData = ctx.getImageData(0, 0, width, height);
-            ctx.clearRect(0, 0, width, height);
-            ctx.putImageData(imageData, 0, rollAmount);
-        } catch(e) { /* ignore */ }
-    }
+    // Removed Vertical Roll effect for better viewing experience
 
     // Modified effect: Block Corruption (replaces simple horizontal slip)
     if (isBeat) {
@@ -881,52 +1380,212 @@ const dataMoshState: { imageData: ImageData | null, framesLeft: number } = {
 const drawDataMosh = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
-    // If a mosh is active from a previous frame, draw the "ghost" frame first.
-    // This creates the smearing/feedback effect.
-    if (dataMoshState.framesLeft > 0 && dataMoshState.imageData) {
+    // Optimized data mosh with reduced effects for better performance
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Audio-reactive parameters
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const mid = dataArray.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
+    const treble = dataArray.slice(96, 128).reduce((a, b) => a + b, 0) / 32;
+    
+    const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
+    
+    // Simplified ghost frame effect - reduced frequency
+    if (dataMoshState.framesLeft > 0 && dataMoshState.imageData && frame % 3 === 0) {
+        ctx.globalAlpha = 0.2;
         ctx.putImageData(dataMoshState.imageData, 0, 0);
         dataMoshState.framesLeft--;
+        ctx.globalAlpha = 1;
     }
     
-    // Draw the main, live visual on top of the ghost (or on the clean canvas if no ghost)
-    const centerY = height / 2;
-    const wavePath = new Path2D();
-    const sliceWidth = width / (dataArray.length * 0.5);
-    let x = 0;
-    for (let i = 0; i < dataArray.length * 0.5; i++) {
-        const amp = Math.pow(dataArray[i] / 255, 1.5) * height * 0.3 * sensitivity;
-        const y = centerY + amp;
-        if (i === 0) {
-            wavePath.moveTo(x, y);
+    // Draw simplified wave layer - only one main wave for performance
+    const drawWaveLayer = (amplitude: number, frequency: number, color: string) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8; // Reduced shadow blur
+        
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 4) { // Increased step size for performance
+            const normalizedX = x / width;
+            const time = frame * 0.01; // Reduced animation speed
+            const waveHeight = Math.sin(normalizedX * frequency * Math.PI + time) * amplitude;
+            const y = centerY + waveHeight;
+            
+            if (x === 0) {
+                ctx.moveTo(x, y);
         } else {
-            wavePath.lineTo(x, y);
+                ctx.lineTo(x, y);
+            }
         }
-        x += sliceWidth;
+        ctx.stroke();
+    };
+    
+    // Draw only one main wave layer for better performance
+    const baseAmplitude = height * 0.12 * sensitivity;
+    drawWaveLayer(baseAmplitude * normalizedBass, 2, colors.primary);
+    
+    // Draw simplified frequency spectrum bars - reduced count
+    const numBars = 64; // Reduced from 128
+    const barWidth = width / numBars;
+    
+    for (let i = 0; i < numBars; i++) {
+        const dataIndex = Math.floor((i / numBars) * dataArray.length);
+        const amplitude = dataArray[dataIndex] / 255;
+        const barHeight = Math.pow(amplitude, 1.5) * height * 0.3 * sensitivity; // Reduced height
+        
+        if (barHeight < 4) continue; // Increased minimum height threshold
+        
+        const x = i * barWidth;
+        const y = height - barHeight;
+        
+        // Simplified distortion effect - reduced frequency
+        const distortionX = isBeat && Math.random() > 0.85 ? (Math.random() - 0.5) * 8 : 0; // Reduced distortion
+        const distortionY = isBeat && Math.random() > 0.9 ? (Math.random() - 0.5) * 10 : 0; // Reduced distortion
+        
+        // Dynamic color based on current color palette and audio data
+        let barColor;
+        if (i < numBars * 0.33) {
+            // Low frequencies - use primary color
+            barColor = applyAlphaToColor(colors.primary, 0.7 + amplitude * 0.3);
+        } else if (i < numBars * 0.66) {
+            // Mid frequencies - use secondary color
+            barColor = applyAlphaToColor(colors.secondary, 0.7 + amplitude * 0.3);
+        } else {
+            // High frequencies - use accent color
+            barColor = applyAlphaToColor(colors.accent, 0.7 + amplitude * 0.3);
+        }
+        
+        // Add some color variation based on amplitude and position
+        const hueShift = (i / numBars) * 60 - 30; // -30 to +30 degrees
+        const saturation = 80 + amplitude * 20; // 80% to 100%
+        const lightness = 50 + amplitude * 30; // 50% to 80%
+        
+        // Create dynamic HSL color with current palette influence
+        const dynamicColor = `hsla(${200 + hueShift + (frame * 0.5) % 360}, ${saturation}%, ${lightness}%, ${0.8 + amplitude * 0.2})`;
+        
+        ctx.fillStyle = dynamicColor;
+        
+        // Draw rounded rectangle instead of regular rectangle
+        const barX = x + distortionX;
+        const barY = y + distortionY;
+        const radius = Math.min(barWidth * 0.3, barHeight * 0.2); // Dynamic corner radius
+        
+        // Create rounded rectangle path
+        ctx.beginPath();
+        ctx.moveTo(barX + radius, barY);
+        ctx.lineTo(barX + barWidth - radius, barY);
+        ctx.quadraticCurveTo(barX + barWidth, barY, barX + barWidth, barY + radius);
+        ctx.lineTo(barX + barWidth, barY + barHeight - radius);
+        ctx.quadraticCurveTo(barX + barWidth, barY + barHeight, barX + barWidth - radius, barY + barHeight);
+        ctx.lineTo(barX + radius, barY + barHeight);
+        ctx.quadraticCurveTo(barX, barY + barHeight, barX, barY + barHeight - radius);
+        ctx.lineTo(barX, barY + radius);
+        ctx.quadraticCurveTo(barX, barY, barX + radius, barY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add subtle glow effect
+        ctx.shadowColor = dynamicColor;
+        ctx.shadowBlur = 3;
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow
+        
+        // Reduced glitch overlay frequency with rounded effect
+        if (isBeat && Math.random() > 0.92) {
+            ctx.fillStyle = '#FF00FF';
+            const glitchHeight = 1;
+            const glitchY = barY + Math.random() * barHeight;
+            
+            // Draw rounded glitch line
+            ctx.beginPath();
+            ctx.moveTo(barX + radius, glitchY);
+            ctx.lineTo(barX + barWidth - radius, glitchY);
+            ctx.quadraticCurveTo(barX + barWidth, glitchY, barX + barWidth, glitchY + radius);
+            ctx.lineTo(barX + barWidth, glitchY + glitchHeight - radius);
+            ctx.quadraticCurveTo(barX + barWidth, glitchY + glitchHeight, barX + barWidth - radius, glitchY + glitchHeight);
+            ctx.lineTo(barX + radius, glitchY + glitchHeight);
+            ctx.quadraticCurveTo(barX, glitchY + glitchHeight, barX, glitchY + glitchHeight - radius);
+            ctx.lineTo(barX, glitchY + radius);
+            ctx.quadraticCurveTo(barX, glitchY, barX + radius, glitchY);
+            ctx.closePath();
+            ctx.fill();
+        }
     }
     
-    if (waveformStroke) {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-        ctx.lineWidth = 4.5;
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'transparent';
-        ctx.stroke(wavePath);
-        ctx.restore();
+    // Draw simplified central core
+    const coreRadius = 30 + normalizedBass * 50 * sensitivity; // Reduced size
+    
+    // Simple core without complex gradients
+    ctx.fillStyle = colors.primary;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 20; // Reduced shadow blur
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Reduced rotating rings - only 2 rings
+    const numRings = 2; // Reduced from 4
+    for (let i = 0; i < numRings; i++) {
+        const ringRadius = coreRadius + 20 + i * 15;
+        const rotationSpeed = frame * (0.02 + i * 0.01); // Reduced rotation speed
+        const ringOpacity = 0.4 - i * 0.2;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, ringOpacity);
+        ctx.lineWidth = 2; // Reduced line width
+        
+        // Simplified ring - fewer segments
+        const segments = 8; // Reduced from 12
+        for (let j = 0; j < segments; j++) {
+            const startAngle = (j / segments) * Math.PI * 2 + rotationSpeed;
+            const endAngle = ((j + 1) / segments) * Math.PI * 2 + rotationSpeed;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, ringRadius, startAngle, endAngle);
+            ctx.stroke();
+        }
     }
     
-    ctx.strokeStyle = colors.primary;
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = colors.primary;
-    ctx.shadowBlur = 10;
-    ctx.stroke(wavePath);
-
-    // If a beat happens, we capture the *current* result (ghost + live wave)
-    // to be the *next* ghost frame, continuing the feedback loop.
-    if (isBeat) {
+    // Reduced particle count for better performance
+    const particleCount = 20 + normalizedBass * 40 * sensitivity; // Reduced from 50 + 100
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + frame * 0.005; // Reduced animation speed
+        const radius = 50 + Math.sin(frame * 0.01 + i * 0.1) * 20; // Reduced radius variation
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        const particleSize = 1.5 + normalizedMid * 3 * sensitivity; // Reduced size
+        const particleOpacity = 0.5 + normalizedTreble * 0.3;
+        
+        ctx.fillStyle = applyAlphaToColor(colors.accent, particleOpacity);
+        ctx.beginPath();
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Simplified scanline effect - reduced frequency
+    if (frame % 2 === 0) { // Only draw every other frame
+        ctx.strokeStyle = applyAlphaToColor(colors.primary, 0.08);
+        ctx.lineWidth = 1;
+        for (let y = 0; y < height; y += 8) { // Increased spacing
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+    }
+    
+    // Reduced mosh effect frequency
+    if (isBeat && Math.random() > 0.85) { // Reduced from 0.7
         try {
             dataMoshState.imageData = ctx.getImageData(0, 0, width, height);
-            dataMoshState.framesLeft = 5; // Linger for 5 frames
-        } catch (e) { /* ignore */ }
+            dataMoshState.framesLeft = 3 + Math.floor(Math.random() * 5); // Reduced from 5 + 10
+        } catch (e) {
+            // Handle cross-origin issues
+        }
     }
 
     ctx.restore();
@@ -1014,70 +1673,238 @@ const pixelRainState: {
 };
 
 const drawPixelSort = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
-    // 1. Always draw the base visual first. This provides the source for our particles.
-    drawMonstercat(ctx, dataArray, width, height, frame, sensitivity, colors, graphicEffect, isBeat, waveformStroke);
-
-    // 2. On a strong beat, sample the canvas and create new "rain" particles.
-    if (isBeat) {
-        try {
-            // Reading from the canvas can be slow, but it's the most direct way to sample the generated visual.
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const pixels = imageData.data;
-            const step = 4; // Performance: check every Nth pixel.
-            for (let y = 0; y < height; y += step) {
-                for (let x = 0; x < width; x += step) {
-                    const i = (y * width + x) * 4;
-                    // Check alpha channel to ensure we're sampling a drawn pixel
-                    if (pixels[i + 3] > 200) {
-                        const brightness = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2];
-                        // Spawn from bright areas with a bit of randomness
-                        if (brightness > 120 && Math.random() > 0.92) {
-                            pixelRainState.particles.push({
-                                x: x,
-                                y: y,
-                                vy: Math.random() * 5 + 7, // High initial downward velocity for "fast" effect
-                                opacity: 1,
-                                color: `rgba(${pixels[i]}, ${pixels[i+1]}, ${pixels[i+2]}, 1)`,
-                                length: Math.random() * 25 + 15, // Trail length
-                            });
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            // This can happen if a cross-origin background image taints the canvas.
-            console.warn("Pixel Sort effect was blocked from reading canvas data, likely due to a cross-origin image.");
-        }
-    }
-
-    // 3. Update and draw all active particles.
-    const gravity = 0.6; // Increased gravity for a faster feel
-    ctx.lineCap = 'round';
+    ctx.save();
     
-    // Iterate backwards to safely remove items while looping
-    for (let i = pixelRainState.particles.length - 1; i >= 0; i--) {
-        const p = pixelRainState.particles[i];
-
-        // Apply physics
-        p.y += p.vy;
-        p.vy += gravity;
-
-        // Draw the particle as a motion-blurred trail
-        ctx.strokeStyle = applyAlphaToColor(p.color, p.opacity);
-        ctx.lineWidth = 2;
+    // Create a digital storm effect with audio-reactive elements
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Audio-reactive parameters
+    const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    const mid = dataArray.slice(16, 64).reduce((a, b) => a + b, 0) / 48;
+    const treble = dataArray.slice(64, 128).reduce((a, b) => a + b, 0) / 64;
+    
+    const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
+    
+    // Draw digital storm background
+    const stormIntensity = (normalizedBass + normalizedMid + normalizedTreble) / 3;
+    
+    // Create storm clouds
+    for (let i = 0; i < 8; i++) {
+        const cloudX = (i / 8) * width + Math.sin(frame * 0.02 + i) * 50;
+        const cloudY = height * 0.2 + Math.sin(frame * 0.01 + i * 0.5) * 30;
+        const cloudSize = 80 + normalizedBass * 100 * sensitivity;
+        
+        ctx.fillStyle = applyAlphaToColor(colors.primary, 0.1 + stormIntensity * 0.2);
         ctx.beginPath();
-        ctx.moveTo(p.x, p.y - p.length);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-
-        // Fade out
-        p.opacity -= 0.02;
-
-        // Remove particle if it's invisible or off-screen
-        if (p.opacity <= 0 || (p.y - p.length) > height) {
-            pixelRainState.particles.splice(i, 1);
+        ctx.arc(cloudX, cloudY, cloudSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw lightning bolts on beat
+    if (isBeat && Math.random() > 0.6) {
+        const numBolts = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < numBolts; i++) {
+            const startX = Math.random() * width;
+            const startY = 0;
+            const endX = startX + (Math.random() - 0.5) * 200;
+            const endY = height;
+            
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00FFFF';
+            ctx.shadowBlur = 20;
+            
+            // Create zigzag lightning
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            
+            let currentX = startX;
+            let currentY = startY;
+            const segments = 8;
+            
+            for (let j = 1; j <= segments; j++) {
+                const progress = j / segments;
+                const targetX = startX + (endX - startX) * progress;
+                const targetY = startY + (endY - startY) * progress;
+                
+                const offset = (Math.random() - 0.5) * 40;
+                currentX = targetX + offset;
+                currentY = targetY;
+                
+                ctx.lineTo(currentX, currentY);
+            }
+            
+            ctx.stroke();
         }
     }
+    
+    // Draw digital rain effect
+    const rainDrops = 200;
+    for (let i = 0; i < rainDrops; i++) {
+        const x = (i * 37) % width; // Distribute drops evenly
+        const y = (frame * 2 + i * 2) % (height + 100);
+        const length = 10 + normalizedTreble * 20 * sensitivity;
+        const opacity = 0.3 + normalizedTreble * 0.4;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, opacity);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + length);
+        ctx.stroke();
+    }
+    
+    // Draw frequency bars with digital distortion
+    const numBars = 64;
+    const barWidth = width / numBars;
+    
+    for (let i = 0; i < numBars; i++) {
+        const dataIndex = Math.floor((i / numBars) * dataArray.length);
+        const amplitude = dataArray[dataIndex] / 255;
+        const barHeight = Math.pow(amplitude, 1.5) * height * 0.6 * sensitivity;
+        
+        if (barHeight < 2) continue;
+        
+        const x = i * barWidth;
+        const y = height - barHeight;
+        
+        // Create digital glitch effect
+        const glitchOffset = isBeat && Math.random() > 0.8 ? (Math.random() - 0.5) * 10 : 0;
+        const glitchHeight = isBeat && Math.random() > 0.9 ? Math.random() * 20 : 0;
+        
+        // Dynamic color based on current color palette and audio data
+        let barColor;
+        if (i < numBars * 0.33) {
+            // Low frequencies - use primary color
+            barColor = applyAlphaToColor(colors.primary, 0.8 + amplitude * 0.2);
+        } else if (i < numBars * 0.66) {
+            // Mid frequencies - use secondary color
+            barColor = applyAlphaToColor(colors.secondary, 0.8 + amplitude * 0.2);
+        } else {
+            // High frequencies - use accent color
+            barColor = applyAlphaToColor(colors.accent, 0.8 + amplitude * 0.2);
+        }
+        
+        // Add digital color variation with current palette influence
+        const hueShift = (i / numBars) * 80 - 40; // -40 to +40 degrees
+        const saturation = 85 + amplitude * 15; // 85% to 100%
+        const lightness = 55 + amplitude * 25; // 55% to 80%
+        
+        // Create dynamic digital color
+        const dynamicColor = `hsla(${200 + hueShift + (frame * 0.3) % 360}, ${saturation}%, ${lightness}%, ${0.9 + amplitude * 0.1})`;
+        
+        ctx.fillStyle = dynamicColor;
+        
+        // Draw rounded rectangle instead of regular rectangle
+        const barX = x + glitchOffset;
+        const barY = y;
+        const radius = Math.min(barWidth * 0.25, barHeight * 0.15); // Dynamic corner radius
+        
+        // Create rounded rectangle path
+        ctx.beginPath();
+        ctx.moveTo(barX + radius, barY);
+        ctx.lineTo(barX + barWidth - 1 - radius, barY);
+        ctx.quadraticCurveTo(barX + barWidth - 1, barY, barX + barWidth - 1, barY + radius);
+        ctx.lineTo(barX + barWidth - 1, barY + barHeight - radius);
+        ctx.quadraticCurveTo(barX + barWidth - 1, barY + barHeight, barX + barWidth - 1 - radius, barY + barHeight);
+        ctx.lineTo(barX + radius, barY + barHeight);
+        ctx.quadraticCurveTo(barX, barY + barHeight, barX, barY + barHeight - radius);
+        ctx.lineTo(barX, barY + radius);
+        ctx.quadraticCurveTo(barX, barY, barX + radius, barY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add digital glow effect
+        ctx.shadowColor = dynamicColor;
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow
+        
+        // Draw glitch segments with rounded effect
+        if (glitchHeight > 0) {
+            ctx.fillStyle = '#FF00FF';
+            const glitchY = barY + glitchHeight;
+            
+            // Draw rounded glitch line
+            ctx.beginPath();
+            ctx.moveTo(barX + radius, glitchY);
+            ctx.lineTo(barX + barWidth - 1 - radius, glitchY);
+            ctx.quadraticCurveTo(barX + barWidth - 1, glitchY, barX + barWidth - 1, glitchY + radius);
+            ctx.lineTo(barX + barWidth - 1, glitchY + 2 - radius);
+            ctx.quadraticCurveTo(barX + barWidth - 1, glitchY + 2, barX + barWidth - 1 - radius, glitchY + 2);
+            ctx.lineTo(barX + radius, glitchY + 2);
+            ctx.quadraticCurveTo(barX, glitchY + 2, barX, glitchY + 2 - radius);
+            ctx.lineTo(barX, glitchY + radius);
+            ctx.quadraticCurveTo(barX, glitchY, barX + radius, glitchY);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Draw digital scan lines with rounded effect
+        if (i % 4 === 0) {
+            ctx.strokeStyle = applyAlphaToColor('#00FFFF', 0.4);
+            ctx.lineWidth = 1;
+            
+            // Create rounded scan line
+            const scanRadius = Math.min(barWidth * 0.2, 2);
+            ctx.beginPath();
+            ctx.moveTo(barX + scanRadius, y);
+            ctx.lineTo(barX + barWidth - 1 - scanRadius, y);
+            ctx.quadraticCurveTo(barX + barWidth - 1, y, barX + barWidth - 1, y + scanRadius);
+            ctx.lineTo(barX + barWidth - 1, y + barHeight - scanRadius);
+            ctx.quadraticCurveTo(barX + barWidth - 1, y + barHeight, barX + barWidth - 1 - scanRadius, y + barHeight);
+            ctx.lineTo(barX + scanRadius, y + barHeight);
+            ctx.quadraticCurveTo(barX, y + barHeight, barX, y + barHeight - scanRadius);
+            ctx.lineTo(barX, y + scanRadius);
+            ctx.quadraticCurveTo(barX, y, barX + scanRadius, y);
+            ctx.closePath();
+        ctx.stroke();
+        }
+    }
+    
+    // Draw central digital core
+    const coreRadius = 30 + normalizedBass * 60 * sensitivity;
+    const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+    coreGradient.addColorStop(0, '#FFFFFF');
+    coreGradient.addColorStop(0.3, colors.accent);
+    coreGradient.addColorStop(0.7, colors.primary);
+    coreGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = coreGradient;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw rotating digital rings
+    const numRings = 3;
+    for (let i = 0; i < numRings; i++) {
+        const ringRadius = coreRadius + 20 + i * 15;
+        const rotationSpeed = frame * (0.02 + i * 0.01);
+        const ringOpacity = 0.4 - i * 0.1;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, ringOpacity);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        
+        // Create segmented ring effect
+        const segments = 8;
+        for (let j = 0; j < segments; j++) {
+            const startAngle = (j / segments) * Math.PI * 2 + rotationSpeed;
+            const endAngle = ((j + 1) / segments) * Math.PI * 2 + rotationSpeed;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, ringRadius, startAngle, endAngle);
+            ctx.stroke();
+        }
+    }
+    ctx.setLineDash([]);
+    
+    ctx.restore();
 };
 
 const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
@@ -1086,59 +1913,116 @@ const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
     const centerY = height / 2;
 
     // Define the boundary for particles (circular field)
-    const fieldRadius = Math.min(width, height) * 0.4;
+    const fieldRadius = Math.min(width, height) * 0.35;
     
-    // Draw field boundary (subtle)
-    ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.3);
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    // Draw enhanced field boundary with pulsing effect
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const normalizedBass = bass / 255;
+    const pulseRadius = fieldRadius + normalizedBass * 20 * sensitivity;
+    
+    // Draw multiple boundary rings for enhanced effect
+    for (let i = 0; i < 3; i++) {
+        const ringRadius = pulseRadius - i * 8;
+        const alpha = 0.4 - i * 0.1;
+        const lineWidth = 3 - i * 0.5;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, alpha);
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash([8, 8]);
     ctx.beginPath();
-    ctx.arc(centerX, centerY, fieldRadius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
     ctx.stroke();
+    }
     ctx.setLineDash([]);
+
+    // Draw energy field lines radiating from center
+    const numLines = 12;
+    for (let i = 0; i < numLines; i++) {
+        const angle = (i / numLines) * Math.PI * 2 + frame * 0.01;
+        const lineLength = fieldRadius * 0.3 + normalizedBass * 50 * sensitivity;
+        
+        ctx.strokeStyle = applyAlphaToColor(colors.primary, 0.3);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(
+            centerX + Math.cos(angle) * lineLength,
+            centerY + Math.sin(angle) * lineLength
+        );
+        ctx.stroke();
+    }
 
     // The particle updates happen in the main loop, so we just draw here.
     if (particles) {
         particles.forEach(p => {
-            // Constrain particles to the field boundary
+            // Enhanced particle physics with audio-reactive speed
             const distanceFromCenter = Math.sqrt((p.x - centerX) ** 2 + (p.y - centerY) ** 2);
+            
+            // Audio-reactive particle speed
+            const speedMultiplier = 1 + normalizedBass * 3 * sensitivity;
+            p.vx *= speedMultiplier;
+            p.vy *= speedMultiplier;
+            
             if (distanceFromCenter > fieldRadius) {
-                // Push particle back to boundary
+                // Push particle back to boundary with enhanced bounce
                 const angle = Math.atan2(p.y - centerY, p.x - centerX);
                 p.x = centerX + Math.cos(angle) * fieldRadius;
                 p.y = centerY + Math.sin(angle) * fieldRadius;
                 
-                // Reverse velocity to bounce back
+                // Enhanced bounce with energy loss
                 const normalX = Math.cos(angle);
                 const normalY = Math.sin(angle);
                 const dotProduct = p.vx * normalX + p.vy * normalY;
-                p.vx -= 2 * dotProduct * normalX;
-                p.vy -= 2 * dotProduct * normalY;
+                p.vx = (p.vx - 2 * dotProduct * normalX) * 0.8;
+                p.vy = (p.vy - 2 * dotProduct * normalY) * 0.8;
             }
             
+            // Draw enhanced particles with glow effect
+            ctx.save();
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 15;
+            
+            // Draw particle core
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fillStyle = applyAlphaToColor(p.color, p.opacity * 0.8);
+            ctx.fillStyle = applyAlphaToColor(p.color, p.opacity * 0.9);
             ctx.fill();
+            
+            // Draw particle glow
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = applyAlphaToColor(p.color, p.opacity * 0.3);
+            ctx.fill();
+            
+            ctx.restore();
         });
     }
 
-    // Draw central core
-    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
-    const normalizedBass = bass / 255;
-    const coreRadius = width * 0.02 + normalizedBass * 40 * sensitivity;
-
-    const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
-    coreGradient.addColorStop(0, applyAlphaToColor(colors.accent, 0.9));
-    coreGradient.addColorStop(0.5, applyAlphaToColor(colors.primary, 0.7));
-    coreGradient.addColorStop(1, 'transparent');
+    // Draw enhanced central core with multiple layers
+    const coreRadius = width * 0.02 + normalizedBass * 50 * sensitivity;
     
-    ctx.fillStyle = coreGradient;
+    // Inner core
+    const innerCoreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+    innerCoreGradient.addColorStop(0, '#FFFFFF');
+    innerCoreGradient.addColorStop(0.3, applyAlphaToColor(colors.accent, 0.9));
+    innerCoreGradient.addColorStop(0.7, applyAlphaToColor(colors.primary, 0.7));
+    innerCoreGradient.addColorStop(1, 'transparent');
+    
+    ctx.fillStyle = innerCoreGradient;
     ctx.shadowColor = colors.primary;
-    ctx.shadowBlur = isBeat ? 40 : 20;
+    ctx.shadowBlur = isBeat ? 50 : 25;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, coreRadius * 1.5, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, coreRadius * 1.2, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Outer energy ring
+    const outerRingRadius = coreRadius * 2 + normalizedBass * 30 * sensitivity;
+    ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.6);
+    ctx.lineWidth = 4;
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRingRadius, 0, Math.PI * 2);
+    ctx.stroke();
     
     ctx.restore();
 };

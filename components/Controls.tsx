@@ -67,11 +67,25 @@ interface ControlsProps {
     onEffectOffsetYChange: (value: number) => void;
 }
 
-const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean }>> = ({ children, onClick, className = '', disabled=false }) => (
-    <button onClick={onClick} disabled={disabled} className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}>
-        {children}
-    </button>
-);
+const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean; variant?: 'primary' | 'secondary' | 'danger' }>> = ({ children, onClick, className = '', disabled=false, variant = 'primary' }) => {
+    const baseClasses = 'px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800';
+    
+    const variantClasses = {
+        primary: 'bg-cyan-500 hover:bg-cyan-600 text-white shadow-lg hover:shadow-xl focus:ring-cyan-400',
+        secondary: 'bg-gray-600 hover:bg-gray-700 text-white shadow-md hover:shadow-lg focus:ring-gray-400',
+        danger: 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl focus:ring-red-400'
+    };
+    
+    return (
+        <button 
+            onClick={onClick} 
+            disabled={disabled} 
+            className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+        >
+            {children}
+        </button>
+    );
+};
 
 const SwatchButton: React.FC<{
     color: string;
@@ -81,12 +95,71 @@ const SwatchButton: React.FC<{
     <button
         type="button"
         onClick={() => onClick(color)}
-        className={`w-6 h-6 rounded-full border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-400 ${
-            isActive ? 'border-white scale-110' : 'border-gray-700'
+        className={`w-8 h-8 rounded-full border-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-400 hover:scale-110 ${
+            isActive ? 'border-white scale-110 shadow-lg' : 'border-gray-600 hover:border-gray-400'
         }`}
         style={{ backgroundColor: color }}
         aria-label={`Set text color to ${color}`}
     />
+);
+
+const ControlSection: React.FC<React.PropsWithChildren<{ title: string; className?: string }>> = ({ children, title, className = '' }) => (
+    <div className={`bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50 ${className}`}>
+        <h3 className="text-lg font-semibold text-gray-200 mb-4 flex items-center">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full mr-3"></div>
+            {title}
+        </h3>
+        {children}
+    </div>
+);
+
+const SliderControl: React.FC<{
+    label: string;
+    value: number;
+    onChange: (value: number) => void;
+    min: number;
+    max: number;
+    step: number;
+    className?: string;
+}> = ({ label, value, onChange, min, max, step, className = '' }) => (
+    <div className={`space-y-2 ${className}`}>
+        <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-gray-300">{label}</label>
+            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{value.toFixed(2)}</span>
+        </div>
+        <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+        />
+    </div>
+);
+
+const SelectControl: React.FC<{
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    options: { value: string; label: string }[];
+    className?: string;
+}> = ({ label, value, onChange, options, className = '' }) => (
+    <div className={`space-y-2 ${className}`}>
+        <label className="text-sm font-medium text-gray-300">{label}</label>
+        <select
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+        >
+            {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                    {option.label}
+                </option>
+            ))}
+        </select>
+    </div>
 );
 
 // Convert custom time format [00:00.00] to SRT format
@@ -225,368 +298,185 @@ const Controls: React.FC<ControlsProps> = ({
     };
 
     return (
-        <div className="w-full max-w-7xl p-4 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg shadow-lg flex flex-col gap-4">
+        <div className="w-full max-w-7xl p-6 bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-2xl">
             {/* --- Main Player Controls --- */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                 <div className="flex items-center space-x-2">
-                    <Button onClick={onPlayPause} className="bg-cyan-600 hover:bg-cyan-500 text-white w-12 h-12 text-2xl !p-0">
-                        <Icon path={isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-6 h-6" />
-                    </Button>
-                    <Button 
-                        onClick={onRecordToggle} 
-                        className={`${isRecording ? 'bg-red-500 hover:bg-red-400 animate-pulse' : 'bg-gray-600 hover:bg-gray-500'}`}
-                        disabled={isLoading || isGeneratingSubtitles}
-                    >
-                        {isLoading ? 
-                            <>
-                                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                                <span>處理中...</span>
-                            </>
-                            : <>
-                                <Icon path={isRecording ? ICON_PATHS.RECORD_STOP : ICON_PATHS.RECORD_START} className="w-5 h-5" />
-                                <span>{isRecording ? '停止' : '錄製'}</span>
-                            </>
-                        }
-                    </Button>
-                </div>
-                <div className="flex items-center space-x-3">
-                    {audioFile && (
-                         <Button onClick={onClearAudio} className="bg-orange-600 hover:bg-orange-500 text-white">
-                           <Icon path={ICON_PATHS.CHANGE_MUSIC} className="w-5 h-5"/>
-                           <span>更換音樂</span>
+            <ControlSection title="播放控制" className="mb-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center space-x-3">
+                        <Button onClick={onPlayPause} variant="primary" className="w-14 h-14 text-2xl !p-0 shadow-xl">
+                            <Icon path={isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-7 h-7" />
                         </Button>
-                    )}
-                    {audioFile && (
-                        <a href={URL.createObjectURL(audioFile)} download={audioFile.name} className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-500 text-white">
-                            <Icon path={ICON_PATHS.DOWNLOAD} />
-                            <span>音樂</span>
-                        </a>
-                    )}
-                    {videoUrl && (
-                        <a href={videoUrl} download={`${audioFile?.name.replace(/\.[^/.]+$/, "") || 'visualization'}.${videoExtension}`} className="px-4 py-2 rounded-md font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white">
-                            <Icon path={ICON_PATHS.DOWNLOAD} />
-                            <span>下載 {videoExtension.toUpperCase()}</span>
-                        </a>
-                    )}
-                </div>
-            </div>
-
-            <hr className="border-gray-700"/>
-            
-            {/* --- Customization Controls --- */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-6">
-                
-                {/* Visual Style */}
-                <div className="flex flex-col">
-                    <label htmlFor="vis-select" className="text-sm text-gray-400 mb-1">視覺風格</label>
-                    <select 
-                        id="vis-select"
-                        value={visualizationType} 
-                        onChange={(e) => onVisualizationChange(e.target.value as VisualizationType)}
-                        className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isRecording}
-                    >
-                        {Object.values(VisualizationType).map(v => (
-                            <option key={v} value={v}>{v}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Color Theme */}
-                <div className="flex flex-col">
-                    <label htmlFor="palette-select" className="text-sm text-gray-400 mb-1">顏色主題</label>
-                    <div className="relative">
-                        <select
-                            id="palette-select"
-                            value={colorPalette}
-                            onChange={(e) => onColorPaletteChange(e.target.value as ColorPaletteType)}
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={isRecording}
+                        <Button 
+                            onClick={onRecordToggle} 
+                            variant={isRecording ? 'danger' : 'secondary'}
+                            className={`${isRecording ? 'animate-pulse shadow-red-500/50' : ''}`}
+                            disabled={isLoading || isGeneratingSubtitles}
                         >
-                            {Object.values(ColorPaletteType).map(v => (
-                                <option key={v} value={v}>{v}</option>
-                            ))}
-                        </select>
+                            {isLoading ? 
+                                <>
+                                    <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                                    <span>處理中...</span>
+                                </>
+                                : <>
+                                    <Icon path={isRecording ? ICON_PATHS.RECORD_STOP : ICON_PATHS.RECORD_START} className="w-5 h-5" />
+                                    <span>{isRecording ? '停止錄製' : '開始錄製'}</span>
+                                </>
+                            }
+                        </Button>
                     </div>
-                </div>
-
-                {/* Resolution */}
-                <div className="flex flex-col">
-                    <label htmlFor="res-select" className="text-sm text-gray-400 mb-1">解析度</label>
-                    <select
-                        id="res-select"
-                        value={resolution}
-                        onChange={(e) => onResolutionChange(e.target.value as Resolution)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isRecording}
-                    >
-                        {Object.values(Resolution).map(v => (
-                             <option key={v} value={v}>{v}</option>
-                        ))}
-                    </select>
-                </div>
-                
-                {/* Background Color */}
-                <div className="flex flex-col">
-                    <div className="flex items-center gap-1 mb-1 relative group">
-                        <label htmlFor="bg-select" className="text-sm text-gray-400">背景顏色</label>
-                        <div className="text-gray-500 cursor-help">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" /></svg>
-                        </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            '透明' 背景會匯出 .webm 檔案，某些編輯器可能需要轉檔。其他背景則會匯出更相容的 .mp4 檔案。
-                        </div>
-                    </div>
-                    <select
-                        id="bg-select"
-                        value={backgroundColor}
-                        onChange={(e) => onBackgroundColorChange(e.target.value as BackgroundColorType)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isRecording}
-                    >
-                        {Object.values(BackgroundColorType).map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                </div>
-
-                {/* Background Image */}
-                <div className="flex flex-col">
-                    <label className="text-sm text-gray-400 mb-1">背景圖片</label>
-                    <div className="flex items-center gap-2">
-                        <label className="flex-grow text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-md font-semibold transition-all duration-200 cursor-pointer">
-                            上傳
-                            <input id="bg-image-upload" type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
-                        </label>
-                        {backgroundImage && (
-                            <button onClick={onClearBackgroundImage} className="bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-md font-semibold transition-colors">
-                                清除
-                            </button>
+                    <div className="flex items-center space-x-3">
+                        {audioFile && (
+                            <Button onClick={onClearAudio} variant="secondary">
+                                <Icon path={ICON_PATHS.CHANGE_MUSIC} className="w-5 h-5"/>
+                                <span>更換音樂</span>
+                            </Button>
+                        )}
+                        {audioFile && (
+                            <a href={URL.createObjectURL(audioFile)} download={audioFile.name} className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-xl">
+                                <Icon path={ICON_PATHS.DOWNLOAD} />
+                                <span>下載音樂</span>
+                            </a>
+                        )}
+                        {videoUrl && (
+                            <a href={videoUrl} download={`${audioFile?.name.replace(/\.[^/.]+$/, "") || 'visualization'}.${videoExtension}`} className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-500 text-white shadow-lg hover:shadow-xl">
+                                <Icon path={ICON_PATHS.DOWNLOAD} />
+                                <span>下載 {videoExtension.toUpperCase()}</span>
+                            </a>
                         )}
                     </div>
                 </div>
-
-                {/* Custom Text */}
-                <div className="flex flex-col">
-                    <label htmlFor="text-input" className="text-sm text-gray-400 mb-1">自訂文字</label>
-                    <div className="relative">
+            </ControlSection>
+            
+            {/* --- Visual Style Controls --- */}
+            <ControlSection title="視覺風格設定" className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <SelectControl
+                        label="視覺風格"
+                        value={visualizationType}
+                        onChange={(value) => onVisualizationChange(value as VisualizationType)}
+                        options={Object.values(VisualizationType).map(v => ({ value: v, label: v }))}
+                    />
+                    
+                    <SelectControl
+                        label="顏色主題"
+                        value={colorPalette}
+                        onChange={(value) => onColorPaletteChange(value as ColorPaletteType)}
+                        options={Object.values(ColorPaletteType).map(v => ({ value: v, label: v }))}
+                    />
+                    
+                    <SelectControl
+                        label="解析度"
+                        value={resolution}
+                        onChange={(value) => onResolutionChange(value as Resolution)}
+                        options={Object.values(Resolution).map(v => ({ value: v, label: v }))}
+                    />
+                    
+                    <SelectControl
+                        label="背景顏色"
+                        value={backgroundColor}
+                        onChange={(value) => onBackgroundColorChange(value as BackgroundColorType)}
+                        options={Object.values(BackgroundColorType).map(v => ({ value: v, label: v }))}
+                    />
+                </div>
+            </ControlSection>
+            
+            {/* --- Audio Response Controls --- */}
+            <ControlSection title="音頻響應設定" className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <SliderControl
+                        label="靈敏度"
+                        value={sensitivity}
+                        onChange={onSensitivityChange}
+                        min={0.1}
+                        max={3.0}
+                        step={0.1}
+                    />
+                    
+                    <SliderControl
+                        label="平滑度"
+                        value={smoothing}
+                        onChange={onSmoothingChange}
+                        min={0}
+                        max={10}
+                        step={1}
+                    />
+                    
+                    <SliderControl
+                        label="均衡器"
+                        value={equalization}
+                        onChange={onEqualizationChange}
+                        min={0}
+                        max={1}
+                        step={0.05}
+                    />
+                </div>
+            </ControlSection>
+            
+            {/* --- Custom Text Controls --- */}
+            <ControlSection title="自訂文字設定" className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">自訂文字</label>
                         <input
-                            id="text-input"
                             type="text"
                             value={customText}
                             onChange={(e) => onTextChange(e.target.value)}
-                            placeholder="您的文字"
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                            placeholder="輸入自訂文字..."
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
                         />
                     </div>
-                </div>
-
-                {/* Font Family */}
-                <div className="flex flex-col">
-                    <label htmlFor="font-select" className="text-sm text-gray-400 mb-1">字體</label>
-                    <select
-                        id="font-select"
+                    
+                    <SelectControl
+                        label="字體"
                         value={fontFamily}
-                        onChange={(e) => onFontFamilyChange(e.target.value as FontType)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    >
-                        {Object.values(FontType).map(v => <option key={v} value={v}>{FONT_MAP[v]}</option>)}
-                    </select>
-                </div>
-
-                {/* Text Color */}
-                 <div className="flex flex-col">
-                    <label className="text-sm text-gray-400 mb-1">文字顏色</label>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="text-color-input"
-                            type="color"
-                            value={textColor}
-                            onChange={(e) => onTextColorChange(e.target.value)}
-                            className="bg-gray-700 border border-gray-600 rounded-md p-1 h-10 w-12 cursor-pointer"
-                            aria-label="Custom text color"
-                        />
-                        <div className="flex items-center gap-1.5 p-1 rounded-md bg-gray-900/50 flex-wrap">
+                        onChange={(value) => onFontFamilyChange(value as FontType)}
+                        options={Object.entries(FONT_MAP).map(([value, label]) => ({ value, label }))}
+                    />
+                    
+                    <SelectControl
+                        label="視覺效果"
+                        value={graphicEffect}
+                        onChange={(value) => onGraphicEffectChange(value as GraphicEffectType)}
+                        options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
+                    />
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">文字顏色</label>
+                        <div className="flex space-x-2">
                             {PRESET_COLORS.map(color => (
                                 <SwatchButton
                                     key={color}
                                     color={color}
                                     onClick={onTextColorChange}
-                                    isActive={textColor.toLowerCase() === color.toLowerCase()}
+                                    isActive={textColor === color}
                                 />
                             ))}
                         </div>
                     </div>
                 </div>
-
-                {/* Text Effect */}
-                 <div className="flex flex-col">
-                    <label htmlFor="effect-select" className="text-sm text-gray-400 mb-1">文字特效</label>
-                    <select
-                        id="effect-select"
-                        value={graphicEffect}
-                        onChange={(e) => onGraphicEffectChange(e.target.value as GraphicEffectType)}
-                        className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:opacity-50"
-                        disabled={isRecording}
-                    >
-                        {Object.values(GraphicEffectType).map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                </div>
-
-                 {/* Watermark Position */}
-                <div className="flex flex-col">
-                    <label htmlFor="watermark-pos-select" className="text-sm text-gray-400 mb-1">浮水印位置</label>
-                    <div className="relative">
-                        <select
-                            id="watermark-pos-select"
-                            value={watermarkPosition}
-                            onChange={(e) => onWatermarkPositionChange(e.target.value as WatermarkPosition)}
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                        >
-                            {Object.values(WatermarkPosition).map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
-                    </div>
-                </div>
-                 
-                {/* Waveform Stroke */}
-                <div className="flex flex-col">
-                    <div className="flex items-center gap-1 mb-1 relative group">
-                        <label htmlFor="waveform-stroke-toggle" className="text-sm text-gray-400">聲波描邊</label>
-                         <div className="text-gray-500 cursor-help">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" /></svg>
-                        </div>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            啟用後，會在視覺化波形周圍增加深色外框，以提高在明亮背景下的可見度。
-                        </div>
-                    </div>
-                     <button
-                        id="waveform-stroke-toggle"
-                        onClick={() => onWaveformStrokeChange(!waveformStroke)}
-                        disabled={isRecording}
-                        type="button"
-                        className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed ${waveformStroke ? 'bg-cyan-600' : 'bg-gray-600'}`}
-                        aria-pressed={waveformStroke}
-                    >
-                        <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${waveformStroke ? 'translate-x-6' : 'translate-x-1'}`} />
-                    </button>
-                </div>
-
-                {/* Sensitivity */}
-                <div className="flex flex-col">
-                    <label htmlFor="sensitivity-slider" className="text-sm text-gray-400 mb-1">靈敏度 ({sensitivity.toFixed(1)})</label>
-                    <input
-                        id="sensitivity-slider"
-                        type="range"
-                        min="0.1"
-                        max="2.5"
-                        step="0.1"
-                        value={sensitivity}
-                        onChange={(e) => onSensitivityChange(parseFloat(e.target.value))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Visualization sensitivity"
-                    />
-                </div>
-                {/* Balance */}
-                 <div className="flex flex-col">
-                    <label htmlFor="balance-slider" className="text-sm text-gray-400 mb-1">平衡 ({equalization.toFixed(2)})</label>
-                    <input
-                        id="balance-slider"
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={equalization}
-                        onChange={(e) => onEqualizationChange(parseFloat(e.target.value))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Visualization frequency balance"
-                    />
-                </div>
-                {/* Smoothing */}
-                <div className="flex flex-col">
-                    <label htmlFor="smoothing-slider" className="text-sm text-gray-400 mb-1">平滑度 ({smoothing})</label>
-                    <input
-                        id="smoothing-slider"
-                        type="range"
-                        min="0"
-                        max="10"
-                        step="1"
-                        value={smoothing}
-                        onChange={(e) => onSmoothingChange(parseInt(e.target.value, 10))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Visualization smoothing"
-                    />
-                </div>
-
-                {/* --- Effect Transform Controls --- */}
-                <div className="flex flex-col">
-                    <label htmlFor="scale-slider" className="text-sm text-gray-400 mb-1">特效大小 ({effectScale.toFixed(2)})</label>
-                    <input
-                        id="scale-slider"
-                        type="range"
-                        min="0.1"
-                        max="2.0"
-                        step="0.05"
-                        value={effectScale}
-                        onChange={(e) => onEffectScaleChange(parseFloat(e.target.value))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Effect scale"
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <label htmlFor="offsetx-slider" className="text-sm text-gray-400 mb-1">水平位移 ({effectOffsetX}px)</label>
-                    <input
-                        id="offsetx-slider"
-                        type="range"
-                        min="-500"
-                        max="500"
-                        step="10"
-                        value={effectOffsetX}
-                        onChange={(e) => onEffectOffsetXChange(parseInt(e.target.value, 10))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Effect X offset"
-                    />
-                </div>
-                <div className="flex flex-col">
-                    <label htmlFor="offsety-slider" className="text-sm text-gray-400 mb-1">垂直位移 ({effectOffsetY}px)</label>
-                    <input
-                        id="offsety-slider"
-                        type="range"
-                        min="-500"
-                        max="500"
-                        step="10"
-                        value={effectOffsetY}
-                        onChange={(e) => onEffectOffsetYChange(parseInt(e.target.value, 10))}
-                        className="w-full cursor-pointer accent-cyan-500"
-                        aria-label="Effect Y offset"
-                    />
-                </div>
-            </div>
+            </ControlSection>
             
-            <hr className="border-gray-700"/>
-
             {/* --- Subtitle Section --- */}
-            <details className="w-full bg-gray-900/50 p-4 rounded-lg border border-gray-700" open>
-                <summary className="cursor-pointer font-semibold text-lg flex items-center gap-2">
-                    <Icon path={ICON_PATHS.SUBTITLES} className="w-6 h-6 text-cyan-400" />
-                    字幕設定 - 已更新版本
-                </summary>
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="flex flex-col col-span-full">
-                        <label htmlFor="subtitle-text" className="text-sm text-gray-400 mb-1">字幕文字 (使用格式 [00:00.00] 或由 AI 生成)</label>
+            <ControlSection title="字幕設定" className="mb-6">
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">字幕文字 (使用格式 [00:00.00] 或由 AI 生成)</label>
                         <textarea 
-                            id="subtitle-text"
                             value={subtitlesRawText}
                             onChange={(e) => onSubtitlesRawTextChange(e.target.value)}
                             rows={5}
-                            className="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none w-full font-mono text-sm"
+                            className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent font-mono text-sm"
                             placeholder="使用格式 [00:00.00] 歌詞文字，或點擊「AI 產生字幕」按鈕自動產生歌詞..."
                         />
                     </div>
                     
-                    <div className="flex flex-col justify-end gap-2">
-                       <div className="relative group">
-                           <Button 
+                    <div className="flex items-center justify-between">
+                        <div className="relative group">
+                            <Button 
                                 onClick={onGenerateSubtitles}
                                 disabled={isGeneratingSubtitles || !audioFile}
-                                className="bg-purple-600 hover:bg-purple-500 text-white w-full"
+                                variant="secondary"
+                                className="bg-purple-600 hover:bg-purple-500"
                             >
                                 {isGeneratingSubtitles ? 
                                     <>
@@ -599,102 +489,156 @@ const Controls: React.FC<ControlsProps> = ({
                                       </>
                                 }
                             </Button>
-                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                                 直接分析音訊檔並使用 AI 產生字幕。過程可能需要一些時間，請耐心等候。結果的準確度取決於音訊的清晰度。
                             </div>
                         </div>
                         
-                        <Button 
-                            onClick={() => {
-                                if (subtitlesRawText) {
-                                    const srtContent = convertToSRT(subtitlesRawText);
-                                    const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
-                                    const url = URL.createObjectURL(blob);
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = 'subtitles.srt';
-                                    document.body.appendChild(a);
-                                    a.click();
-                                    document.body.removeChild(a);
-                                    URL.revokeObjectURL(url);
-                                }
-                            }}
-                            disabled={!subtitlesRawText}
-                            className="bg-green-600 hover:bg-green-500 text-white w-full"
-                        >
-                            <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
-                            <span>下載 SRT</span>
-                        </Button>
-                    </div>
-                    
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-400 mb-1">顯示字幕</label>
-                         <button
-                            onClick={() => onShowSubtitlesChange(!showSubtitles)}
-                            type="button"
-                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${showSubtitles ? 'bg-cyan-600' : 'bg-gray-600'}`}
-                            aria-pressed={showSubtitles}
-                        >
-                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${showSubtitles ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
-                    <div className="flex flex-col col-span-full md:col-span-1">
-                        <label htmlFor="subtitle-size-slider" className="text-sm text-gray-400 mb-1">字幕大小 ({subtitleFontSize.toFixed(1)}vw)</label>
-                        <input
-                            id="subtitle-size-slider"
-                            type="range" min="1" max="10" step="0.1"
-                            value={subtitleFontSize}
-                            onChange={(e) => onSubtitleFontSizeChange(parseFloat(e.target.value))}
-                            className="w-full cursor-pointer accent-cyan-500"
-                            aria-label="Subtitle font size"
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-400 mb-1">字幕字體</label>
-                        <select
-                            value={subtitleFontFamily}
-                            onChange={(e) => onSubtitleFontFamilyChange(e.target.value as FontType)}
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                        >
-                            {Object.values(FontType).map(v => <option key={v} value={v}>{FONT_MAP[v]}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-400 mb-1">字幕顏色</label>
-                        <div className="flex items-center gap-2">
-                            <input type="color" value={subtitleColor} onChange={(e) => onSubtitleColorChange(e.target.value)} className="bg-gray-700 border border-gray-600 rounded-md p-1 h-10 w-12 cursor-pointer" />
-                            <div className="flex items-center gap-1.5 p-1 rounded-md bg-gray-900/50 flex-wrap">
-                                {PRESET_COLORS.map(color => <SwatchButton key={color} color={color} onClick={onSubtitleColorChange} isActive={subtitleColor.toLowerCase() === color.toLowerCase()} />)}
+                        <div className="flex items-center space-x-4">
+                            {/* Download Subtitles Button */}
+                            {subtitlesRawText.trim() && (
+                                <Button
+                                    onClick={() => {
+                                        const blob = new Blob([subtitlesRawText], { type: 'text/plain;charset=utf-8' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = 'subtitles.txt';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }}
+                                    variant="secondary"
+                                    className="bg-green-600 hover:bg-green-500"
+                                >
+                                    <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
+                                    <span>下載字幕</span>
+                                </Button>
+                            )}
+                            
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="show-subtitles"
+                                    checked={showSubtitles}
+                                    onChange={(e) => onShowSubtitlesChange(e.target.checked)}
+                                    className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                                />
+                                <label htmlFor="show-subtitles" className="text-sm text-gray-300">顯示字幕</label>
                             </div>
                         </div>
                     </div>
                     
-                     <div className="flex flex-col">
-                        <label className="text-sm text-gray-400 mb-1">字幕特效</label>
-                        <select
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <SliderControl
+                            label="字幕字體大小"
+                            value={subtitleFontSize}
+                            onChange={onSubtitleFontSizeChange}
+                            min={2}
+                            max={8}
+                            step={0.5}
+                        />
+                        
+                        <SelectControl
+                            label="字幕字體"
+                            value={subtitleFontFamily}
+                            onChange={(value) => onSubtitleFontFamilyChange(value as FontType)}
+                            options={Object.entries(FONT_MAP).map(([value, label]) => ({ value, label }))}
+                        />
+                        
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">字幕顏色</label>
+                            <div className="flex space-x-2">
+                                {PRESET_COLORS.map(color => (
+                                    <SwatchButton
+                                        key={color}
+                                        color={color}
+                                        onClick={onSubtitleColorChange}
+                                        isActive={subtitleColor === color}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <SelectControl
+                            label="字幕效果"
                             value={subtitleEffect}
-                            onChange={(e) => onSubtitleEffectChange(e.target.value as GraphicEffectType)}
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                        >
-                            {Object.values(GraphicEffectType).map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label className="text-sm text-gray-400 mb-1">字幕背景</label>
-                        <select
-                            value={subtitleBgStyle}
-                            onChange={(e) => onSubtitleBgStyleChange(e.target.value as SubtitleBgStyle)}
-                            className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                        >
-                            {Object.values(SubtitleBgStyle).map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
+                            onChange={(value) => onSubtitleEffectChange(value as GraphicEffectType)}
+                            options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
+                        />
                     </div>
                 </div>
-            </details>
+            </ControlSection>
+            
+            {/* --- Advanced Controls --- */}
+            <ControlSection title="進階設定" className="mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <SelectControl
+                        label="浮水印位置"
+                        value={watermarkPosition}
+                        onChange={(value) => onWatermarkPositionChange(value as WatermarkPosition)}
+                        options={Object.values(WatermarkPosition).map(v => ({ value: v, label: v }))}
+                    />
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">聲波描邊</label>
+                        <button
+                            onClick={() => onWaveformStrokeChange(!waveformStroke)}
+                            disabled={isRecording}
+                            type="button"
+                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed ${waveformStroke ? 'bg-cyan-600' : 'bg-gray-600'}`}
+                            aria-pressed={waveformStroke}
+                        >
+                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${waveformStroke ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    
+                    <SliderControl
+                        label="特效大小"
+                        value={effectScale}
+                        onChange={onEffectScaleChange}
+                        min={0.1}
+                        max={2.0}
+                        step={0.05}
+                    />
+                    
+                    <SliderControl
+                        label="水平位移"
+                        value={effectOffsetX}
+                        onChange={onEffectOffsetXChange}
+                        min={-500}
+                        max={500}
+                        step={10}
+                    />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <SliderControl
+                        label="垂直位移"
+                        value={effectOffsetY}
+                        onChange={onEffectOffsetYChange}
+                        min={-500}
+                        max={500}
+                        step={10}
+                    />
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">背景圖片</label>
+                        <div className="flex items-center gap-2">
+                            <label className="flex-grow text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer">
+                                上傳圖片
+                                <input type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
+                            </label>
+                            {backgroundImage && (
+                                <Button onClick={onClearBackgroundImage} variant="danger" className="px-3 py-2">
+                                    清除
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </ControlSection>
         </div>
     );
 };

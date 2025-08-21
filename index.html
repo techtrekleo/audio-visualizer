@@ -8,6 +8,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Orbitron:wght@700&family=Lobster&family=Bungee&family=Press+Start+2P&family=Pacifico&family=Dancing+Script:wght@700&family=RocknRoll+One&family=Reggae+One&family=VT323&display=swap" rel="stylesheet">
     <style>
+      /* Base styles to ensure proper background */
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #111827;
+        color: #f3f4f6;
+        font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      #root {
+        min-height: 100vh;
+        background-color: #111827;
+      }
+      
       /* Custom scrollbar for a more modern look */
       ::-webkit-scrollbar {
         width: 8px;
@@ -56,7 +73,7 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+<link rel="stylesheet" href="./index.css">
 </head>
 <body>
     <div id="root"></div>
