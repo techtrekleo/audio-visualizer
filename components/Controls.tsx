@@ -163,29 +163,63 @@ const SelectControl: React.FC<{
     </div>
 );
 
-// Convert custom time format [00:00.00] to SRT format
-const convertToSRT = (timeText: string): string => {
-    const lines = timeText.split('\n');
-    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
+// Convert various subtitle formats to standard SRT format
+const convertToSRT = (rawText: string): string => {
+    if (!rawText.trim()) return '';
+    
+    const lines = rawText.trim().split('\n');
     const subtitles: Array<{ time: number; text: string }> = [];
     
-    lines.forEach(line => {
-        const match = line.match(timeRegex);
-        if (match) {
-            const minutes = parseInt(match[1], 10);
-            const seconds = parseInt(match[2], 10);
-            const centiseconds = parseInt(match[3], 10);
-            const time = minutes * 60 + seconds + centiseconds / 100;
-            const text = line.replace(timeRegex, '').trim();
-            if (text) {
-                subtitles.push({ time, text });
+    // First, try to parse [00:00.00] format
+    const timeRegex1 = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
+    
+    // Then, try to parse "00:00:05 - 文本" format
+    const timeRegex2 = /^(\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d{1,3}))?\s*[-–]\s*(.+)$/;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        let time: number | null = null;
+        let text: string | null = null;
+        
+        // Try [00:00.00] format first
+        const match1 = line.match(timeRegex1);
+        if (match1) {
+            const minutes = parseInt(match1[1], 10);
+            const seconds = parseInt(match1[2], 10);
+            const centiseconds = parseInt(match1[3], 10);
+            time = minutes * 60 + seconds + centiseconds / 100;
+            text = line.replace(timeRegex1, '').trim();
+        } else {
+            // Try "00:00:05 - 文本" format
+            const match2 = line.match(timeRegex2);
+            if (match2) {
+                const [, hours, minutes, seconds, milliseconds = '0', subtitleText] = match2;
+                time = parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(seconds) + parseInt(milliseconds) / 1000;
+                text = subtitleText;
             }
         }
-    });
+        
+        if (time !== null && text) {
+            subtitles.push({ time, text });
+        }
+    }
     
-    // Sort by time and generate SRT
-    subtitles.sort((a, b) => a.time - b.time);
+    // If no time information found, treat each line as a subtitle with estimated timing
+    if (subtitles.length === 0) {
+        lines.forEach((line, index) => {
+            if (line.trim()) {
+                const estimatedTime = index * 2; // 2 second intervals
+                subtitles.push({ time: estimatedTime, text: line.trim() });
+            }
+        });
+    } else {
+        // Sort by time if we have time information
+        subtitles.sort((a, b) => a.time - b.time);
+    }
     
+    // Generate SRT content
     let srtContent = '';
     subtitles.forEach((subtitle, index) => {
         const startTime = formatSRTTime(subtitle.time);
@@ -196,7 +230,7 @@ const convertToSRT = (timeText: string): string => {
         srtContent += `${subtitle.text}\n\n`;
     });
     
-    return srtContent;
+    return srtContent.trim();
 };
 
 // Format time for SRT (HH:MM:SS,mmm)
@@ -208,6 +242,8 @@ const formatSRTTime = (seconds: number): string => {
     
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
 };
+
+
 
 const Controls: React.FC<ControlsProps> = ({
     isPlaying,
@@ -499,11 +535,13 @@ const Controls: React.FC<ControlsProps> = ({
                             {subtitlesRawText.trim() && (
                                 <Button
                                     onClick={() => {
-                                        const blob = new Blob([subtitlesRawText], { type: 'text/plain;charset=utf-8' });
+                                        // 將原始字幕文本轉換為標準SRT格式
+                                        const srtContent = convertToSRT(subtitlesRawText);
+                                        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
                                         const url = URL.createObjectURL(blob);
                                         const a = document.createElement('a');
                                         a.href = url;
-                                        a.download = 'subtitles.txt';
+                                        a.download = 'subtitles.srt';
                                         document.body.appendChild(a);
                                         a.click();
                                         document.body.removeChild(a);
@@ -513,7 +551,7 @@ const Controls: React.FC<ControlsProps> = ({
                                     className="bg-green-600 hover:bg-green-500"
                                 >
                                     <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
-                                    <span>下載字幕</span>
+                                    <span>下載字幕 (SRT)</span>
                                 </Button>
                             )}
                             
