@@ -149,54 +149,7 @@ const CategorizedEffectSelector: React.FC<CategorizedEffectSelectorProps> = ({
         })}
       </div>
 
-      {/* 分類說明 */}
-      <div className="mt-6 p-4 bg-gray-700 rounded-lg">
-        <h4 className="text-lg font-semibold text-white mb-3">
-          📚 {getCategoryName(activeCategory)} 說明
-        </h4>
-        <div className="text-gray-300 text-sm leading-relaxed">
-          {activeCategory === EffectCategory.BASIC && (
-            <p>
-              基礎款特效適合初學者使用，性能需求低，視覺效果穩定可靠。
-              這些特效通常具有經典的視覺風格，適合日常使用和學習。
-            </p>
-          )}
-          {activeCategory === EffectCategory.ADVANCED && (
-            <p>
-              進階款特效在基礎款之上增加了更多特色效果，中等複雜度。
-              適合有一定經驗的用戶，在視覺衝擊力和性能之間取得平衡。
-            </p>
-          )}
-          {activeCategory === EffectCategory.EXPERIMENTAL && (
-            <p>
-              實驗款特效具有創新性和高複雜度，視覺衝擊力極強。
-              性能需求較高，適合追求極致視覺效果的用戶和高性能設備。
-            </p>
-          )}
-          {activeCategory === EffectCategory.SPECIAL && (
-            <p>
-              特殊款特效具有獨特的功能和風格，適合特定用途和場合。
-              包括教育類、美學類和復古風格等，為用戶提供多樣化選擇。
-            </p>
-          )}
-        </div>
-      </div>
 
-      {/* 快速切換按鈕 */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={() => setShowTags(!showTags)}
-          className="px-3 py-2 bg-gray-600 text-gray-300 rounded-lg text-sm hover:bg-gray-500 transition-colors"
-        >
-          {showTags ? '隱藏標籤' : '顯示標籤'} 🏷️
-        </button>
-        <button
-          onClick={() => setActiveCategory(EffectCategory.BASIC)}
-          className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-500 transition-colors"
-        >
-          快速切換到基礎款 🚀
-        </button>
-      </div>
     </div>
   );
 };

@@ -58,7 +58,7 @@ const ImageBasedVisualizer: React.FC<ImageBasedVisualizerProps> = ({
       position: relative;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      background: #000000;
       overflow: hidden;
     `;
 
@@ -147,7 +147,7 @@ const ImageBasedVisualizer: React.FC<ImageBasedVisualizerProps> = ({
       position: relative;
       width: 100%;
       height: 100%;
-      background: radial-gradient(circle at center, #000011 0%, #000000 100%);
+      background: #000000;
       overflow: hidden;
     `;
 
