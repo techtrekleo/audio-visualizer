@@ -655,55 +655,172 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     const centerY = height / 2;
     
     const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const mid = dataArray.slice(32, 128).reduce((a, b) => a + b, 0) / 96;
+    const treble = dataArray.slice(128, 256).reduce((a, b) => a + b, 0) / 128;
+    
     const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
     
     // 1. Pulsating Background Glow (moved to main render loop to be behind background image)
     
     ctx.save();
 
-    // 2. 水波涟漪效果 - Water Ripple Effect
-    const rippleCount = 3; // 涟漪层数
-    const maxRippleRadius = Math.min(width, height) * 0.4;
+    // 2. 增强水波涟漪效果 - Enhanced Water Ripple Effect
+    const rippleCount = 8; // 大幅增加涟漪层数
+    const maxRippleRadius = Math.min(width, height) * 0.6; // 增加涟漪范围
     
     for (let layer = 0; layer < rippleCount; layer++) {
-        const rippleAge = (frame + layer * 20) % 120; // 涟漪生命周期
+        const rippleAge = (frame + layer * 12) % 120; // 延长涟漪生命周期
         const rippleRadius = (rippleAge / 120) * maxRippleRadius;
-        const rippleOpacity = Math.max(0, 1 - (rippleAge / 120)) * 0.6;
+        const rippleOpacity = Math.max(0, 1 - (rippleAge / 120)) * 1.0; // 增加透明度
         
-        if (rippleOpacity > 0.05) {
+        if (rippleOpacity > 0.03) { // 降低阈值，显示更多涟漪
             // 根据音频强度调整涟漪颜色和强度
-            const audioIntensity = normalizedBass * sensitivity;
+            const audioIntensity = (normalizedBass * 0.5 + normalizedMid * 0.3 + normalizedTreble * 0.2) * sensitivity;
             const rippleColor = isBeat ? colors.accent : colors.primary;
             
+            // 大幅增强涟漪线条
             ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * audioIntensity);
-            ctx.lineWidth = Math.max(1, 3 - layer * 0.5);
-            ctx.shadowBlur = 15;
+            ctx.lineWidth = Math.max(3, 8 - layer * 0.8); // 增加线条粗细
+            ctx.shadowBlur = 30; // 增加阴影模糊
             ctx.shadowColor = rippleColor;
             
-            // 绘制涟漪圆圈
+            // 绘制主涟漪圆圈
             ctx.beginPath();
             ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
             ctx.stroke();
             
-            // 添加涟漪波动效果
-            if (layer === 0 && isBeat) {
-                const waveCount = 8;
+            // 添加双重涟漪效果
+            if (layer % 2 === 0) {
+                ctx.strokeStyle = applyAlphaToColor(colors.secondary, rippleOpacity * audioIntensity * 0.7);
+                ctx.lineWidth = Math.max(1, 4 - layer * 0.4);
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = colors.secondary;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, rippleRadius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // 增强涟漪波动效果
+            if (layer === 0 && (isBeat || normalizedBass > 0.4)) {
+                const waveCount = 16; // 增加波动数量
                 for (let wave = 0; wave < waveCount; wave++) {
                     const waveAngle = (wave / waveCount) * Math.PI * 2;
-                    const waveRadius = rippleRadius + Math.sin(frame * 0.1 + wave) * 5;
+                    const waveRadius = rippleRadius + Math.sin(frame * 0.2 + wave) * 12;
                     const waveX = centerX + Math.cos(waveAngle) * waveRadius;
                     const waveY = centerY + Math.sin(waveAngle) * waveRadius;
                     
                     ctx.beginPath();
-                    ctx.arc(waveX, waveY, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = applyAlphaToColor(rippleColor, rippleOpacity * 0.8);
+                    ctx.arc(waveX, waveY, 4, 0, Math.PI * 2); // 增加波动点大小
+                    ctx.fillStyle = applyAlphaToColor(rippleColor, rippleOpacity * 1.0);
                     ctx.fill();
                 }
             }
+            
+            // 增强涟漪扭曲效果
+            if (layer === 1 && normalizedMid > 0.2) {
+                const distortionCount = 8;
+                for (let dist = 0; dist < distortionCount; dist++) {
+                    const distAngle = (dist / distortionCount) * Math.PI * 2 + frame * 0.08;
+                    const distRadius = rippleRadius + Math.sin(frame * 0.3 + dist) * 20;
+                    const distX = centerX + Math.cos(distAngle) * distRadius;
+                    const distY = centerY + Math.sin(distAngle) * distRadius;
+                    
+                    ctx.beginPath();
+                    ctx.arc(distX, distY, 3, 0, Math.PI * 2); // 增加扭曲点大小
+                    ctx.fillStyle = applyAlphaToColor(colors.secondary, rippleOpacity * 0.8);
+                    ctx.fill();
+                }
+            }
+            
+            // 添加涟漪光晕效果
+            if (layer <= 2) {
+                ctx.shadowBlur = 40;
+                ctx.shadowColor = rippleColor;
+                ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * 0.3);
+                ctx.lineWidth = Math.max(5, 12 - layer * 2);
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+    
+    // 添加额外的脉冲涟漪
+    if (isBeat || normalizedBass > 0.6) {
+        const pulseRippleCount = 3;
+        for (let pr = 0; pr < pulseRippleCount; pr++) {
+            const pulseAge = (frame + pr * 25) % 80;
+            const pulseRadius = (pulseAge / 80) * maxRippleRadius * 0.8;
+            const pulseOpacity = Math.max(0, 1 - (pulseAge / 80)) * 0.9;
+            
+            if (pulseOpacity > 0.05) {
+                ctx.strokeStyle = applyAlphaToColor(colors.accent, pulseOpacity);
+                ctx.lineWidth = 6;
+                ctx.shadowBlur = 50;
+                ctx.shadowColor = colors.accent;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
+    
+    // 3. 音符涟漪 - Note-based Ripples
+    const noteCount = 12; // 增加音符数量
+    for (let i = 0; i < noteCount; i++) {
+        const noteAngle = (i / noteCount) * Math.PI * 2 + frame * 0.03;
+        const noteRadius = Math.min(width, height) * 0.28;
+        const noteX = centerX + Math.cos(noteAngle) * noteRadius;
+        const noteY = centerY + Math.sin(noteAngle) * noteRadius;
+        
+        const noteIntensity = dataArray[Math.floor((i / noteCount) * dataArray.length)] / 255;
+        if (noteIntensity > 0.08) { // 降低阈值，显示更多音符
+            const noteSize = noteIntensity * 30 * sensitivity; // 增加音符大小
+            const noteColor = colors.secondary;
+            
+            // 增强音符涟漪效果
+            const noteRippleCount = 3; // 每个音符产生多层涟漪
+            for (let nr = 0; nr < noteRippleCount; nr++) {
+                const noteRippleAge = (frame + i * 5 + nr * 8) % 60;
+                const noteRippleRadius = noteSize * (2 + nr * 1.5);
+                const noteRippleOpacity = noteIntensity * (0.6 - nr * 0.2);
+                
+                if (noteRippleOpacity > 0.05) {
+                    ctx.strokeStyle = applyAlphaToColor(noteColor, noteRippleOpacity);
+                    ctx.lineWidth = Math.max(2, 5 - nr * 1);
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = noteColor;
+                    
+                    ctx.beginPath();
+                    ctx.arc(noteX, noteY, noteRippleRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            
+            // 音符核心
+            ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 1.0);
+            ctx.shadowBlur = 25; // 增加阴影
+            ctx.shadowColor = noteColor;
+            
+            ctx.beginPath();
+            ctx.arc(noteX, noteY, noteSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 音符光晕
+            ctx.shadowBlur = 40;
+            ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 0.3);
+            ctx.beginPath();
+            ctx.arc(noteX, noteY, noteSize * 1.5, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
 
-    // 3. Frequency "Tendrils"
+    // 4. Frequency "Tendrils" with Ripple Integration
     const spikes = 180;
     const spikeBaseRadius = Math.min(width, height) * 0.15;
     
@@ -746,22 +863,90 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         ctx.shadowBlur = 10;
         ctx.lineWidth = 4;
         drawCurve();
+        
+        // 在尖端添加涟漪效果
+        if (spikeHeight > 50 && i % 20 === 0) {
+            const tipRippleRadius = Math.min(15, spikeHeight * 0.1);
+            const tipRippleOpacity = (spikeHeight / 150) * 0.6;
+            
+            ctx.strokeStyle = applyAlphaToColor(colors.accent, tipRippleOpacity);
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = colors.accent;
+            
+            ctx.beginPath();
+            ctx.arc(x2, y2, tipRippleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
     }
     ctx.restore(); // Restore from tendril shadow/glow effect
     
-    // 4. Central Core
-    const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 30;
+    // 5. Enhanced Central Core with Ripple Waves
+    const coreRadius = Math.min(width, height) * 0.06 + normalizedBass * 50; // 增加核心大小
     const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
     coreGradient.addColorStop(0, colors.accent);
     coreGradient.addColorStop(0.3, colors.primary);
     coreGradient.addColorStop(1, 'rgba(0, 150, 200, 0)');
     
-    ctx.shadowBlur = 40;
+    ctx.shadowBlur = 60; // 增加核心阴影
     ctx.shadowColor = colors.primary;
     ctx.fillStyle = coreGradient;
     ctx.beginPath();
     ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
     ctx.fill();
+    
+    // 增强核心涟漪波动
+    if (isBeat || normalizedBass > 0.4) { // 降低触发阈值
+        const coreRippleCount = 5; // 增加核心涟漪数量
+        for (let cr = 0; cr < coreRippleCount; cr++) {
+            const coreRippleAge = (frame + cr * 8) % 80; // 调整涟漪速度
+            const coreRippleRadius = coreRadius + (coreRippleAge / 80) * 40;
+            const coreRippleOpacity = Math.max(0, 1 - (coreRippleAge / 80)) * 0.8;
+            
+            if (coreRippleOpacity > 0.05) {
+                ctx.strokeStyle = applyAlphaToColor(colors.accent, coreRippleOpacity);
+                ctx.lineWidth = 4; // 增加线条粗细
+                ctx.shadowBlur = 30; // 增加阴影
+                ctx.shadowColor = colors.accent;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, coreRippleRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 添加核心涟漪光晕
+                if (cr <= 2) {
+                    ctx.shadowBlur = 50;
+                    ctx.strokeStyle = applyAlphaToColor(colors.accent, coreRippleOpacity * 0.4);
+                    ctx.lineWidth = 8;
+                    
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, coreRippleRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+    
+    // 添加核心脉冲效果
+    if (isBeat) {
+        const pulseCount = 4;
+        for (let p = 0; p < pulseCount; p++) {
+            const pulseAge = (frame + p * 15) % 60;
+            const pulseRadius = coreRadius + (pulseAge / 60) * 60;
+            const pulseOpacity = Math.max(0, 1 - (pulseAge / 60)) * 0.6;
+            
+            if (pulseOpacity > 0.05) {
+                ctx.strokeStyle = applyAlphaToColor(colors.accent, pulseOpacity);
+                ctx.lineWidth = 6;
+                ctx.shadowBlur = 40;
+                ctx.shadowColor = colors.accent;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+    }
     
     ctx.restore();
 };
