@@ -8,6 +8,7 @@ export enum VisualizationType {
     FUSION = 'Fusion',
     TECH_WAVE = '量子脈衝 (Quantum Pulse)',
     STELLAR_CORE = 'Stellar Core',
+    WATER_RIPPLE = '水波涟漪 (Water Ripple)',
     RADIAL_BARS = 'Radial Bars',
     PARTICLE_GALAXY = '完整星系 (Full Galaxy)',
     LIQUID_METAL = '金屬花朵 (Metal Flower)',

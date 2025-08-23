@@ -661,7 +661,49 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     
     ctx.save();
 
-    // 2. Frequency "Tendrils"
+    // 2. 水波涟漪效果 - Water Ripple Effect
+    const rippleCount = 3; // 涟漪层数
+    const maxRippleRadius = Math.min(width, height) * 0.4;
+    
+    for (let layer = 0; layer < rippleCount; layer++) {
+        const rippleAge = (frame + layer * 20) % 120; // 涟漪生命周期
+        const rippleRadius = (rippleAge / 120) * maxRippleRadius;
+        const rippleOpacity = Math.max(0, 1 - (rippleAge / 120)) * 0.6;
+        
+        if (rippleOpacity > 0.05) {
+            // 根据音频强度调整涟漪颜色和强度
+            const audioIntensity = normalizedBass * sensitivity;
+            const rippleColor = isBeat ? colors.accent : colors.primary;
+            
+            ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * audioIntensity);
+            ctx.lineWidth = Math.max(1, 3 - layer * 0.5);
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = rippleColor;
+            
+            // 绘制涟漪圆圈
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 添加涟漪波动效果
+            if (layer === 0 && isBeat) {
+                const waveCount = 8;
+                for (let wave = 0; wave < waveCount; wave++) {
+                    const waveAngle = (wave / waveCount) * Math.PI * 2;
+                    const waveRadius = rippleRadius + Math.sin(frame * 0.1 + wave) * 5;
+                    const waveX = centerX + Math.cos(waveAngle) * waveRadius;
+                    const waveY = centerY + Math.sin(waveAngle) * waveRadius;
+                    
+                    ctx.beginPath();
+                    ctx.arc(waveX, waveY, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = applyAlphaToColor(rippleColor, rippleOpacity * 0.8);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+
+    // 3. Frequency "Tendrils"
     const spikes = 180;
     const spikeBaseRadius = Math.min(width, height) * 0.15;
     
@@ -707,7 +749,7 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     }
     ctx.restore(); // Restore from tendril shadow/glow effect
     
-    // 3. Central Core
+    // 4. Central Core
     const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 30;
     const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
     coreGradient.addColorStop(0, colors.accent);
@@ -724,6 +766,101 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
+const drawWaterRipple = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // 分析音频数据
+    const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+    const mid = dataArray.slice(32, 128).reduce((a, b) => a + b, 0) / 96;
+    const treble = dataArray.slice(128, 256).reduce((a, b) => a + b, 0) / 128;
+    
+    const normalizedBass = bass / 255;
+    const normalizedMid = mid / 255;
+    const normalizedTreble = treble / 255;
+    
+    // 水波涟漪效果
+    const rippleCount = 5; // 涟漪层数
+    const maxRippleRadius = Math.min(width, height) * 0.45;
+    
+    for (let layer = 0; layer < rippleCount; layer++) {
+        const rippleAge = (frame + layer * 15) % 100; // 涟漪生命周期
+        const rippleRadius = (rippleAge / 100) * maxRippleRadius;
+        const rippleOpacity = Math.max(0, 1 - (rippleAge / 100)) * 0.7;
+        
+        if (rippleOpacity > 0.05) {
+            // 根据音频强度调整涟漪颜色和强度
+            const audioIntensity = (normalizedBass * 0.5 + normalizedMid * 0.3 + normalizedTreble * 0.2) * sensitivity;
+            const rippleColor = isBeat ? colors.accent : colors.primary;
+            
+            ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * audioIntensity);
+            ctx.lineWidth = Math.max(1, 4 - layer * 0.6);
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = rippleColor;
+            
+            // 绘制涟漪圆圈
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 添加涟漪波动效果
+            if (layer === 0 && isBeat) {
+                const waveCount = 12;
+                for (let wave = 0; wave < waveCount; wave++) {
+                    const waveAngle = (wave / waveCount) * Math.PI * 2;
+                    const waveRadius = rippleRadius + Math.sin(frame * 0.15 + wave) * 8;
+                    const waveX = centerX + Math.cos(waveAngle) * waveRadius;
+                    const waveY = centerY + Math.sin(waveAngle) * waveRadius;
+                    
+                    ctx.beginPath();
+                    ctx.arc(waveX, waveY, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = applyAlphaToColor(rippleColor, rippleOpacity * 0.9);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+    
+    // 中心水波纹
+    const centerRippleRadius = Math.min(width, height) * 0.08 + normalizedBass * 40;
+    const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, centerRippleRadius);
+    centerGradient.addColorStop(0, colors.accent);
+    centerGradient.addColorStop(0.4, colors.primary);
+    centerGradient.addColorStop(1, 'rgba(0, 150, 200, 0)');
+    
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = colors.primary;
+    ctx.fillStyle = centerGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, centerRippleRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 添加音符涟漪
+    const noteCount = 8;
+    for (let i = 0; i < noteCount; i++) {
+        const noteAngle = (i / noteCount) * Math.PI * 2 + frame * 0.02;
+        const noteRadius = Math.min(width, height) * 0.25;
+        const noteX = centerX + Math.cos(noteAngle) * noteRadius;
+        const noteY = centerY + Math.sin(noteAngle) * noteRadius;
+        
+        const noteIntensity = dataArray[Math.floor((i / noteCount) * dataArray.length)] / 255;
+        if (noteIntensity > 0.1) {
+            const noteSize = noteIntensity * 20 * sensitivity;
+            const noteColor = colors.secondary;
+            
+            ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 0.8);
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = noteColor;
+            
+            ctx.beginPath();
+            ctx.arc(noteX, noteY, noteSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    ctx.restore();
+};
 
 const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
@@ -2444,6 +2581,7 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.FUSION]: drawFusion,
     [VisualizationType.TECH_WAVE]: drawTechWave,
     [VisualizationType.STELLAR_CORE]: drawStellarCore,
+    [VisualizationType.WATER_RIPPLE]: drawWaterRipple,
     [VisualizationType.RADIAL_BARS]: drawRadialBars,
     [VisualizationType.PARTICLE_GALAXY]: drawParticleGalaxy,
     [VisualizationType.LIQUID_METAL]: drawLiquidMetal,
