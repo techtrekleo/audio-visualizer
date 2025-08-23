@@ -1117,19 +1117,12 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     const normalizedMid = mid / 255;
     const normalizedTreble = treble / 255;
     
-    // Fill space background
-    ctx.fillStyle = '#000011'; // Deep space blue
-    ctx.fillRect(0, 0, width, height);
+    // 移除背景，让背景透明
+    // 不再填充深空蓝色背景
+    // 不再绘制星云背景
     
-    // Draw simplified nebula background
+    // 定义星系半径（用于计算螺旋臂和小行星带）
     const nebulaRadius = Math.min(width, height) * 0.6;
-    const nebulaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, nebulaRadius);
-    nebulaGradient.addColorStop(0, applyAlphaToColor(colors.primary, 0.08));
-    nebulaGradient.addColorStop(0.5, applyAlphaToColor(colors.secondary, 0.04));
-    nebulaGradient.addColorStop(1, 'transparent');
-    
-    ctx.fillStyle = nebulaGradient;
-    ctx.fillRect(0, 0, width, height);
     
     // Draw simplified spiral arms (reduced from 4 to 2)
     const numArms = 2;
@@ -1333,9 +1326,8 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
 const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     
-    // Fill black background
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+    // 移除黑色背景，让背景透明
+    // 不再填充黑色背景
     
     const centerX = width / 2;
     const centerY = height / 2;
