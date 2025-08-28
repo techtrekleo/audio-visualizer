@@ -352,7 +352,7 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     const solidWaveAmpMultiplier = 0.6;
     const dottedWaveAmpMultiplier = 1.2;
 
-    // Draw Solid Wave
+    // Draw Solid Wave - Top half
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
     const yOscSolid_first = Math.sin(firstPoint.x * 0.05 + frame * 0.02) * 5; 
@@ -361,12 +361,34 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY + p.y_amp * solidWaveAmpMultiplier + yOsc);
     }
+
+    if (waveformStroke) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 4.5;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+    ctx.strokeStyle = colors.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 15;
+    ctx.stroke();
+
+    // Draw Solid Wave - Bottom half
+    ctx.beginPath();
     for (let i = full_wave_data.length - 1; i >= 0; i--) {
         const p = full_wave_data[i];
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
-        ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        if (i === full_wave_data.length - 1) {
+            ctx.moveTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        } else {
+            ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        }
     }
-    ctx.closePath();
 
     if (waveformStroke) {
         ctx.save();
@@ -426,7 +448,7 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     const solidWaveAmpMultiplier = 0.6;
     const dottedWaveAmpMultiplier = 1.2;
 
-    // Draw Solid Wave
+    // Draw Solid Wave - Top half
     ctx.beginPath();
     const firstPoint = full_wave_data[0];
     const yOscSolid_first = Math.sin(firstPoint.x * 0.05 + frame * 0.02) * 5; 
@@ -435,12 +457,34 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
         ctx.lineTo(p.x, centerY + p.y_amp * solidWaveAmpMultiplier + yOsc);
     }
+
+    if (waveformStroke) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 4.5;
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.strokeStyle = colors.primary;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = colors.primary;
+    ctx.shadowBlur = 15;
+    ctx.stroke();
+
+    // Draw Solid Wave - Bottom half
+    ctx.beginPath();
     for (let i = full_wave_data.length - 1; i >= 0; i--) {
         const p = full_wave_data[i];
         const yOsc = Math.sin(p.x * 0.05 + frame * 0.02) * 5;
-        ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        if (i === full_wave_data.length - 1) {
+            ctx.moveTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        } else {
+            ctx.lineTo(p.x, centerY - (p.y_amp * solidWaveAmpMultiplier) + yOsc);
+        }
     }
-    ctx.closePath();
 
     if (waveformStroke) {
         ctx.save();
