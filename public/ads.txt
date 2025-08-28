@@ -1,6 +1,1 @@
-# Google AdSense
 google.com, pub-YOUR_PUBLISHER_ID, DIRECT, f08c47fec0942fa0
-
-# 當你獲得 AdSense 批准後，將 YOUR_PUBLISHER_ID 替換為實際的發布商 ID
-# 格式：ca-pub-1234567890123456 中的數字部分
-# 例如：ca-pub-1234567890123456 就填入 1234567890123456
