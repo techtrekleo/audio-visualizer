@@ -90,9 +90,34 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         ctx.fill();
     }
     
-    // Draw vertical bars
+    // Draw vertical bars with mirroring
     const numBars = Math.floor(width / (barWidth + barSpacing));
     const dataSliceLength = dataArray.length * 0.6;
+    
+    // Function to draw a single bar
+    const drawBar = (x: number, y: number, height: number, isMirrored: boolean = false) => {
+        if (height < 1) return;
+        
+        // Create glowing white bars
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        
+        // Draw vertical bar
+        const barX = x - barWidth / 2;
+        const barY = y;
+        
+        // Create rounded rectangle for the bar
+        const cornerRadius = 2;
+        createRoundedRectPath(ctx, barX, barY, barWidth, height, cornerRadius);
+        ctx.fill();
+        
+        // Add subtle inner glow
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        createRoundedRectPath(ctx, barX + 1, barY + 1, barWidth - 2, height - 2, cornerRadius);
+        ctx.fill();
+    };
     
     for (let i = 0; i < numBars; i++) {
         const x = i * (barWidth + barSpacing) + barWidth / 2;
@@ -105,31 +130,22 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             barHeight = Math.pow(amplitude, 1.8) * maxBarHeight * sensitivity;
             if (barHeight < 3) continue;
         } else {
-            // Static bars with subtle breathing effect
-            const staticHeight = maxBarHeight * 0.12;
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.1 + 1;
+            // Static bars should be at minimum height when no music
+            const staticHeight = maxBarHeight * 0.02; // Very minimal height
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.05 + 1; // Very subtle breathing
             barHeight = staticHeight * breathingEffect;
         }
         
-        // Create glowing white bars
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        // Draw main bar (above base line)
+        drawBar(x, baseLineY - barHeight, barHeight);
         
-        // Draw vertical bar
-        const barX = x - barWidth / 2;
-        const barY = baseLineY - barHeight;
+        // Draw mirrored bar (below base line) - UP/DOWN mirroring
+        drawBar(x, baseLineY, barHeight);
         
-        // Create rounded rectangle for the bar
-        const cornerRadius = 2;
-        createRoundedRectPath(ctx, barX, barY, barWidth, barHeight, cornerRadius);
-        ctx.fill();
-        
-        // Add subtle inner glow
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        createRoundedRectPath(ctx, barX + 1, barY + 1, barWidth - 2, barHeight - 2, cornerRadius);
-        ctx.fill();
+        // Draw left mirror bar - LEFT/RIGHT mirroring
+        const leftX = width - x;
+        drawBar(leftX, baseLineY - barHeight, barHeight, true);
+        drawBar(leftX, baseLineY, barHeight, true);
     }
     
     ctx.restore();
