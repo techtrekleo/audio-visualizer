@@ -730,7 +730,7 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     const centerX = width / 2;
     const centerY = height / 2;
     
-    // Audio-reactive parameters
+    // 優化的音頻分析
     const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
     const mid = dataArray.slice(32, 96).reduce((a, b) => a + b, 0) / 64;
     const treble = dataArray.slice(96, 128).reduce((a, b) => a + b, 0) / 32;
@@ -739,76 +739,74 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     const normalizedMid = mid / 255;
     const normalizedTreble = treble / 255;
     
-    // Draw quantum field background
-    const fieldRadius = Math.min(width, height) * 0.6;
+    // 簡化的量子場背景
+    const fieldRadius = Math.min(width, height) * 0.5;
     const fieldGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, fieldRadius);
-    fieldGradient.addColorStop(0, applyAlphaToColor(colors.primary, 0.1));
-    fieldGradient.addColorStop(0.5, applyAlphaToColor(colors.secondary, 0.05));
+    fieldGradient.addColorStop(0, applyAlphaToColor(colors.primary, 0.08));
     fieldGradient.addColorStop(1, 'transparent');
     
     ctx.fillStyle = fieldGradient;
     ctx.fillRect(0, 0, width, height);
     
-    // Draw quantum energy nodes
-    const nodeCount = 12;
+    // 優化的量子能量節點
+    const nodeCount = 8; // 減少從12到8
     for (let i = 0; i < nodeCount; i++) {
-        const nodeAngle = (i / nodeCount) * Math.PI * 2 + frame * 0.02;
-        const nodeRadius = fieldRadius * 0.7;
+        const nodeAngle = (i / nodeCount) * Math.PI * 2 + frame * 0.015; // 減慢旋轉速度
+        const nodeRadius = fieldRadius * 0.6;
         const nodeX = centerX + Math.cos(nodeAngle) * nodeRadius;
         const nodeY = centerY + Math.sin(nodeAngle) * nodeRadius;
         
-        const nodeSize = 8 + normalizedBass * 6 * sensitivity;
+        const nodeSize = 6 + normalizedBass * 4 * sensitivity; // 減少大小
         const nodeColor = i % 3 === 0 ? colors.primary : i % 3 === 1 ? colors.secondary : colors.accent;
         
-        // Draw node core
+        // 繪製節點核心
         ctx.fillStyle = nodeColor;
         ctx.shadowColor = nodeColor;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 12; // 減少陰影模糊
         ctx.beginPath();
         ctx.arc(nodeX, nodeY, nodeSize, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw node pulse rings
-        const pulseCount = 3;
-        for (let j = 0; j < pulseCount; j++) {
-            const pulseRadius = nodeSize + j * 8 + normalizedMid * 10 * sensitivity;
-            const pulseOpacity = 0.4 - j * 0.1;
+        // 簡化的節點脈衝環
+        if (i % 2 === 0) { // 只在偶數節點繪製脈衝環
+            const pulseRadius = nodeSize + 8 + normalizedMid * 8 * sensitivity;
+            const pulseOpacity = 0.3;
             
             ctx.strokeStyle = applyAlphaToColor(nodeColor, pulseOpacity);
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.arc(nodeX, nodeY, pulseRadius, 0, Math.PI * 2);
             ctx.stroke();
         }
         ctx.setLineDash([]);
         
-        // Draw energy connections between nodes
+        // 簡化的能量連接
         const nextNodeIndex = (i + 1) % nodeCount;
-        const nextNodeAngle = (nextNodeIndex / nodeCount) * Math.PI * 2 + frame * 0.02;
+        const nextNodeAngle = (nextNodeIndex / nodeCount) * Math.PI * 2 + frame * 0.015;
         const nextNodeX = centerX + Math.cos(nextNodeAngle) * nodeRadius;
         const nextNodeY = centerY + Math.sin(nextNodeAngle) * nodeRadius;
         
-        const connectionOpacity = 0.3 + normalizedTreble * 0.4;
+        const connectionOpacity = 0.2 + normalizedTreble * 0.3;
         ctx.strokeStyle = applyAlphaToColor(colors.accent, connectionOpacity);
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
+        ctx.setLineDash([2, 2]);
         
-            ctx.beginPath();
+        ctx.beginPath();
         ctx.moveTo(nodeX, nodeY);
         ctx.lineTo(nextNodeX, nextNodeY);
-            ctx.stroke();
+        ctx.stroke();
     }
     ctx.setLineDash([]);
     
-    // Draw central quantum core
-    const coreRadius = 25 + normalizedBass * 40 * sensitivity;
+    // 優化的中央量子核心
+    const coreRadius = 20 + normalizedBass * 30 * sensitivity; // 減少大小
     
-    // Core layers
-    const coreLayers = 4;
+    // 簡化的核心層
+    const coreLayers = 2; // 減少從4到2
     for (let i = 0; i < coreLayers; i++) {
-        const layerRadius = coreRadius + i * 8;
-        const layerOpacity = 0.8 - i * 0.2;
+        const layerRadius = coreRadius + i * 10;
+        const layerOpacity = 0.6 - i * 0.3;
         const layerColor = i % 2 === 0 ? colors.primary : colors.secondary;
         
         const layerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, layerRadius);
@@ -817,28 +815,28 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
         
         ctx.fillStyle = layerGradient;
         ctx.shadowColor = layerColor;
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = 15; // 減少陰影模糊
         ctx.beginPath();
         ctx.arc(centerX, centerY, layerRadius, 0, Math.PI * 2);
         ctx.fill();
     }
     
-    // Draw quantum wave functions
-    const waveCount = 6;
+    // 簡化的量子波函數
+    const waveCount = 4; // 減少從6到4
     for (let i = 0; i < waveCount; i++) {
-        const waveAngle = (i / waveCount) * Math.PI * 2 + frame * 0.01;
-        const waveAmplitude = 50 + normalizedMid * 80 * sensitivity;
-        const waveFrequency = 3 + normalizedTreble * 4;
+        const waveAngle = (i / waveCount) * Math.PI * 2 + frame * 0.008; // 減慢旋轉速度
+        const waveAmplitude = 40 + normalizedMid * 60 * sensitivity; // 減少振幅
+        const waveFrequency = 2 + normalizedTreble * 3; // 減少頻率
         
-        ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.6);
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.5);
+        ctx.lineWidth = 1.5;
         ctx.shadowColor = colors.accent;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 8; // 減少陰影模糊
         
         ctx.beginPath();
-        for (let x = 0; x < width; x += 3) {
+        for (let x = 0; x < width; x += 6) { // 增加步長從3到6
             const normalizedX = x / width;
-            const waveHeight = Math.sin(normalizedX * waveFrequency * Math.PI + frame * 0.02) * waveAmplitude;
+            const waveHeight = Math.sin(normalizedX * waveFrequency * Math.PI + frame * 0.015) * waveAmplitude;
             const rotatedX = centerX + (x - centerX) * Math.cos(waveAngle) - waveHeight * Math.sin(waveAngle);
             const rotatedY = centerY + (x - centerX) * Math.sin(waveAngle) + waveHeight * Math.cos(waveAngle);
             
@@ -851,108 +849,73 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
         ctx.stroke();
     }
     
-    // Draw frequency spectrum with quantum distortion
-    const spectrumBars = 64;
+    // 簡化的頻率光譜
+    const spectrumBars = 32; // 減少從64到32
     const barWidth = width / spectrumBars;
     
     for (let i = 0; i < spectrumBars; i++) {
         const dataIndex = Math.floor((i / spectrumBars) * dataArray.length);
         const amplitude = dataArray[dataIndex] / 255;
-        const barHeight = Math.pow(amplitude, 1.5) * height * 0.3 * sensitivity;
+        const barHeight = Math.pow(amplitude, 1.3) * height * 0.25 * sensitivity; // 減少高度
         
-        if (barHeight < 2) continue;
+        if (barHeight < 3) continue; // 提高閾值
         
         const x = i * barWidth;
         const y = height - barHeight;
         
-        // Create quantum distortion effect
-        const distortionX = isBeat && Math.random() > 0.8 ? (Math.random() - 0.5) * 8 : 0;
-        const distortionHeight = isBeat && Math.random() > 0.9 ? Math.random() * 15 : 0;
+        // 簡化的量子扭曲效果
+        const distortionX = isBeat && Math.random() > 0.9 ? (Math.random() - 0.5) * 4 : 0; // 減少扭曲
+        const distortionHeight = isBeat && Math.random() > 0.95 ? Math.random() * 8 : 0; // 減少扭曲
         
-        // Dynamic quantum color based on current color palette and audio data
+        // 簡化的顏色系統
         let barColor;
         if (i < spectrumBars * 0.33) {
-            // Low frequencies - use primary color
-            barColor = applyAlphaToColor(colors.primary, 0.8 + amplitude * 0.2);
+            barColor = applyAlphaToColor(colors.primary, 0.7 + amplitude * 0.2);
         } else if (i < spectrumBars * 0.66) {
-            // Mid frequencies - use secondary color
-            barColor = applyAlphaToColor(colors.secondary, 0.8 + amplitude * 0.2);
+            barColor = applyAlphaToColor(colors.secondary, 0.7 + amplitude * 0.2);
         } else {
-            // High frequencies - use accent color
-            barColor = applyAlphaToColor(colors.accent, 0.8 + amplitude * 0.2);
+            barColor = applyAlphaToColor(colors.accent, 0.7 + amplitude * 0.2);
         }
         
-        // Add quantum color variation with current palette influence
-        const hueShift = (i / spectrumBars) * 90 - 45; // -45 to +45 degrees
-        const saturation = 90 + amplitude * 10; // 90% to 100%
-        const lightness = 60 + amplitude * 20; // 60% to 80%
+        ctx.fillStyle = barColor;
         
-        // Create dynamic quantum color
-        const dynamicColor = `hsla(${200 + hueShift + (frame * 0.4) % 360}, ${saturation}%, ${lightness}%, ${0.85 + amplitude * 0.15})`;
-        
-        ctx.fillStyle = dynamicColor;
-        
-        // Draw rounded rectangle instead of regular rectangle
+        // 繪製簡化的矩形
         const barX = x + distortionX;
         const barY = y;
         const finalHeight = barHeight + distortionHeight;
-        const radius = Math.min(barWidth * 0.3, finalHeight * 0.2); // Dynamic corner radius
         
-        // Create rounded rectangle path
-        ctx.beginPath();
-        ctx.moveTo(barX + radius, barY);
-        ctx.lineTo(barX + barWidth - 1 - radius, barY);
-        ctx.quadraticCurveTo(barX + barWidth - 1, barY, barX + barWidth - 1, barY + radius);
-        ctx.lineTo(barX + barWidth - 1, barY + finalHeight - radius);
-        ctx.quadraticCurveTo(barX + barWidth - 1, barY + finalHeight, barX + barWidth - 1 - radius, barY + finalHeight);
-        ctx.lineTo(barX + radius, barY + finalHeight);
-        ctx.quadraticCurveTo(barX, barY + finalHeight, barX, barY + finalHeight - radius);
-        ctx.lineTo(barX, barY + radius);
-        ctx.quadraticCurveTo(barX, barY, barX + radius, barY);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Add quantum glow effect
-        ctx.shadowColor = dynamicColor;
-        ctx.shadowBlur = 10;
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow
+        ctx.fillRect(barX, barY, barWidth - 1, finalHeight);
     }
     
-    // Draw quantum particles
-    const particleCount = 80 + normalizedBass * 120 * sensitivity;
+    // 簡化的量子粒子
+    const particleCount = 40 + normalizedBass * 60 * sensitivity; // 減少粒子數量
     for (let i = 0; i < particleCount; i++) {
-        const angle = (i / particleCount) * Math.PI * 2 + frame * 0.005;
-        const radius = 40 + Math.sin(frame * 0.03 + i * 0.1) * 60;
+        const angle = (i / particleCount) * Math.PI * 2 + frame * 0.003; // 減慢旋轉速度
+        const radius = 30 + Math.sin(frame * 0.02 + i * 0.05) * 40; // 減少半徑變化
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
         
-        const particleSize = 2 + normalizedMid * 3 * sensitivity;
-        const particleOpacity = 0.7 + normalizedTreble * 0.3;
+        const particleSize = 1.5 + normalizedMid * 2 * sensitivity; // 減少粒子大小
+        const particleOpacity = 0.6 + normalizedTreble * 0.2;
         
-        // Create quantum particle effect
-        const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
-        particleGradient.addColorStop(0, '#FFFFFF');
-        particleGradient.addColorStop(0.5, applyAlphaToColor(colors.accent, particleOpacity));
-        particleGradient.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = particleGradient;
+        // 簡化的粒子效果
+        ctx.fillStyle = applyAlphaToColor(colors.accent, particleOpacity);
         ctx.shadowColor = colors.accent;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 8; // 減少陰影模糊
         ctx.beginPath();
         ctx.arc(x, y, particleSize, 0, Math.PI * 2);
         ctx.fill();
     }
     
-    // Draw energy field lines
-    const fieldLineCount = 8;
+    // 簡化的能量場線
+    const fieldLineCount = 6; // 減少線條數量
     for (let i = 0; i < fieldLineCount; i++) {
-        const lineAngle = (i / fieldLineCount) * Math.PI * 2 + frame * 0.015;
-        const lineLength = fieldRadius * 0.4 + normalizedBass * 60 * sensitivity;
+        const lineAngle = (i / fieldLineCount) * Math.PI * 2 + frame * 0.01; // 減慢旋轉速度
+        const lineLength = fieldRadius * 0.3 + normalizedBass * 40 * sensitivity; // 減少線條長度
         
-        ctx.strokeStyle = applyAlphaToColor(colors.primary, 0.4);
-        ctx.lineWidth = 2;
-        ctx.setLineDash([10, 10]);
+        ctx.strokeStyle = applyAlphaToColor(colors.primary, 0.3);
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([8, 8]);
         
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
@@ -1586,13 +1549,10 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
 const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
     ctx.save();
     
-    // 移除黑色背景，让背景透明
-    // 不再填充黑色背景
-    
     const centerX = width / 2;
     const centerY = height / 2;
     
-    // Enhanced audio analysis with more sensitive ranges
+    // 優化的音頻分析 - 減少計算複雜度
     const bass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
     const mid = dataArray.slice(16, 64).reduce((a, b) => a + b, 0) / 48;
     const treble = dataArray.slice(64, 128).reduce((a, b) => a + b, 0) / 64;
@@ -1601,97 +1561,78 @@ const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     const normalizedMid = mid / 255;
     const normalizedTreble = treble / 255;
     
-    // Enhanced sensitivity multipliers for more dramatic effects
-    const bassMultiplier = 2.0; // Increased from 1.0
-    const midMultiplier = 1.8;  // Increased from 1.0
-    const trebleMultiplier = 1.5; // Increased from 1.0
+    // 貝茲花園特效 - 優化性能
+    const numPetals = 6 + Math.floor(normalizedMid * 2 * sensitivity); // 減少花瓣數量
+    const basePetalLength = Math.min(width, height) * 0.15;
+    const petalLength = basePetalLength + normalizedBass * 80 * sensitivity; // 減少響應範圍
     
-    // Create flower blooming effect with enhanced audio response
-    const numPetals = 8 + Math.floor(normalizedMid * 4 * sensitivity); // Dynamic petal count
-    const basePetalLength = Math.min(width, height) * 0.2;
-    const petalLength = basePetalLength + normalizedBass * 150 * sensitivity * bassMultiplier; // Increased response
-    
-    // Draw flower petals with enhanced liquid metal effect
+    // 繪製優化的貝茲曲線花瓣
     for (let i = 0; i < numPetals; i++) {
-        const petalAngle = (i / numPetals) * Math.PI * 2 + frame * 0.01;
+        const petalAngle = (i / numPetals) * Math.PI * 2 + frame * 0.008; // 減慢旋轉速度
         const petalColor = i % 2 === 0 ? colors.primary : colors.secondary;
         
-        // Enhanced petal positioning based on audio
-        const petalOffset = normalizedBass * 20 * sensitivity; // Petals move with bass
-        const startX = centerX + Math.cos(petalAngle) * (20 + petalOffset);
-        const startY = centerY + Math.sin(petalAngle) * (20 + petalOffset);
+        // 簡化的花瓣定位
+        const startX = centerX + Math.cos(petalAngle) * 15;
+        const startY = centerY + Math.sin(petalAngle) * 15;
         const endX = centerX + Math.cos(petalAngle) * petalLength;
         const endY = centerY + Math.sin(petalAngle) * petalLength;
         
-        // Control points for petal curve with audio influence
-        const control1X = startX + Math.cos(petalAngle + 0.3 + normalizedMid * 0.2) * petalLength * 0.3;
-        const control1Y = startY + Math.sin(petalAngle + 0.3 + normalizedMid * 0.2) * petalLength * 0.3;
-        const control2X = startX + Math.cos(petalAngle - 0.3 - normalizedMid * 0.2) * petalLength * 0.3;
-        const control2Y = startY + Math.sin(petalAngle - 0.3 - normalizedMid * 0.2) * petalLength * 0.3;
+        // 優化的控制點計算
+        const control1X = startX + Math.cos(petalAngle + 0.2) * petalLength * 0.4;
+        const control1Y = startY + Math.sin(petalAngle + 0.2) * petalLength * 0.4;
+        const control2X = startX + Math.cos(petalAngle - 0.2) * petalLength * 0.4;
+        const control2Y = startY + Math.sin(petalAngle - 0.2) * petalLength * 0.4;
         
-        // Dynamic petal width based on mid frequencies
-        const petalWidth = 6 + normalizedMid * 12 * sensitivity * midMultiplier; // Increased range
+        // 簡化的花瓣寬度
+        const petalWidth = 4 + normalizedMid * 6 * sensitivity;
         
-        // Draw petal with enhanced liquid metal gradient
+        // 優化的花瓣漸變
         const petalGradient = ctx.createLinearGradient(startX, startY, endX, endY);
-        petalGradient.addColorStop(0, applyAlphaToColor(petalColor, 0.9 + normalizedBass * 0.1));
-        petalGradient.addColorStop(0.3, applyAlphaToColor(petalColor, 0.7 + normalizedMid * 0.2));
-        petalGradient.addColorStop(0.7, applyAlphaToColor(petalColor, 0.5 + normalizedTreble * 0.2));
-        petalGradient.addColorStop(1, applyAlphaToColor(petalColor, 0.2 + normalizedBass * 0.1));
+        petalGradient.addColorStop(0, applyAlphaToColor(petalColor, 0.8));
+        petalGradient.addColorStop(0.5, applyAlphaToColor(petalColor, 0.6));
+        petalGradient.addColorStop(1, applyAlphaToColor(petalColor, 0.3));
         
         ctx.strokeStyle = petalGradient;
         ctx.lineWidth = petalWidth;
         ctx.lineCap = 'round';
         ctx.shadowColor = petalColor;
-        ctx.shadowBlur = 20 + normalizedBass * 20 * sensitivity; // Dynamic shadow blur
+        ctx.shadowBlur = 8 + normalizedBass * 8 * sensitivity; // 減少陰影模糊
         
-        // Draw petal curve
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
-        ctx.stroke();
-        
-        // Enhanced petal glow effect
-        ctx.strokeStyle = applyAlphaToColor(petalColor, 0.4 + normalizedTreble * 0.3);
-        ctx.lineWidth = petalWidth * 0.5;
-        ctx.shadowBlur = 15 + normalizedMid * 10 * sensitivity;
+        // 繪製貝茲曲線花瓣
         ctx.beginPath();
         ctx.moveTo(startX, startY);
         ctx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
         ctx.stroke();
     }
     
-    // Enhanced central flower core with more dramatic audio response
-    const coreRadius = 25 + normalizedBass * 80 * sensitivity * bassMultiplier; // Increased range
+    // 優化的中央花蕊
+    const coreRadius = 20 + normalizedBass * 40 * sensitivity;
     
-    // Inner core with enhanced metallic shine
     const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
-    coreGradient.addColorStop(0, '#FFFFFF');
-    coreGradient.addColorStop(0.2, applyAlphaToColor(colors.accent, 0.9 + normalizedBass * 0.1));
-    coreGradient.addColorStop(0.5, applyAlphaToColor(colors.primary, 0.7 + normalizedMid * 0.2));
-    coreGradient.addColorStop(0.8, applyAlphaToColor(colors.secondary, 0.5 + normalizedTreble * 0.2));
+    coreGradient.addColorStop(0, colors.accent);
+    coreGradient.addColorStop(0.6, colors.primary);
     coreGradient.addColorStop(1, 'transparent');
     
     ctx.fillStyle = coreGradient;
     ctx.shadowColor = colors.accent;
-    ctx.shadowBlur = 30 + normalizedBass * 20 * sensitivity; // Dynamic shadow
+    ctx.shadowBlur = 15 + normalizedBass * 10 * sensitivity; // 減少陰影模糊
     ctx.beginPath();
     ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Enhanced rotating liquid metal rings with audio response
-    const numRings = 3 + Math.floor(normalizedMid * 2 * sensitivity); // Dynamic ring count
+    // 簡化的能量環
+    const numRings = 2 + Math.floor(normalizedMid * sensitivity); // 減少環數
     for (let i = 0; i < numRings; i++) {
-        const ringRadius = coreRadius + 15 + i * 12 + normalizedBass * 15 * sensitivity;
-        const rotationSpeed = frame * (0.02 + i * 0.01 + normalizedBass * 0.02); // Audio-responsive rotation
-        const ringOpacity = 0.6 - i * 0.15 + normalizedTreble * 0.2;
+        const ringRadius = coreRadius + 20 + i * 15 + normalizedBass * 20 * sensitivity;
+        const rotationSpeed = frame * (0.015 + i * 0.008); // 減慢旋轉速度
+        const ringOpacity = 0.5 - i * 0.2 + normalizedTreble * 0.1;
         
         ctx.strokeStyle = applyAlphaToColor(colors.accent, ringOpacity);
-        ctx.lineWidth = 3 + normalizedMid * 2 * sensitivity;
-        ctx.setLineDash([15, 15]);
+        ctx.lineWidth = 2 + normalizedMid * sensitivity;
+        ctx.setLineDash([10, 10]);
         
-        // Create segmented ring effect with audio influence
-        const segments = 6 + Math.floor(normalizedMid * 4 * sensitivity); // Dynamic segments
+        // 簡化的環形分段
+        const segments = 4 + Math.floor(normalizedMid * 2 * sensitivity);
         for (let j = 0; j < segments; j++) {
             const startAngle = (j / segments) * Math.PI * 2 + rotationSpeed;
             const endAngle = ((j + 1) / segments) * Math.PI * 2 + rotationSpeed;
@@ -1703,77 +1644,38 @@ const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     }
     ctx.setLineDash([]);
     
-    // Enhanced liquid metal droplets with better audio response
-    const dropletCount = 15 + normalizedTreble * 50 * sensitivity * trebleMultiplier; // Increased range
-    for (let i = 0; i < dropletCount; i++) {
-        const angle = (i / dropletCount) * Math.PI * 2 + frame * 0.005;
-        const radius = 70 + Math.sin(frame * 0.03 + i * 0.2) * 50 + normalizedBass * 30 * sensitivity;
+    // 簡化的粒子效果
+    const particleCount = 8 + normalizedTreble * 20 * sensitivity; // 減少粒子數量
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + frame * 0.003; // 減慢旋轉速度
+        const radius = 60 + Math.sin(frame * 0.02 + i * 0.1) * 30 + normalizedBass * 20 * sensitivity;
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
         
-        const dropletSize = 2 + normalizedMid * 8 * sensitivity * midMultiplier; // Increased range
-        const dropletOpacity = 0.7 + normalizedTreble * 0.3;
+        const particleSize = 2 + normalizedMid * 4 * sensitivity;
+        const particleOpacity = 0.6 + normalizedTreble * 0.2;
         
-        // Create droplet with enhanced liquid metal effect
-        const dropletGradient = ctx.createRadialGradient(x, y, 0, x, y, dropletSize);
-        dropletGradient.addColorStop(0, '#FFFFFF');
-        dropletGradient.addColorStop(0.5, applyAlphaToColor(colors.accent, dropletOpacity));
-        dropletGradient.addColorStop(1, 'transparent');
+        // 簡化的粒子漸變
+        const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
+        particleGradient.addColorStop(0, colors.accent);
+        particleGradient.addColorStop(1, 'transparent');
         
-        ctx.fillStyle = dropletGradient;
+        ctx.fillStyle = particleGradient;
         ctx.shadowColor = colors.accent;
-        ctx.shadowBlur = 15 + normalizedMid * 10 * sensitivity; // Dynamic shadow
+        ctx.shadowBlur = 8 + normalizedMid * 5 * sensitivity; // 減少陰影模糊
         ctx.beginPath();
-        ctx.arc(x, y, dropletSize, 0, Math.PI * 2);
+        ctx.arc(x, y, particleSize, 0, Math.PI * 2);
         ctx.fill();
     }
     
-    // Enhanced metallic shine effect with audio influence
-    const shineGradient = ctx.createLinearGradient(0, 0, width, height);
-    const shineIntensity = 0.1 + normalizedBass * 0.2; // Audio-responsive shine
-    shineGradient.addColorStop(0, `rgba(255, 255, 255, ${shineIntensity})`);
-    shineGradient.addColorStop(0.3, `rgba(255, 255, 255, ${shineIntensity * 2})`);
-    shineGradient.addColorStop(0.5, `rgba(255, 255, 255, ${shineIntensity * 3})`);
-    shineGradient.addColorStop(0.7, `rgba(255, 255, 255, ${shineIntensity * 2})`);
-    shineGradient.addColorStop(1, `rgba(255, 255, 255, ${shineIntensity})`);
-    
-    ctx.fillStyle = shineGradient;
-    ctx.globalAlpha = 0.3 + normalizedBass * 0.2; // Dynamic alpha
-    ctx.fillRect(0, 0, width, height);
-    ctx.globalAlpha = 1;
-    
-    // Enhanced energy waves radiating from center
-    const waveCount = 4 + Math.floor(normalizedBass * 3 * sensitivity); // Dynamic wave count
-    for (let i = 0; i < waveCount; i++) {
-        const waveRadius = 40 + i * 20 + normalizedBass * 50 * sensitivity * bassMultiplier; // Increased range
-        const waveOpacity = 0.4 - i * 0.1 + normalizedBass * 0.2;
-        
-        ctx.strokeStyle = applyAlphaToColor(colors.accent, waveOpacity);
-        ctx.lineWidth = 2 + normalizedBass * 2 * sensitivity;
-        ctx.setLineDash([10, 10]);
-        
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    ctx.setLineDash([]);
-    
-    // Add beat-triggered effects
-    if (isBeat) {
-        // Beat flash effect
-        ctx.fillStyle = applyAlphaToColor(colors.primary, 0.3);
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, coreRadius * 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Beat ripple effect
-        ctx.strokeStyle = applyAlphaToColor(colors.accent, 0.6);
-        ctx.lineWidth = 3;
+    // 簡化的節拍效果
+    if (isBeat && Math.random() > 0.6) { // 只在40%的節拍時觸發
+        ctx.fillStyle = applyAlphaToColor(colors.primary, 0.2);
         ctx.beginPath();
         ctx.arc(centerX, centerY, coreRadius * 1.5, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.fill();
     }
-
+    
     ctx.restore();
 };
 
