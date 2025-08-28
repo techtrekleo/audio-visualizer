@@ -144,7 +144,7 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         // Draw bar above base line
         drawBar(x, baseLineY - barHeight, barHeight);
         
-        // Draw bar below base line (mirror)
+        // Draw bar below base line (up-down mirroring)
         drawBar(x, baseLineY, barHeight);
         
         // Draw left-right mirror (symmetrical)
