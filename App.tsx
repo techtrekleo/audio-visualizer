@@ -8,6 +8,7 @@ import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
 import Controls from './components/Controls';
 import Icon from './components/Icon';
+import AdSenseAd from './components/AdSenseAd';
 // import AdManager from './components/AdManager';
 // import PopupAdManager from './components/PopupAdManager';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
@@ -368,6 +369,11 @@ function App() {
                             </div>
                         </div>
 
+                        {/* 橫幅廣告 */}
+                        <div className="w-full max-w-7xl mx-auto mb-6">
+                            <AdSenseAd type="banner" />
+                        </div>
+
                         {showWarning && (
                             <div 
                                 className="w-full max-w-7xl p-3 bg-yellow-500/10 border border-yellow-400 text-yellow-200 rounded-lg text-center shadow-lg flex items-center justify-center gap-3"
@@ -443,6 +449,11 @@ function App() {
                     </div>
                 )}
             </main>
+            {/* 頁腳廣告 */}
+            <div className="w-full max-w-7xl mx-auto px-4 mb-4">
+                <AdSenseAd type="footer" />
+            </div>
+            
             <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
                 一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
             </footer>
