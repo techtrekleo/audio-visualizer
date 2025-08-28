@@ -127,17 +127,13 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             barHeight = staticHeight * breathingEffect;
         }
         
-        // Draw bar above base line
+        // Draw bar above base line only (no up-down mirroring)
         drawBar(x, baseLineY - barHeight, barHeight);
-        
-        // Draw bar below base line (up-down mirroring)
-        drawBar(x, baseLineY, barHeight);
         
         // Draw left-right mirror (symmetrical) - only if not at center
         if (Math.abs(x - centerX) > barWidth) {
             const leftX = width - x;
             drawBar(leftX, baseLineY - barHeight, barHeight);
-            drawBar(leftX, baseLineY, barHeight);
         }
     }
     
