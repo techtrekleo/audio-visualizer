@@ -94,13 +94,13 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         
         // If no audio data, create static bars with subtle animation
         let barHeight: number;
-        if (hasAudioData) {
+        if (hasAudioData && amplitude > 0.01) {
             barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
             if (barHeight < 2) continue;
         } else {
-            // Static bars with subtle breathing effect
-            const staticHeight = maxHeight * 0.15; // 15% of max height
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.1) * 0.1 + 1;
+            // Static bars with subtle breathing effect - make them more visible
+            const staticHeight = maxHeight * 0.25; // Increased from 15% to 25%
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.1) * 0.15 + 1; // Increased variation
             barHeight = staticHeight * breathingEffect;
         }
 
@@ -110,8 +110,8 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
                 const lightness = 85 + (amplitude * 15);
                 color = `hsl(220, 10%, ${lightness}%)`;
             } else {
-                // Static white bars with subtle variation
-                const lightness = 70 + Math.sin(frame * 0.01 + i * 0.05) * 5;
+                // Static white bars with subtle variation - make them more visible
+                const lightness = 75 + Math.sin(frame * 0.01 + i * 0.05) * 8; // Increased base lightness and variation
                 color = `hsl(220, 10%, ${lightness}%)`;
             }
         } else {
@@ -121,18 +121,18 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
                 const lightness = 60 + (amplitude * 10);
                 color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             } else {
-                // Static colored bars with subtle hue variation
+                // Static colored bars with subtle hue variation - make them more visible
                 const baseHue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
-                const hueVariation = Math.sin(frame * 0.015 + i * 0.08) * 10;
+                const hueVariation = Math.sin(frame * 0.015 + i * 0.08) * 15; // Increased hue variation
                 const hue = (baseHue + hueVariation + 360) % 360;
-                const saturation = 70;
-                const lightness = 50 + Math.sin(frame * 0.02 + i * 0.1) * 10;
+                const saturation = 80; // Increased saturation
+                const lightness = 55 + Math.sin(frame * 0.02 + i * 0.1) * 12; // Increased base lightness and variation
                 color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             }
         }
         
         ctx.shadowColor = color;
-        ctx.shadowBlur = hasAudioData ? (isBeat ? 10 : 5) : 3;
+        ctx.shadowBlur = hasAudioData && amplitude > 0.01 ? (isBeat ? 10 : 5) : 5; // Increased shadow for static bars
        
         ctx.fillStyle = color;
 
