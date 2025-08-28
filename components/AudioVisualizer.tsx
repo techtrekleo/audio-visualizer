@@ -80,13 +80,13 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     // Calculate number of bars
     const numBars = Math.floor(width / (barWidth + barSpacing));
     
-    // Draw a single clean base line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, baseLineY);
-    ctx.lineTo(width, baseLineY);
-    ctx.stroke();
+    // Draw base line dots at each bar position
+    const drawBaseLineDot = (x: number) => {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, baseLineY, barWidth / 2, 0, Math.PI * 2);
+        ctx.fill();
+    };
     
     // Draw vertical bars with simplified mirroring
     const dataSliceLength = dataArray.length * 0.6;
@@ -134,9 +134,17 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         // Draw bar above base line
         drawBar(x, baseLineY - barHeight, barHeight);
         
+        // Draw bar below base line (up-down mirroring)
+        drawBar(x, baseLineY, barHeight);
+        
+        // Draw base line dot
+        drawBaseLineDot(x);
+        
         // Draw right mirror (symmetrical)
         const rightX = width - x;
         drawBar(rightX, baseLineY - barHeight, barHeight);
+        drawBar(rightX, baseLineY, barHeight);
+        drawBaseLineDot(rightX);
     }
     
     // Right side: from center to right, frequency from high to low
@@ -160,9 +168,17 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         // Draw bar above base line
         drawBar(x, baseLineY - barHeight, barHeight);
         
+        // Draw bar below base line (up-down mirroring)
+        drawBar(x, baseLineY, barHeight);
+        
+        // Draw base line dot
+        drawBaseLineDot(x);
+        
         // Draw left mirror (symmetrical)
         const leftX = centerX - i * (barWidth + barSpacing) - barWidth / 2;
         drawBar(leftX, baseLineY - barHeight, barHeight);
+        drawBar(leftX, baseLineY, barHeight);
+        drawBaseLineDot(leftX);
     }
     
     ctx.restore();
