@@ -98,9 +98,9 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
             if (barHeight < 2) continue;
         } else {
-            // Static bars with subtle breathing effect - make them more visible
-            const staticHeight = maxHeight * 0.25; // Increased from 15% to 25%
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.1) * 0.15 + 1; // Increased variation
+            // Static bars with subtle breathing effect - keep them minimal and elegant
+            const staticHeight = maxHeight * 0.08; // Reduced to 8% for minimal bars
+            const breathingEffect = Math.sin(frame * 0.03 + i * 0.12) * 0.08 + 1; // Subtle breathing
             barHeight = staticHeight * breathingEffect;
         }
 
@@ -110,9 +110,9 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
                 const lightness = 85 + (amplitude * 15);
                 color = `hsl(220, 10%, ${lightness}%)`;
             } else {
-                // Static white bars with subtle variation - make them more visible
-                const lightness = 75 + Math.sin(frame * 0.01 + i * 0.05) * 8; // Increased base lightness and variation
-                color = `hsl(220, 10%, ${lightness}%)`;
+                // Static white bars with subtle variation - keep them minimal and elegant
+                const lightness = 65 + Math.sin(frame * 0.015 + i * 0.06) * 4; // Subtle variation
+                color = `hsl(220, 8%, ${lightness}%)`;
             }
         } else {
             if (hasAudioData) {
@@ -121,18 +121,18 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
                 const lightness = 60 + (amplitude * 10);
                 color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             } else {
-                // Static colored bars with subtle hue variation - make them more visible
+                // Static colored bars with subtle hue variation - keep them minimal and elegant
                 const baseHue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
-                const hueVariation = Math.sin(frame * 0.015 + i * 0.08) * 15; // Increased hue variation
+                const hueVariation = Math.sin(frame * 0.02 + i * 0.1) * 8; // Subtle hue variation
                 const hue = (baseHue + hueVariation + 360) % 360;
-                const saturation = 80; // Increased saturation
-                const lightness = 55 + Math.sin(frame * 0.02 + i * 0.1) * 12; // Increased base lightness and variation
+                const saturation = 60; // Reduced saturation for subtlety
+                const lightness = 45 + Math.sin(frame * 0.025 + i * 0.12) * 6; // Subtle variation
                 color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
             }
         }
         
         ctx.shadowColor = color;
-        ctx.shadowBlur = hasAudioData && amplitude > 0.01 ? (isBeat ? 10 : 5) : 5; // Increased shadow for static bars
+        ctx.shadowBlur = hasAudioData && amplitude > 0.01 ? (isBeat ? 10 : 5) : 2; // Minimal shadow for static bars
        
         ctx.fillStyle = color;
 
