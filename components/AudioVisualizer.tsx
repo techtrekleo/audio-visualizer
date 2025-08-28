@@ -90,17 +90,17 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         ctx.fill();
     }
     
-    // Draw vertical bars with mirroring
+    // Draw vertical bars with simplified mirroring
     const numBars = Math.floor(width / (barWidth + barSpacing));
     const dataSliceLength = dataArray.length * 0.6;
     
     // Function to draw a single bar
-    const drawBar = (x: number, y: number, height: number, isMirrored: boolean = false) => {
+    const drawBar = (x: number, y: number, height: number) => {
         if (height < 1) return;
         
         // Create glowing white bars
         ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 15;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         
         // Draw vertical bar
@@ -110,12 +110,6 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         // Create rounded rectangle for the bar
         const cornerRadius = 2;
         createRoundedRectPath(ctx, barX, barY, barWidth, height, cornerRadius);
-        ctx.fill();
-        
-        // Add subtle inner glow
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        createRoundedRectPath(ctx, barX + 1, barY + 1, barWidth - 2, height - 2, cornerRadius);
         ctx.fill();
     };
     
@@ -131,21 +125,21 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             if (barHeight < 3) continue;
         } else {
             // Static bars should be at minimum height when no music
-            const staticHeight = maxBarHeight * 0.02; // Very minimal height
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.05 + 1; // Very subtle breathing
+            const staticHeight = maxBarHeight * 0.03; // Very minimal height
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.03 + 1; // Very subtle breathing
             barHeight = staticHeight * breathingEffect;
         }
         
-        // Draw main bar (above base line)
+        // Draw bar above base line
         drawBar(x, baseLineY - barHeight, barHeight);
         
-        // Draw mirrored bar (below base line) - UP/DOWN mirroring
+        // Draw bar below base line (mirror)
         drawBar(x, baseLineY, barHeight);
         
-        // Draw left mirror bar - LEFT/RIGHT mirroring
+        // Draw left-right mirror (symmetrical)
         const leftX = width - x;
-        drawBar(leftX, baseLineY - barHeight, barHeight, true);
-        drawBar(leftX, baseLineY, barHeight, true);
+        drawBar(leftX, baseLineY - barHeight, barHeight);
+        drawBar(leftX, baseLineY, barHeight);
     }
     
     ctx.restore();
