@@ -92,13 +92,31 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     const dataSliceLength = dataArray.length * 0.6;
     
     // Function to draw a single bar
-    const drawBar = (x: number, y: number, height: number) => {
+    const drawBar = (x: number, y: number, height: number, index: number) => {
         if (height < 1) return;
         
-        // Create clean white bars without shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        // Create colorful bars with dynamic colors
+        let barColor: string;
+        
+        if (colors.name === ColorPaletteType.WHITE) {
+            // White palette: subtle color variations
+            const lightness = 70 + (Math.sin(index * 0.3 + frame * 0.02) * 10);
+            const hue = 220 + Math.sin(index * 0.2) * 20;
+            barColor = `hsla(${hue}, 15%, ${lightness}%, 0.9)`;
+        } else {
+            // Colorful palettes: use the palette colors
+            const [startHue, endHue] = colors.hueRange;
+            const hueRangeSpan = endHue - startHue;
+            const hue = startHue + (index / numBars) * hueRangeSpan;
+            const saturation = 70 + Math.sin(index * 0.2 + frame * 0.01) * 20;
+            const lightness = 50 + Math.sin(index * 0.15 + frame * 0.015) * 15;
+            barColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.9)`;
+        }
+        
+        // Apply color and shadow effects
+        ctx.fillStyle = barColor;
+        ctx.shadowColor = barColor;
+        ctx.shadowBlur = 8;
         
         // Draw vertical bar
         const barX = x - barWidth / 2;
@@ -132,18 +150,18 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         }
         
         // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight);
+        drawBar(x, baseLineY - barHeight, barHeight, i);
         
         // Draw bar below base line (up-down mirroring)
-        drawBar(x, baseLineY, barHeight);
+        drawBar(x, baseLineY, barHeight, i);
         
         // Draw base line dot
         drawBaseLineDot(x);
         
         // Draw right mirror (symmetrical)
         const rightX = width - x;
-        drawBar(rightX, baseLineY - barHeight, barHeight);
-        drawBar(rightX, baseLineY, barHeight);
+        drawBar(rightX, baseLineY - barHeight, barHeight, numBars - i - 1);
+        drawBar(rightX, baseLineY, barHeight, numBars - i - 1);
         drawBaseLineDot(rightX);
     }
     
@@ -166,18 +184,18 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         }
         
         // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight);
+        drawBar(x, baseLineY - barHeight, barHeight, numBarsOnHalf + i);
         
         // Draw bar below base line (up-down mirroring)
-        drawBar(x, baseLineY, barHeight);
+        drawBar(x, baseLineY, barHeight, numBarsOnHalf + i);
         
         // Draw base line dot
         drawBaseLineDot(x);
         
         // Draw left mirror (symmetrical)
         const leftX = centerX - i * (barWidth + barSpacing) - barWidth / 2;
-        drawBar(leftX, baseLineY - barHeight, barHeight);
-        drawBar(leftX, baseLineY, barHeight);
+        drawBar(leftX, baseLineY - barHeight, barHeight, numBarsOnHalf - i - 1);
+        drawBar(leftX, baseLineY, barHeight, numBarsOnHalf - i - 1);
         drawBaseLineDot(leftX);
     }
     
