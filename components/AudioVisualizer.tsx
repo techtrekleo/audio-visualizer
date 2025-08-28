@@ -110,9 +110,13 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         ctx.fill();
     };
     
-    for (let i = 0; i < numBars; i++) {
+    // AB|BA design: Left side (low to high frequency), Right side (high to low frequency)
+    const numBarsOnHalf = Math.floor(numBars / 2);
+    
+    // Left side: from left to center, frequency from low to high
+    for (let i = 0; i < numBarsOnHalf; i++) {
         const x = i * (barWidth + barSpacing) + barWidth / 2;
-        const dataIndex = Math.floor((i / numBars) * dataSliceLength);
+        const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceLength);
         const amplitude = dataArray[dataIndex] / 255.0;
         
         let barHeight: number;
@@ -127,14 +131,38 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             barHeight = staticHeight * breathingEffect;
         }
         
-        // Draw bar above base line only (no up-down mirroring)
+        // Draw bar above base line
         drawBar(x, baseLineY - barHeight, barHeight);
         
-        // Draw left-right mirror (symmetrical) - only if not at center
-        if (Math.abs(x - centerX) > barWidth) {
-            const leftX = width - x;
-            drawBar(leftX, baseLineY - barHeight, barHeight);
+        // Draw right mirror (symmetrical)
+        const rightX = width - x;
+        drawBar(rightX, baseLineY - barHeight, barHeight);
+    }
+    
+    // Right side: from center to right, frequency from high to low
+    for (let i = 0; i < numBarsOnHalf; i++) {
+        const x = centerX + i * (barWidth + barSpacing) + barWidth / 2;
+        const dataIndex = Math.floor((numBarsOnHalf - i - 1) / numBarsOnHalf) * dataSliceLength;
+        const amplitude = dataArray[dataIndex] / 255.0;
+        
+        let barHeight: number;
+        if (hasAudioData && amplitude > 0.01) {
+            // Dynamic bars based on audio
+            barHeight = Math.pow(amplitude, 1.8) * maxBarHeight * sensitivity;
+            if (barHeight < 3) continue;
+        } else {
+            // Static bars should be at minimum height when no music
+            const staticHeight = maxBarHeight * 0.03; // Very minimal height
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.03 + 1; // Very subtle breathing
+            barHeight = staticHeight * breathingEffect;
         }
+        
+        // Draw bar above base line
+        drawBar(x, baseLineY - barHeight, barHeight);
+        
+        // Draw left mirror (symmetrical)
+        const leftX = centerX - i * (barWidth + barSpacing) - barWidth / 2;
+        drawBar(leftX, baseLineY - barHeight, barHeight);
     }
     
     ctx.restore();
