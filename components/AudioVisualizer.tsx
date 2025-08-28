@@ -65,96 +65,73 @@ const createRoundedRectPath = (ctx: CanvasRenderingContext2D, x: number, y: numb
 const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
-    // Global effects are now handled in drawCustomText
-    
-    const numBarsOnHalf = 64;
-    const totalBars = numBarsOnHalf * 2;
-    const barWidth = width / totalBars;
-    const centerX = width / 2;
     const centerY = height / 2;
-    const maxHeight = height * 0.45;
-
-    const dataSliceEnd = Math.floor(dataArray.length * 0.7);
-    const [startHue, endHue] = colors.hueRange;
-    const hueRangeSpan = endHue - startHue;
+    const maxBarHeight = height * 0.4;
+    const barSpacing = 8; // Space between bars
+    const barWidth = 4; // Width of each bar
     
-    if (waveformStroke) {
-        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-        ctx.lineWidth = 1.5;
-    }
-
-    // Check if we have audio data or if we should show static bars
+    // Check if we have audio data
     const hasAudioData = dataArray.some(value => value > 0);
     
-    for (let i = 0; i < numBarsOnHalf; i++) {
-        // Map i to the correct frequency data for BA|AB layout
-        const mappedIndex = numBarsOnHalf - i - 1; // Reverse the frequency mapping
-        const dataIndex = Math.floor((mappedIndex / numBarsOnHalf) * dataSliceEnd);
+    // Draw base line of dots
+    const baseLineY = centerY;
+    const dotRadius = 2;
+    const dotSpacing = 12;
+    
+    // Create glowing effect for base line
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+    ctx.shadowBlur = 15;
+    
+    // Draw base line dots
+    for (let x = 0; x < width; x += dotSpacing) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, baseLineY, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw vertical bars
+    const numBars = Math.floor(width / (barWidth + barSpacing));
+    const dataSliceLength = dataArray.length * 0.6;
+    
+    for (let i = 0; i < numBars; i++) {
+        const x = i * (barWidth + barSpacing) + barWidth / 2;
+        const dataIndex = Math.floor((i / numBars) * dataSliceLength);
         const amplitude = dataArray[dataIndex] / 255.0;
         
-        // If no audio data, create static bars with subtle animation
         let barHeight: number;
         if (hasAudioData && amplitude > 0.01) {
-            barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
-            if (barHeight < 2) continue;
+            // Dynamic bars based on audio
+            barHeight = Math.pow(amplitude, 1.8) * maxBarHeight * sensitivity;
+            if (barHeight < 3) continue;
         } else {
-            // Static bars with subtle breathing effect - keep them minimal and elegant
-            const staticHeight = maxHeight * 0.08; // Reduced to 8% for minimal bars
-            const breathingEffect = Math.sin(frame * 0.03 + i * 0.12) * 0.08 + 1; // Subtle breathing
+            // Static bars with subtle breathing effect
+            const staticHeight = maxBarHeight * 0.12;
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.1 + 1;
             barHeight = staticHeight * breathingEffect;
         }
-
-        let color;
-        if (colors.name === ColorPaletteType.WHITE) {
-            if (hasAudioData) {
-                const lightness = 85 + (amplitude * 15);
-                color = `hsl(220, 10%, ${lightness}%)`;
-            } else {
-                // Static white bars with subtle variation - keep them minimal and elegant
-                const lightness = 65 + Math.sin(frame * 0.015 + i * 0.06) * 4; // Subtle variation
-                color = `hsl(220, 8%, ${lightness}%)`;
-            }
-        } else {
-            if (hasAudioData) {
-                const hue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
-                const saturation = isBeat ? 100 : 90;
-                const lightness = 60 + (amplitude * 10);
-                color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            } else {
-                // Static colored bars with subtle hue variation - keep them minimal and elegant
-                const baseHue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
-                const hueVariation = Math.sin(frame * 0.02 + i * 0.1) * 8; // Subtle hue variation
-                const hue = (baseHue + hueVariation + 360) % 360;
-                const saturation = 60; // Reduced saturation for subtlety
-                const lightness = 45 + Math.sin(frame * 0.025 + i * 0.12) * 6; // Subtle variation
-                color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-            }
-        }
         
-        ctx.shadowColor = color;
-        ctx.shadowBlur = hasAudioData && amplitude > 0.01 ? (isBeat ? 10 : 5) : 2; // Minimal shadow for static bars
-       
-        ctx.fillStyle = color;
-
-        const barGap = 2;
-        const effectiveBarWidth = barWidth - barGap;
-        const cornerRadius = Math.min(4, effectiveBarWidth / 3);
+        // Create glowing white bars
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         
-        const drawBars = (x: number) => {
-            createRoundedRectPath(ctx, x, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
-            ctx.fill();
-            if (waveformStroke) ctx.stroke();
-
-            createRoundedRectPath(ctx, x, centerY, effectiveBarWidth, barHeight, cornerRadius);
-            ctx.fill();
-            if (waveformStroke) ctx.stroke();
-        };
-
-        // Changed from AB|BA to BA|AB - swapped high/low frequency positions
-        drawBars(centerX - (numBarsOnHalf - i) * barWidth + barGap / 2);
-        drawBars(centerX + (numBarsOnHalf - i - 1) * barWidth + barGap / 2);
+        // Draw vertical bar
+        const barX = x - barWidth / 2;
+        const barY = baseLineY - barHeight;
+        
+        // Create rounded rectangle for the bar
+        const cornerRadius = 2;
+        createRoundedRectPath(ctx, barX, barY, barWidth, barHeight, cornerRadius);
+        ctx.fill();
+        
+        // Add subtle inner glow
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        createRoundedRectPath(ctx, barX + 1, barY + 1, barWidth - 2, barHeight - 2, cornerRadius);
+        ctx.fill();
     }
-
+    
     ctx.restore();
 };
 
