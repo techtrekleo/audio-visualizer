@@ -95,9 +95,9 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     const drawBar = (x: number, y: number, height: number) => {
         if (height < 1) return;
         
-        // Create glowing white bars
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-        ctx.shadowBlur = 15;
+        // Create clean white bars without shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         
         // Draw vertical bar
