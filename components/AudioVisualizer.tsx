@@ -583,32 +583,34 @@ const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         const x = centerX + Math.cos(angle) * planet.distance;
         const y = centerY + Math.sin(angle) * planet.distance;
         
-        // Calculate planet size based on audio
-        const audioScale = 1 + planet.audio * 0.5;
+        // Calculate planet size based on audio - enhanced effect
+        const audioScale = 1 + planet.audio * 1.5; // Increased from 0.5 to 1.5
         const currentRadius = planet.radius * audioScale;
         
-        // Draw planet glow if enabled
+        // Draw planet glow if enabled - enhanced effect
         if (planet.glow) {
-            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius * 2);
+            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius * 3);
             glowGradient.addColorStop(0, planet.color);
-            glowGradient.addColorStop(0.5, applyAlphaToColor(planet.color, 0.6));
+            glowGradient.addColorStop(0.3, applyAlphaToColor(planet.color, 0.8));
+            glowGradient.addColorStop(0.7, applyAlphaToColor(planet.color, 0.4));
             glowGradient.addColorStop(1, 'transparent');
             
             ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(x, y, currentRadius * 2, 0, Math.PI * 2);
+            ctx.arc(x, y, currentRadius * 3, 0, Math.PI * 2);
             ctx.fill();
         }
         
-        // Draw planet
+        // Draw planet with enhanced audio-reactive colors
         const planetGradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius);
-        planetGradient.addColorStop(0, planet.color);
-        planetGradient.addColorStop(0.7, applyAlphaToColor(planet.color, 0.8));
-        planetGradient.addColorStop(1, applyAlphaToColor(planet.color, 0.6));
+        const enhancedColor = planet.audio > 0.3 ? '#FFFFFF' : planet.color; // Bright white when audio is strong
+        planetGradient.addColorStop(0, enhancedColor);
+        planetGradient.addColorStop(0.7, applyAlphaToColor(enhancedColor, 0.9));
+        planetGradient.addColorStop(1, applyAlphaToColor(enhancedColor, 0.7));
         
         ctx.fillStyle = planetGradient;
         ctx.shadowColor = planet.color;
-        ctx.shadowBlur = planet.glow ? 20 : 8;
+        ctx.shadowBlur = planet.glow ? 30 : 15; // Enhanced shadow blur
         
         ctx.beginPath();
         ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
@@ -642,44 +644,10 @@ const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
             ctx.fill();
         }
         
-        // Draw planet name labels
-        if (planet.audio > 0.1) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.font = '12px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(planet.name, x, y + currentRadius + 20);
-        }
+        // Planet name labels removed for cleaner visual
     });
     
-    // Draw shooting stars when audio is intense
-    const totalAudio = planets.reduce((sum, planet) => sum + planet.audio, 0);
-    if (totalAudio > 0.5) {
-        for (let i = 0; i < 3; i++) {
-            const starX = Math.random() * width;
-            const starY = Math.random() * height;
-            const starLength = 20 + Math.random() * 30;
-            const starAngle = Math.PI / 4 + (Math.random() - 0.5) * Math.PI / 2;
-            
-            const starGradient = ctx.createLinearGradient(
-                starX, starY,
-                starX + Math.cos(starAngle) * starLength,
-                starY + Math.sin(starAngle) * starLength
-            );
-            starGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-            starGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
-            starGradient.addColorStop(1, 'transparent');
-            
-            ctx.strokeStyle = starGradient;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(starX, starY);
-            ctx.lineTo(
-                starX + Math.cos(starAngle) * starLength,
-                starY + Math.sin(starAngle) * starLength
-            );
-            ctx.stroke();
-        }
-    }
+    // Shooting stars effect removed for cleaner visual
     
     ctx.restore();
 };
@@ -944,101 +912,57 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     
     ctx.save();
 
-    // 2. 增强水波涟漪效果 - Enhanced Water Ripple Effect
-    const rippleCount = 8; // 大幅增加涟漪层数
-    const maxRippleRadius = Math.min(width, height) * 0.6; // 增加涟漪范围
+    // 2. 優化水波漣漪效果 - Optimized Water Ripple Effect
+    const rippleCount = 4; // 減少漣漪層數從8到4
+    const maxRippleRadius = Math.min(width, height) * 0.5; // 減少漣漪範圍
     
     for (let layer = 0; layer < rippleCount; layer++) {
-        const rippleAge = (frame + layer * 12) % 120; // 延长涟漪生命周期
-        const rippleRadius = (rippleAge / 120) * maxRippleRadius;
-        const rippleOpacity = Math.max(0, 1 - (rippleAge / 120)) * 1.0; // 增加透明度
+        const rippleAge = (frame + layer * 20) % 100; // 簡化漣漪生命週期
+        const rippleRadius = (rippleAge / 100) * maxRippleRadius;
+        const rippleOpacity = Math.max(0, 1 - (rippleAge / 100)) * 0.8; // 減少透明度
         
-        if (rippleOpacity > 0.03) { // 降低阈值，显示更多涟漪
-            // 根据音频强度调整涟漪颜色和强度
+        if (rippleOpacity > 0.05) { // 提高閾值，減少繪製
+            // 根據音頻強度調整漣漪顏色和強度
             const audioIntensity = (normalizedBass * 0.5 + normalizedMid * 0.3 + normalizedTreble * 0.2) * sensitivity;
             const rippleColor = isBeat ? colors.accent : colors.primary;
             
-            // 大幅增强涟漪线条
+            // 簡化漣漪線條
             ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * audioIntensity);
-            ctx.lineWidth = Math.max(3, 8 - layer * 0.8); // 增加线条粗细
-            ctx.shadowBlur = 30; // 增加阴影模糊
+            ctx.lineWidth = Math.max(2, 6 - layer * 1); // 減少線條粗細
+            ctx.shadowBlur = 15; // 減少陰影模糊
             ctx.shadowColor = rippleColor;
             
-            // 绘制主涟漪圆圈
+            // 繪製主漣漪圓圈
             ctx.beginPath();
             ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
             ctx.stroke();
             
-            // 添加双重涟漪效果
-            if (layer % 2 === 0) {
-                ctx.strokeStyle = applyAlphaToColor(colors.secondary, rippleOpacity * audioIntensity * 0.7);
-                ctx.lineWidth = Math.max(1, 4 - layer * 0.4);
-                ctx.shadowBlur = 15;
+            // 簡化雙重漣漪效果 - 只在特定層數繪製
+            if (layer % 3 === 0) {
+                ctx.strokeStyle = applyAlphaToColor(colors.secondary, rippleOpacity * audioIntensity * 0.5);
+                ctx.lineWidth = Math.max(1, 3 - layer * 0.5);
+                ctx.shadowBlur = 8;
                 ctx.shadowColor = colors.secondary;
                 
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, rippleRadius + 5, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            
-            // 增强涟漪波动效果
-            if (layer === 0 && (isBeat || normalizedBass > 0.4)) {
-                const waveCount = 16; // 增加波动数量
-                for (let wave = 0; wave < waveCount; wave++) {
-                    const waveAngle = (wave / waveCount) * Math.PI * 2;
-                    const waveRadius = rippleRadius + Math.sin(frame * 0.2 + wave) * 12;
-                    const waveX = centerX + Math.cos(waveAngle) * waveRadius;
-                    const waveY = centerY + Math.sin(waveAngle) * waveRadius;
-                    
-                    ctx.beginPath();
-                    ctx.arc(waveX, waveY, 4, 0, Math.PI * 2); // 增加波动点大小
-                    ctx.fillStyle = applyAlphaToColor(rippleColor, rippleOpacity * 1.0);
-                    ctx.fill();
-                }
-            }
-            
-            // 增强涟漪扭曲效果
-            if (layer === 1 && normalizedMid > 0.2) {
-                const distortionCount = 8;
-                for (let dist = 0; dist < distortionCount; dist++) {
-                    const distAngle = (dist / distortionCount) * Math.PI * 2 + frame * 0.08;
-                    const distRadius = rippleRadius + Math.sin(frame * 0.3 + dist) * 20;
-                    const distX = centerX + Math.cos(distAngle) * distRadius;
-                    const distY = centerY + Math.sin(distAngle) * distRadius;
-                    
-                    ctx.beginPath();
-                    ctx.arc(distX, distY, 3, 0, Math.PI * 2); // 增加扭曲点大小
-                    ctx.fillStyle = applyAlphaToColor(colors.secondary, rippleOpacity * 0.8);
-                    ctx.fill();
-                }
-            }
-            
-            // 添加涟漪光晕效果
-            if (layer <= 2) {
-                ctx.shadowBlur = 40;
-                ctx.shadowColor = rippleColor;
-                ctx.strokeStyle = applyAlphaToColor(rippleColor, rippleOpacity * 0.3);
-                ctx.lineWidth = Math.max(5, 12 - layer * 2);
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, rippleRadius + 3, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
     }
     
-    // 添加额外的脉冲涟漪
-    if (isBeat || normalizedBass > 0.6) {
-        const pulseRippleCount = 3;
+    // 簡化脈衝漣漪效果
+    if (isBeat && Math.random() > 0.5) { // 只在50%的節拍時觸發
+        const pulseRippleCount = 2; // 減少從3到2
         for (let pr = 0; pr < pulseRippleCount; pr++) {
-            const pulseAge = (frame + pr * 25) % 80;
-            const pulseRadius = (pulseAge / 80) * maxRippleRadius * 0.8;
-            const pulseOpacity = Math.max(0, 1 - (pulseAge / 80)) * 0.9;
+            const pulseAge = (frame + pr * 30) % 60; // 簡化生命週期
+            const pulseRadius = (pulseAge / 60) * maxRippleRadius * 0.6;
+            const pulseOpacity = Math.max(0, 1 - (pulseAge / 60)) * 0.7;
             
-            if (pulseOpacity > 0.05) {
+            if (pulseOpacity > 0.08) { // 提高閾值
                 ctx.strokeStyle = applyAlphaToColor(colors.accent, pulseOpacity);
-                ctx.lineWidth = 6;
-                ctx.shadowBlur = 50;
+                ctx.lineWidth = 4; // 減少線條粗細
+                ctx.shadowBlur = 20; // 減少陰影模糊
                 ctx.shadowColor = colors.accent;
                 
                 ctx.beginPath();
@@ -1048,64 +972,61 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         }
     }
     
-    // 3. 音符涟漪 - Note-based Ripples
-    const noteCount = 12; // 增加音符数量
+    // 3. 優化音符漣漪 - Optimized Note-based Ripples
+    const noteCount = 8; // 減少音符數量從12到8
     for (let i = 0; i < noteCount; i++) {
-        const noteAngle = (i / noteCount) * Math.PI * 2 + frame * 0.03;
-        const noteRadius = Math.min(width, height) * 0.28;
+        const noteAngle = (i / noteCount) * Math.PI * 2 + frame * 0.02; // 減慢旋轉速度
+        const noteRadius = Math.min(width, height) * 0.25;
         const noteX = centerX + Math.cos(noteAngle) * noteRadius;
         const noteY = centerY + Math.sin(noteAngle) * noteRadius;
         
         const noteIntensity = dataArray[Math.floor((i / noteCount) * dataArray.length)] / 255;
-        if (noteIntensity > 0.08) { // 降低阈值，显示更多音符
-            const noteSize = noteIntensity * 30 * sensitivity; // 增加音符大小
+        if (noteIntensity > 0.12) { // 提高閾值，減少繪製
+            const noteSize = noteIntensity * 25 * sensitivity; // 減少音符大小
             const noteColor = colors.secondary;
             
-            // 增强音符涟漪效果
-            const noteRippleCount = 3; // 每个音符产生多层涟漪
-            for (let nr = 0; nr < noteRippleCount; nr++) {
-                const noteRippleAge = (frame + i * 5 + nr * 8) % 60;
-                const noteRippleRadius = noteSize * (2 + nr * 1.5);
-                const noteRippleOpacity = noteIntensity * (0.6 - nr * 0.2);
+            // 簡化音符漣漪效果 - 只產生1層漣漪
+            const noteRippleAge = (frame + i * 10) % 50;
+            const noteRippleRadius = noteSize * 2;
+            const noteRippleOpacity = noteIntensity * 0.4;
+            
+            if (noteRippleOpacity > 0.08) {
+                ctx.strokeStyle = applyAlphaToColor(noteColor, noteRippleOpacity);
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 8; // 減少陰影模糊
+                ctx.shadowColor = noteColor;
                 
-                if (noteRippleOpacity > 0.05) {
-                    ctx.strokeStyle = applyAlphaToColor(noteColor, noteRippleOpacity);
-                    ctx.lineWidth = Math.max(2, 5 - nr * 1);
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = noteColor;
-                    
-                    ctx.beginPath();
-                    ctx.arc(noteX, noteY, noteRippleRadius, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
+                ctx.beginPath();
+                ctx.arc(noteX, noteY, noteRippleRadius, 0, Math.PI * 2);
+                ctx.stroke();
             }
             
             // 音符核心
             ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 1.0);
-            ctx.shadowBlur = 25; // 增加阴影
+            ctx.shadowBlur = 15; // 減少陰影
             ctx.shadowColor = noteColor;
             
             ctx.beginPath();
             ctx.arc(noteX, noteY, noteSize, 0, Math.PI * 2);
             ctx.fill();
             
-            // 音符光晕
-            ctx.shadowBlur = 40;
-            ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 0.3);
+            // 簡化音符光暈
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = applyAlphaToColor(noteColor, noteIntensity * 0.2);
             ctx.beginPath();
-            ctx.arc(noteX, noteY, noteSize * 1.5, 0, Math.PI * 2);
+            ctx.arc(noteX, noteY, noteSize * 1.3, 0, Math.PI * 2);
             ctx.fill();
         }
     }
 
-    // 4. Frequency "Tendrils" with Ripple Integration
-    const spikes = 180;
-    const spikeBaseRadius = Math.min(width, height) * 0.15;
+    // 4. 優化頻率觸鬚 - Optimized Frequency "Tendrils"
+    const spikes = 90; // 減少觸鬚數量從180到90
+    const spikeBaseRadius = Math.min(width, height) * 0.12;
     
     for (let i = 0; i < spikes; i++) {
         const dataIndex = Math.floor((i / spikes) * (dataArray.length * 0.5));
-        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 1.8) * 150 * sensitivity;
-        if (spikeHeight < 1) continue;
+        const spikeHeight = Math.pow(dataArray[dataIndex] / 255, 1.5) * 120 * sensitivity; // 減少高度計算複雜度
+        if (spikeHeight < 2) continue; // 提高閾值
         
         const angle = (i / spikes) * Math.PI * 2;
         const x1 = centerX + Math.cos(angle) * spikeBaseRadius;
@@ -1113,11 +1034,11 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         const x2 = centerX + Math.cos(angle) * (spikeBaseRadius + spikeHeight);
         const y2 = centerY + Math.sin(angle) * (spikeBaseRadius + spikeHeight);
         
+        // 簡化控制點計算
         const controlPointRadius = spikeBaseRadius + spikeHeight / 2;
-        const swirlAngle = angle + Math.PI / 2;
-        const swirlAmount = (spikeHeight / 10) + Math.sin(frame * 0.05 + i * 0.1) * 10;
-        const controlX = centerX + Math.cos(angle) * controlPointRadius + Math.cos(swirlAngle) * swirlAmount;
-        const controlY = centerY + Math.sin(angle) * controlPointRadius + Math.sin(swirlAngle) * swirlAmount;
+        const swirlAmount = (spikeHeight / 15) + Math.sin(frame * 0.03 + i * 0.05) * 8; // 減少計算複雜度
+        const controlX = centerX + Math.cos(angle) * controlPointRadius;
+        const controlY = centerY + Math.sin(angle) * controlPointRadius + Math.sin(frame * 0.03 + i * 0.05) * swirlAmount;
         
         const drawCurve = () => {
             ctx.beginPath();
@@ -1128,7 +1049,7 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
 
         if (waveformStroke) {
             ctx.save();
-            ctx.lineWidth = 6;
+            ctx.lineWidth = 4; // 減少線條粗細
             ctx.strokeStyle = 'rgba(0,0,0,0.6)';
             ctx.shadowBlur = 0;
             ctx.shadowColor = 'transparent';
@@ -1138,18 +1059,18 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
 
         ctx.strokeStyle = colors.primary;
         ctx.shadowColor = colors.primary;
-        ctx.shadowBlur = 10;
-        ctx.lineWidth = 4;
+        ctx.shadowBlur = 6; // 減少陰影模糊
+        ctx.lineWidth = 3; // 減少線條粗細
         drawCurve();
         
-        // 在尖端添加涟漪效果
-        if (spikeHeight > 50 && i % 20 === 0) {
-            const tipRippleRadius = Math.min(15, spikeHeight * 0.1);
-            const tipRippleOpacity = (spikeHeight / 150) * 0.6;
+        // 簡化尖端漣漪效果 - 只在特定條件下繪製
+        if (spikeHeight > 60 && i % 30 === 0) { // 提高閾值和減少頻率
+            const tipRippleRadius = Math.min(12, spikeHeight * 0.08);
+            const tipRippleOpacity = (spikeHeight / 120) * 0.5;
             
             ctx.strokeStyle = applyAlphaToColor(colors.accent, tipRippleOpacity);
-            ctx.lineWidth = 2;
-            ctx.shadowBlur = 8;
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 4;
             ctx.shadowColor = colors.accent;
             
             ctx.beginPath();
@@ -1159,64 +1080,53 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     }
     ctx.restore(); // Restore from tendril shadow/glow effect
     
-    // 5. Enhanced Central Core with Ripple Waves
-    const coreRadius = Math.min(width, height) * 0.06 + normalizedBass * 50; // 增加核心大小
+    // 5. 優化中央核心 - Optimized Central Core
+    const coreRadius = Math.min(width, height) * 0.05 + normalizedBass * 40; // 減少核心大小
     const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
     coreGradient.addColorStop(0, colors.accent);
-    coreGradient.addColorStop(0.3, colors.primary);
+    coreGradient.addColorStop(0.4, colors.primary);
     coreGradient.addColorStop(1, 'rgba(0, 150, 200, 0)');
     
-    ctx.shadowBlur = 60; // 增加核心阴影
+    ctx.shadowBlur = 30; // 減少核心陰影
     ctx.shadowColor = colors.primary;
     ctx.fillStyle = coreGradient;
     ctx.beginPath();
     ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
     ctx.fill();
     
-    // 增强核心涟漪波动
-    if (isBeat || normalizedBass > 0.4) { // 降低触发阈值
-        const coreRippleCount = 5; // 增加核心涟漪数量
+    // 簡化核心漣漪波動
+    if (isBeat && Math.random() > 0.6) { // 只在40%的節拍時觸發
+        const coreRippleCount = 3; // 減少從5到3
         for (let cr = 0; cr < coreRippleCount; cr++) {
-            const coreRippleAge = (frame + cr * 8) % 80; // 调整涟漪速度
-            const coreRippleRadius = coreRadius + (coreRippleAge / 80) * 40;
-            const coreRippleOpacity = Math.max(0, 1 - (coreRippleAge / 80)) * 0.8;
+            const coreRippleAge = (frame + cr * 15) % 60; // 簡化生命週期
+            const coreRippleRadius = coreRadius + (coreRippleAge / 60) * 30;
+            const coreRippleOpacity = Math.max(0, 1 - (coreRippleAge / 60)) * 0.6;
             
-            if (coreRippleOpacity > 0.05) {
+            if (coreRippleOpacity > 0.08) { // 提高閾值
                 ctx.strokeStyle = applyAlphaToColor(colors.accent, coreRippleOpacity);
-                ctx.lineWidth = 4; // 增加线条粗细
-                ctx.shadowBlur = 30; // 增加阴影
+                ctx.lineWidth = 3; // 減少線條粗細
+                ctx.shadowBlur = 15; // 減少陰影
                 ctx.shadowColor = colors.accent;
                 
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, coreRippleRadius, 0, Math.PI * 2);
                 ctx.stroke();
-                
-                // 添加核心涟漪光晕
-                if (cr <= 2) {
-                    ctx.shadowBlur = 50;
-                    ctx.strokeStyle = applyAlphaToColor(colors.accent, coreRippleOpacity * 0.4);
-                    ctx.lineWidth = 8;
-                    
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, coreRippleRadius, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
             }
         }
     }
     
-    // 添加核心脉冲效果
-    if (isBeat) {
-        const pulseCount = 4;
+    // 簡化核心脈衝效果
+    if (isBeat && Math.random() > 0.7) { // 只在30%的節拍時觸發
+        const pulseCount = 2; // 減少從4到2
         for (let p = 0; p < pulseCount; p++) {
-            const pulseAge = (frame + p * 15) % 60;
-            const pulseRadius = coreRadius + (pulseAge / 60) * 60;
-            const pulseOpacity = Math.max(0, 1 - (pulseAge / 60)) * 0.6;
+            const pulseAge = (frame + p * 25) % 50; // 簡化生命週期
+            const pulseRadius = coreRadius + (pulseAge / 50) * 40;
+            const pulseOpacity = Math.max(0, 1 - (pulseAge / 50)) * 0.5;
             
-            if (pulseOpacity > 0.05) {
+            if (pulseOpacity > 0.08) { // 提高閾值
                 ctx.strokeStyle = applyAlphaToColor(colors.accent, pulseOpacity);
-                ctx.lineWidth = 6;
-                ctx.shadowBlur = 40;
+                ctx.lineWidth = 4; // 減少線條粗細
+                ctx.shadowBlur = 20; // 減少陰影模糊
                 ctx.shadowColor = colors.accent;
                 
                 ctx.beginPath();
@@ -1830,21 +1740,21 @@ const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.shadowBlur = 10;
     ctx.stroke(wavePath);
 
-    // Add classic scanlines for the retro feel (reduced frequency)
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-    for (let i = 0; i < height; i += 6) { // Increased from 3 to 6 - reduced frequency by 50%
+    // Add classic scanlines for the retro feel (further reduced frequency)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Reduced opacity from 0.15 to 0.1
+    for (let i = 0; i < height; i += 12) { // Increased from 6 to 12 - reduced frequency by another 50%
         ctx.fillRect(0, i, width, 1);
     }
     
-    // The key "wave" effect: horizontal slipping on beat
-    if (isBeat) {
-        const numSlices = Math.floor(Math.random() * 5) + 3; // 3 to 7 slices
+    // The key "wave" effect: horizontal slipping on beat (reduced frequency)
+    if (isBeat && Math.random() > 0.6) { // Only 40% chance on beat
+        const numSlices = Math.floor(Math.random() * 3) + 1; // Reduced from 3-7 to 1-3 slices
         for (let i = 0; i < numSlices; i++) {
             const sy = Math.random() * height;
-            const sh = (Math.random() * height) / 10 + 5; // A bit of height
+            const sh = (Math.random() * height) / 15 + 3; // Reduced height
             const sx = 0;
             const sw = width;
-            const dx = (Math.random() - 0.5) * 50;
+            const dx = (Math.random() - 0.5) * 25; // Reduced displacement from 50 to 25
             const dy = sy;
             try {
                ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
@@ -1883,14 +1793,14 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
         ctx.stroke();
     };
 
-    // Modified effect: Dynamic Chromatic Aberration
-    // Happens occasionally without a beat, and intensely on a beat.
-    const isGlitching = isBeat || Math.random() > 0.9;
+    // Modified effect: Dynamic Chromatic Aberration (reduced frequency)
+    // Happens less frequently and with reduced intensity
+    const isGlitching = isBeat && Math.random() > 0.5; // Only 50% chance on beat, no random glitching
     if (isGlitching) {
         ctx.globalCompositeOperation = 'lighter';
-        const intensity = isBeat ? 12 : 4;
-        drawWave('rgba(255, 0, 100, 0.7)', (Math.random() - 0.5) * intensity, 0, 2); // Magenta
-        drawWave('rgba(0, 255, 255, 0.7)', (Math.random() - 0.5) * intensity, 0, 2);  // Cyan
+        const intensity = 6; // Reduced from 12 to 6
+        drawWave('rgba(255, 0, 100, 0.5)', (Math.random() - 0.5) * intensity, 0, 2); // Magenta with reduced opacity
+        drawWave('rgba(0, 255, 255, 0.5)', (Math.random() - 0.5) * intensity, 0, 2);  // Cyan with reduced opacity
     }
     
     ctx.globalCompositeOperation = 'source-over';
@@ -1907,24 +1817,24 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.shadowBlur = 10;
     drawWave(colors.primary, 0, 0, 2.5);
 
-    // Original effect: Scanlines
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-    for (let i = 0; i < height; i += 4) {
-        ctx.fillRect(0, i, width, 2);
+    // Original effect: Scanlines (reduced frequency)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Reduced opacity from 0.25 to 0.15
+    for (let i = 0; i < height; i += 8) { // Increased from 4 to 8 - reduced frequency by 50%
+        ctx.fillRect(0, i, width, 1); // Reduced height from 2 to 1
     }
     
     // Removed Vertical Roll effect for better viewing experience
 
-    // Modified effect: Block Corruption (replaces simple horizontal slip)
-    if (isBeat) {
-        const numBlocks = Math.floor(Math.random() * 4) + 1; // 1 to 4 blocks
+    // Modified effect: Block Corruption (reduced frequency and intensity)
+    if (isBeat && Math.random() > 0.7) { // Only 30% chance on beat
+        const numBlocks = Math.floor(Math.random() * 2) + 1; // Reduced from 1-4 to 1-2 blocks
         for (let i = 0; i < numBlocks; i++) {
-            const sx = Math.random() * width * 0.9;
-            const sy = Math.random() * height * 0.9;
-            const sw = Math.random() * width * 0.3 + 10;
-            const sh = Math.random() * height * 0.1 + 5;
-            const dx = sx + (Math.random() - 0.5) * 60;
-            const dy = sy + (Math.random() - 0.5) * 30;
+            const sx = Math.random() * width * 0.8;
+            const sy = Math.random() * height * 0.8;
+            const sw = Math.random() * width * 0.2 + 8; // Reduced width
+            const sh = Math.random() * height * 0.08 + 3; // Reduced height
+            const dx = sx + (Math.random() - 0.5) * 30; // Reduced displacement from 60 to 30
+            const dy = sy + (Math.random() - 0.5) * 15; // Reduced displacement from 30 to 15
             try {
                 // We draw from the canvas onto itself to create the glitch
                 ctx.drawImage(ctx.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
