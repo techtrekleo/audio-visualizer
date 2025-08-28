@@ -66,6 +66,8 @@ interface ControlsProps {
     onEffectOffsetXChange: (value: number) => void;
     effectOffsetY: number;
     onEffectOffsetYChange: (value: number) => void;
+    // Ad dashboard
+    onOpenAdDashboard?: () => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean; variant?: 'primary' | 'secondary' | 'danger' }>> = ({ children, onClick, className = '', disabled=false, variant = 'primary' }) => {
@@ -679,6 +681,21 @@ const Controls: React.FC<ControlsProps> = ({
                     />
                 </div>
             </ControlSection>
+            
+            {/* --- Ad Dashboard --- */}
+            {onOpenAdDashboard && (
+                <ControlSection title="廣告管理" className="mb-6">
+                    <div className="flex justify-center">
+                        <Button
+                            onClick={onOpenAdDashboard}
+                            variant="secondary"
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            📊 查看廣告效果
+                        </Button>
+                    </div>
+                </ControlSection>
+            )}
         </div>
     );
 };

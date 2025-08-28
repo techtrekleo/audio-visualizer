@@ -8,6 +8,8 @@ import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
 import Controls from './components/Controls';
 import Icon from './components/Icon';
+import AdManager from './components/AdManager';
+import PopupAdManager from './components/PopupAdManager';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
 import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle } from './types';
@@ -42,6 +44,9 @@ function App() {
     const [effectScale, setEffectScale] = useState<number>(1.0);
     const [effectOffsetX, setEffectOffsetX] = useState<number>(0);
     const [effectOffsetY, setEffectOffsetY] = useState<number>(0);
+
+    // Ad Dashboard State
+    const [showAdDashboard, setShowAdDashboard] = useState<boolean>(false);
 
     // Subtitle State
     const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
@@ -171,6 +176,14 @@ function App() {
         }
         const url = URL.createObjectURL(file);
         setBackgroundImage(url);
+    };
+
+    const handleOpenAdDashboard = () => {
+        setShowAdDashboard(true);
+    };
+
+    const handleCloseAdDashboard = () => {
+        setShowAdDashboard(false);
     };
 
     const clearBackgroundImage = () => {
@@ -319,6 +332,9 @@ function App() {
             </header>
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
+                {/* 頂部廣告 */}
+                <AdManager />
+                
                 {!audioFile ? (
                     <div className="flex-1 flex items-center justify-center">
                       <AudioUploader onFileSelect={handleFileSelect} />
@@ -437,6 +453,7 @@ function App() {
                             onEffectOffsetXChange={setEffectOffsetX}
                             effectOffsetY={effectOffsetY}
                             onEffectOffsetYChange={setEffectOffsetY}
+                            onOpenAdDashboard={handleOpenAdDashboard}
                         />
                     </div>
                 )}
@@ -444,6 +461,16 @@ function App() {
             <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
                 一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
             </footer>
+            
+            {/* 彈出廣告管理器 */}
+            <PopupAdManager triggerCondition="first-visit" />
+            <PopupAdManager triggerCondition="recording-complete" />
+            
+            {/* 廣告儀表板 */}
+            <AdDashboard 
+                isVisible={showAdDashboard} 
+                onClose={handleCloseAdDashboard} 
+            />
         </div>
     );
 }
