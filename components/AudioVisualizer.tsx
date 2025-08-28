@@ -566,13 +566,85 @@ const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
         { name: 'Pluto', radius: 6, distance: 450, color: '#696969', audio: normalizedPluto, speed: 0.005, glow: false }
     ];
     
-    // Draw orbital paths
+    // Draw orbital paths with Bezier curve nebula effects
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 1;
     planets.forEach(planet => {
         if (planet.distance > 0) {
             ctx.beginPath();
             ctx.arc(centerX, centerY, planet.distance, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    });
+    
+    // Draw Bezier curve nebula around each planet
+    planets.forEach((planet, index) => {
+        if (planet.distance > 0 && planet.audio > 0.1) { // Only draw for planets with audio activity
+            const angle = frame * planet.speed + (index * Math.PI / 5);
+            const x = centerX + Math.cos(angle) * planet.distance;
+            const y = centerY + Math.sin(angle) * planet.distance;
+            
+            // Create nebula effect with Bezier curves
+            const nebulaRadius = planet.radius * 2.5 + planet.audio * 20;
+            const controlPoints = 8; // Number of control points for smooth curves
+            
+            ctx.beginPath();
+            
+            // Start from the first point
+            const startAngle = 0;
+            const startX = x + Math.cos(startAngle) * nebulaRadius;
+            const startY = y + Math.sin(startAngle) * nebulaRadius;
+            ctx.moveTo(startX, startY);
+            
+            // Create smooth Bezier curve around the planet
+            for (let i = 0; i <= controlPoints; i++) {
+                const progress = i / controlPoints;
+                const currentAngle = progress * Math.PI * 2;
+                
+                // Add some wave variation based on audio
+                const waveOffset = Math.sin(frame * 0.05 + i * 0.8) * (planet.audio * 8);
+                const currentRadius = nebulaRadius + waveOffset;
+                
+                const currentX = x + Math.cos(currentAngle) * currentRadius;
+                const currentY = y + Math.sin(currentAngle) * currentRadius;
+                
+                if (i === 0) {
+                    // First point already moved to
+                    continue;
+                } else if (i === controlPoints) {
+                    // Last point - close the path
+                    ctx.lineTo(startX, startY);
+                } else {
+                    // Calculate control points for smooth curves
+                    const prevAngle = ((i - 1) / controlPoints) * Math.PI * 2;
+                    const prevRadius = nebulaRadius + Math.sin(frame * 0.05 + (i - 1) * 0.8) * (planet.audio * 8);
+                    const prevX = x + Math.cos(prevAngle) * prevRadius;
+                    const prevY = y + Math.sin(prevAngle) * prevRadius;
+                    
+                    // Create smooth curve using quadratic curves
+                    const midX = (prevX + currentX) / 2;
+                    const midY = (prevY + currentY) / 2;
+                    
+                    ctx.quadraticCurveTo(prevX, prevY, midX, midY);
+                }
+            }
+            
+            // Create nebula gradient
+            const nebulaGradient = ctx.createRadialGradient(x, y, 0, x, y, nebulaRadius);
+            const nebulaColor = planet.color;
+            const alpha = planet.audio * 0.3; // Audio-reactive transparency
+            
+            nebulaGradient.addColorStop(0, applyAlphaToColor(nebulaColor, alpha * 0.8));
+            nebulaGradient.addColorStop(0.5, applyAlphaToColor(nebulaColor, alpha * 0.4));
+            nebulaGradient.addColorStop(1, 'transparent');
+            
+            // Fill the nebula
+            ctx.fillStyle = nebulaGradient;
+            ctx.fill();
+            
+            // Add subtle stroke for definition
+            ctx.strokeStyle = applyAlphaToColor(nebulaColor, alpha * 0.6);
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
     });
