@@ -66,6 +66,7 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.save();
     
     const centerY = height / 2;
+    const centerX = width / 2;
     const maxBarHeight = height * 0.4;
     const barSpacing = 20; // Increased space between bars
     const barWidth = 8; // Increased width of each bar
@@ -82,18 +83,10 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
     ctx.shadowBlur = 15;
     
-    // Draw base line dots
-    for (let x = 0; x < width; x += dotSpacing) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.beginPath();
-        ctx.arc(x, baseLineY, dotRadius, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
     // Calculate number of bars
     const numBars = Math.floor(width / (barWidth + barSpacing));
     
-    // Also draw dots at bar positions for better alignment
+    // Draw base line dots only at bar positions for clean alignment
     for (let i = 0; i < numBars; i++) {
         const x = i * (barWidth + barSpacing) + barWidth / 2;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -147,10 +140,12 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         // Draw bar below base line (up-down mirroring)
         drawBar(x, baseLineY, barHeight);
         
-        // Draw left-right mirror (symmetrical)
-        const leftX = width - x;
-        drawBar(leftX, baseLineY - barHeight, barHeight);
-        drawBar(leftX, baseLineY, barHeight);
+        // Draw left-right mirror (symmetrical) - only if not at center
+        if (Math.abs(x - centerX) > barWidth) {
+            const leftX = width - x;
+            drawBar(leftX, baseLineY - barHeight, barHeight);
+            drawBar(leftX, baseLineY, barHeight);
+        }
     }
     
     ctx.restore();
