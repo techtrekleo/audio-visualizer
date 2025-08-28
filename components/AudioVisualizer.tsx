@@ -67,8 +67,8 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     
     const centerY = height / 2;
     const maxBarHeight = height * 0.4;
-    const barSpacing = 8; // Space between bars
-    const barWidth = 4; // Width of each bar
+    const barSpacing = 20; // Increased space between bars
+    const barWidth = 8; // Increased width of each bar
     
     // Check if we have audio data
     const hasAudioData = dataArray.some(value => value > 0);
@@ -90,8 +90,19 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         ctx.fill();
     }
     
-    // Draw vertical bars with simplified mirroring
+    // Calculate number of bars
     const numBars = Math.floor(width / (barWidth + barSpacing));
+    
+    // Also draw dots at bar positions for better alignment
+    for (let i = 0; i < numBars; i++) {
+        const x = i * (barWidth + barSpacing) + barWidth / 2;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x, baseLineY, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw vertical bars with simplified mirroring
     const dataSliceLength = dataArray.length * 0.6;
     
     // Function to draw a single bar
