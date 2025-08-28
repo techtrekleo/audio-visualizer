@@ -522,6 +522,168 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
+const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    ctx.save();
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Audio-reactive parameters for different frequency ranges
+    const sunBass = dataArray.slice(0, 16).reduce((a, b) => a + b, 0) / 16;
+    const mercuryTreble = dataArray.slice(200, 256).reduce((a, b) => a + b, 0) / 56;
+    const venusHighMid = dataArray.slice(150, 200).reduce((a, b) => a + b, 0) / 50;
+    const earthMid = dataArray.slice(100, 150).reduce((a, b) => a + b, 0) / 50;
+    const marsLowMid = dataArray.slice(64, 100).reduce((a, b) => a + b, 0) / 36;
+    const jupiterLow = dataArray.slice(32, 64).reduce((a, b) => a + b, 0) / 32;
+    const saturnBass = dataArray.slice(16, 32).reduce((a, b) => a + b, 0) / 16;
+    const uranusSubBass = dataArray.slice(8, 16).reduce((a, b) => a + b, 0) / 8;
+    const neptuneUltraLow = dataArray.slice(4, 8).reduce((a, b) => a + b, 0) / 4;
+    const plutoDeep = dataArray.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+    
+    // Normalize audio data
+    const normalizedSun = Math.pow(sunBass / 255, 1.5) * sensitivity;
+    const normalizedMercury = Math.pow(mercuryTreble / 255, 1.2) * sensitivity;
+    const normalizedVenus = Math.pow(venusHighMid / 255, 1.3) * sensitivity;
+    const normalizedEarth = Math.pow(earthMid / 255, 1.4) * sensitivity;
+    const normalizedMars = Math.pow(marsLowMid / 255, 1.3) * sensitivity;
+    const normalizedJupiter = Math.pow(jupiterLow / 255, 1.5) * sensitivity;
+    const normalizedSaturn = Math.pow(saturnBass / 255, 1.4) * sensitivity;
+    const normalizedUranus = Math.pow(uranusSubBass / 255, 1.6) * sensitivity;
+    const normalizedNeptune = Math.pow(neptuneUltraLow / 255, 1.7) * sensitivity;
+    const normalizedPluto = Math.pow(plutoDeep / 255, 1.8) * sensitivity;
+    
+    // Planet properties
+    const planets = [
+        { name: 'Sun', radius: 25, distance: 0, color: '#FFD700', audio: normalizedSun, speed: 0.01, glow: true },
+        { name: 'Mercury', radius: 8, distance: 60, color: '#A0522D', audio: normalizedMercury, speed: 0.03, glow: false },
+        { name: 'Venus', radius: 12, distance: 90, color: '#FFA500', audio: normalizedVenus, speed: 0.025, glow: false },
+        { name: 'Earth', radius: 13, distance: 130, color: '#4169E1', audio: normalizedEarth, speed: 0.02, glow: false },
+        { name: 'Mars', radius: 10, distance: 170, color: '#DC143C', audio: normalizedMars, speed: 0.018, glow: false },
+        { name: 'Jupiter', radius: 20, distance: 220, color: '#DAA520', audio: normalizedJupiter, speed: 0.015, glow: false },
+        { name: 'Saturn', radius: 18, distance: 280, color: '#F4A460', audio: normalizedSaturn, speed: 0.012, glow: false },
+        { name: 'Uranus', radius: 15, distance: 340, color: '#40E0D0', audio: normalizedUranus, speed: 0.01, glow: false },
+        { name: 'Neptune', radius: 14, distance: 400, color: '#1E90FF', audio: normalizedNeptune, speed: 0.008, glow: false },
+        { name: 'Pluto', radius: 6, distance: 450, color: '#696969', audio: normalizedPluto, speed: 0.005, glow: false }
+    ];
+    
+    // Draw orbital paths
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    planets.forEach(planet => {
+        if (planet.distance > 0) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, planet.distance, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    });
+    
+    // Draw planets
+    planets.forEach((planet, index) => {
+        const angle = frame * planet.speed + (index * Math.PI / 5);
+        const x = centerX + Math.cos(angle) * planet.distance;
+        const y = centerY + Math.sin(angle) * planet.distance;
+        
+        // Calculate planet size based on audio
+        const audioScale = 1 + planet.audio * 0.5;
+        const currentRadius = planet.radius * audioScale;
+        
+        // Draw planet glow if enabled
+        if (planet.glow) {
+            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius * 2);
+            glowGradient.addColorStop(0, planet.color);
+            glowGradient.addColorStop(0.5, applyAlphaToColor(planet.color, 0.6));
+            glowGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius * 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw planet
+        const planetGradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius);
+        planetGradient.addColorStop(0, planet.color);
+        planetGradient.addColorStop(0.7, applyAlphaToColor(planet.color, 0.8));
+        planetGradient.addColorStop(1, applyAlphaToColor(planet.color, 0.6));
+        
+        ctx.fillStyle = planetGradient;
+        ctx.shadowColor = planet.color;
+        ctx.shadowBlur = planet.glow ? 20 : 8;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Special effects for specific planets
+        if (planet.name === 'Saturn') {
+            // Draw Saturn's rings
+            const ringGradient = ctx.createRadialGradient(x, y, currentRadius, x, y, currentRadius * 1.8);
+            ringGradient.addColorStop(0, 'transparent');
+            ringGradient.addColorStop(0.3, applyAlphaToColor(planet.color, 0.4));
+            ringGradient.addColorStop(0.7, applyAlphaToColor(planet.color, 0.6));
+            ringGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = ringGradient;
+            ctx.beginPath();
+            ctx.ellipse(x, y, currentRadius * 1.8, currentRadius * 0.3, angle, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        if (planet.name === 'Earth') {
+            // Draw Earth's atmosphere glow
+            const atmosphereGradient = ctx.createRadialGradient(x, y, currentRadius, x, y, currentRadius * 1.3);
+            atmosphereGradient.addColorStop(0, 'transparent');
+            atmosphereGradient.addColorStop(0.5, applyAlphaToColor('#87CEEB', 0.3));
+            atmosphereGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = atmosphereGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw planet name labels
+        if (planet.audio > 0.1) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(planet.name, x, y + currentRadius + 20);
+        }
+    });
+    
+    // Draw shooting stars when audio is intense
+    const totalAudio = planets.reduce((sum, planet) => sum + planet.audio, 0);
+    if (totalAudio > 0.5) {
+        for (let i = 0; i < 3; i++) {
+            const starX = Math.random() * width;
+            const starY = Math.random() * height;
+            const starLength = 20 + Math.random() * 30;
+            const starAngle = Math.PI / 4 + (Math.random() - 0.5) * Math.PI / 2;
+            
+            const starGradient = ctx.createLinearGradient(
+                starX, starY,
+                starX + Math.cos(starAngle) * starLength,
+                starY + Math.sin(starAngle) * starLength
+            );
+            starGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            starGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+            starGradient.addColorStop(1, 'transparent');
+            
+            ctx.strokeStyle = starGradient;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(starX, starY);
+            ctx.lineTo(
+                starX + Math.cos(starAngle) * starLength,
+                starY + Math.sin(starAngle) * starLength
+            );
+            ctx.stroke();
+        }
+    }
+    
+    ctx.restore();
+};
+
 const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
@@ -2876,7 +3038,7 @@ const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.STELLAR_CORE]: drawStellarCore,
     [VisualizationType.WATER_RIPPLE]: drawWaterRipple,
     [VisualizationType.RADIAL_BARS]: drawRadialBars,
-    [VisualizationType.PARTICLE_GALAXY]: drawParticleGalaxy,
+    [VisualizationType.PARTICLE_GALAXY]: drawSolarSystem,
     [VisualizationType.LIQUID_METAL]: drawLiquidMetal,
     [VisualizationType.CRT_GLITCH]: drawCrtGlitch,
     [VisualizationType.GLITCH_WAVE]: drawGlitchWave,
