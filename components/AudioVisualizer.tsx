@@ -83,28 +83,56 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
         ctx.lineWidth = 1.5;
     }
 
+    // Check if we have audio data or if we should show static bars
+    const hasAudioData = dataArray.some(value => value > 0);
+    
     for (let i = 0; i < numBarsOnHalf; i++) {
         // Map i to the correct frequency data for BA|AB layout
         const mappedIndex = numBarsOnHalf - i - 1; // Reverse the frequency mapping
         const dataIndex = Math.floor((mappedIndex / numBarsOnHalf) * dataSliceEnd);
         const amplitude = dataArray[dataIndex] / 255.0;
-        const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
-
-        if (barHeight < 2) continue;
+        
+        // If no audio data, create static bars with subtle animation
+        let barHeight: number;
+        if (hasAudioData) {
+            barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
+            if (barHeight < 2) continue;
+        } else {
+            // Static bars with subtle breathing effect
+            const staticHeight = maxHeight * 0.15; // 15% of max height
+            const breathingEffect = Math.sin(frame * 0.02 + i * 0.1) * 0.1 + 1;
+            barHeight = staticHeight * breathingEffect;
+        }
 
         let color;
         if (colors.name === ColorPaletteType.WHITE) {
-            const lightness = 85 + (amplitude * 15);
-            color = `hsl(220, 10%, ${lightness}%)`;
+            if (hasAudioData) {
+                const lightness = 85 + (amplitude * 15);
+                color = `hsl(220, 10%, ${lightness}%)`;
+            } else {
+                // Static white bars with subtle variation
+                const lightness = 70 + Math.sin(frame * 0.01 + i * 0.05) * 5;
+                color = `hsl(220, 10%, ${lightness}%)`;
+            }
         } else {
-            const hue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
-            const saturation = isBeat ? 100 : 90;
-            const lightness = 60 + (amplitude * 10);
-            color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            if (hasAudioData) {
+                const hue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
+                const saturation = isBeat ? 100 : 90;
+                const lightness = 60 + (amplitude * 10);
+                color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            } else {
+                // Static colored bars with subtle hue variation
+                const baseHue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
+                const hueVariation = Math.sin(frame * 0.015 + i * 0.08) * 10;
+                const hue = (baseHue + hueVariation + 360) % 360;
+                const saturation = 70;
+                const lightness = 50 + Math.sin(frame * 0.02 + i * 0.1) * 10;
+                color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            }
         }
         
         ctx.shadowColor = color;
-        ctx.shadowBlur = isBeat ? 10 : 5;
+        ctx.shadowBlur = hasAudioData ? (isBeat ? 10 : 5) : 3;
        
         ctx.fillStyle = color;
 
