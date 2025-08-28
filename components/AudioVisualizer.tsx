@@ -74,26 +74,19 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     // Check if we have audio data
     const hasAudioData = dataArray.some(value => value > 0);
     
-    // Draw base line of dots
+    // Draw base line
     const baseLineY = centerY;
-    const dotRadius = 2;
-    const dotSpacing = 12;
-    
-    // Create glowing effect for base line
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-    ctx.shadowBlur = 15;
     
     // Calculate number of bars
     const numBars = Math.floor(width / (barWidth + barSpacing));
     
-    // Draw base line dots only at bar positions for clean alignment
-    for (let i = 0; i < numBars; i++) {
-        const x = i * (barWidth + barSpacing) + barWidth / 2;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.beginPath();
-        ctx.arc(x, baseLineY, dotRadius, 0, Math.PI * 2);
-        ctx.fill();
-    }
+    // Draw a single clean base line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, baseLineY);
+    ctx.lineTo(width, baseLineY);
+    ctx.stroke();
     
     // Draw vertical bars with simplified mirroring
     const dataSliceLength = dataArray.length * 0.6;
