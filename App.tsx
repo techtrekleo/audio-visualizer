@@ -462,6 +462,8 @@ function App() {
                     <a href="/privacy-policy.html" className="text-gray-400 hover:text-cyan-400 transition-colors">隱私政策</a>
                     <span className="text-gray-600">|</span>
                     <a href="/terms-of-service.html" className="text-gray-400 hover:text-cyan-400 transition-colors">使用條款</a>
+                    <span className="text-gray-600">|</span>
+                    <a href="/youtube-shorts-guide.html" className="text-gray-400 hover:text-cyan-400 transition-colors">YouTube Shorts 指南</a>
                 </div>
             </footer>
         </div>

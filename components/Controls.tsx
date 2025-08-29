@@ -402,12 +402,27 @@ const Controls: React.FC<ControlsProps> = ({
                         options={Object.values(ColorPaletteType).map(v => ({ value: v, label: v }))}
                     />
                     
-                    <SelectControl
-                        label="解析度"
-                        value={resolution}
-                        onChange={(value) => onResolutionChange(value as Resolution)}
-                        options={Object.values(Resolution).map(v => ({ value: v, label: v }))}
-                    />
+                    <div className="space-y-2">
+                        <SelectControl
+                            label="解析度"
+                            value={resolution}
+                            onChange={(value) => onResolutionChange(value as Resolution)}
+                            options={Object.values(Resolution).map(v => ({ value: v, label: v }))}
+                        />
+                        {(resolution === Resolution.SQUARE_1080 || resolution === Resolution.SQUARE_4K) && (
+                            <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 text-sm">
+                                <div className="flex items-center gap-2 text-blue-300">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="font-medium">YouTube Shorts 專用</span>
+                                </div>
+                                <p className="text-blue-200 text-xs mt-1">
+                                    1:1 畫面比例完美適合 YouTube Shorts、Instagram 和 TikTok
+                                </p>
+                            </div>
+                        )}
+                    </div>
                     
                     <SelectControl
                         label="背景顏色"

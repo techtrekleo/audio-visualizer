@@ -18,6 +18,8 @@ export const RESOLUTION_MAP: Record<Resolution, {width: number, height: number} 
     [Resolution.P720]: { width: 1280, height: 720 },
     [Resolution.P1080]: { width: 1920, height: 1080 },
     [Resolution.P4K]: { width: 3840, height: 2160 },
+    [Resolution.SQUARE_1080]: { width: 1080, height: 1080 },
+    [Resolution.SQUARE_4K]: { width: 2160, height: 2160 },
     [Resolution.CURRENT]: null,
 };
 
