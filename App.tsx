@@ -455,7 +455,14 @@ function App() {
             </div>
             
             <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
-                一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
+                <div className="mb-2">
+                    一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
+                </div>
+                <div className="flex justify-center gap-4 text-xs">
+                    <a href="/privacy-policy.html" className="text-gray-400 hover:text-cyan-400 transition-colors">隱私政策</a>
+                    <span className="text-gray-600">|</span>
+                    <a href="/terms-of-service.html" className="text-gray-400 hover:text-cyan-400 transition-colors">使用條款</a>
+                </div>
             </footer>
         </div>
     );
