@@ -212,3 +212,4 @@ export const getAllAdMetrics = () => adAnalytics.getAllMetrics();
 export const getOverallAdMetrics = () => adAnalytics.getOverallMetrics();
 export const exportAdData = () => adAnalytics.exportData();
 export const clearAdData = () => adAnalytics.clearData();
+

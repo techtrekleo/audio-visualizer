@@ -72,3 +72,4 @@ const PopupAd: React.FC<PopupAdProps> = ({
 };
 
 export default PopupAd;
+

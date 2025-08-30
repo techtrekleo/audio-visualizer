@@ -175,3 +175,4 @@ export const AD_DISPLAY_STRATEGY = {
         cooldown: 300000 // 彈出間隔（5分鐘）
     }
 };
+

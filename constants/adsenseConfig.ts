@@ -76,3 +76,4 @@ export const isAdSenseConfigured = (): boolean => {
         ad.adSlot !== 'YOUR_CONTENT_SLOT'
     );
 };
+

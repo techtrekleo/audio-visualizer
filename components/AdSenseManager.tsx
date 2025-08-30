@@ -46,3 +46,4 @@ const AdSenseManager: React.FC<AdSenseManagerProps> = ({ position, className = '
 };
 
 export default AdSenseManager;
+

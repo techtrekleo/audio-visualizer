@@ -6,3 +6,4 @@ Sitemap: https://audio-visualizer-production.up.railway.app/sitemap.xml
 
 # Google AdSense
 Allow: /ads.txt
+

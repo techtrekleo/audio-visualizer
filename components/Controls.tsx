@@ -648,6 +648,57 @@ const Controls: React.FC<ControlsProps> = ({
                             onChange={(value) => onSubtitleEffectChange(value as GraphicEffectType)}
                             options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
                         />
+                        
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium text-gray-300">字幕背景</label>
+                                <div className="relative group">
+                                    <svg className="w-4 h-4 text-gray-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        <strong>字幕背景樣式說明：</strong><br/>
+                                        • <strong>無</strong>：純文字，無背景<br/>
+                                        • <strong>半透明</strong>：黑色半透明背景<br/>
+                                        • <strong>實色</strong>：黑色實心背景
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {Object.values(SubtitleBgStyle).map((style) => (
+                                    <button
+                                        key={style}
+                                        onClick={() => onSubtitleBgStyleChange(style)}
+                                        className={`p-3 rounded-lg border-2 transition-all duration-200 text-xs font-medium ${
+                                            subtitleBgStyle === style
+                                                ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200'
+                                                : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-600 text-gray-300'
+                                        }`}
+                                    >
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-center">
+                                                {style === SubtitleBgStyle.NONE && (
+                                                    <div className="w-8 h-5 bg-transparent border border-gray-400 rounded flex items-center justify-center">
+                                                        <span className="text-gray-400 text-xs">A</span>
+                                                    </div>
+                                                )}
+                                                {style === SubtitleBgStyle.SEMI_TRANSPARENT && (
+                                                    <div className="w-8 h-5 bg-black/50 border border-gray-400 rounded flex items-center justify-center">
+                                                        <span className="text-white text-xs">A</span>
+                                                    </div>
+                                                )}
+                                                {style === SubtitleBgStyle.SOLID && (
+                                                    <div className="w-8 h-5 bg-black border border-gray-400 rounded flex items-center justify-center">
+                                                        <span className="text-white text-xs">A</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-center text-xs">{style}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </ControlSection>
