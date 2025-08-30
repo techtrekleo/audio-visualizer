@@ -564,8 +564,15 @@ const Controls: React.FC<ControlsProps> = ({
                                       </>
                                 }
                             </Button>
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-2 bg-gray-900 border border-gray-600 rounded-md text-xs text-center text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                直接分析音訊檔並使用 AI 產生字幕。過程可能需要一些時間，請耐心等候。結果的準確度取決於音訊的清晰度。
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 p-3 bg-gray-900 border border-gray-600 rounded-md text-xs text-left text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                <div className="space-y-2">
+                                    <div className="font-medium text-cyan-300">AI 字幕生成功能</div>
+                                    <div>• 直接分析音訊檔並使用 AI 產生字幕</div>
+                                    <div>• 過程可能需要一些時間，請耐心等候</div>
+                                    <div>• 結果的準確度取決於音訊的清晰度</div>
+                                    <div className="text-green-300 font-medium">• 🌟 自動轉換為繁體中文</div>
+                                    <div className="text-green-300">• 支援多種語言音訊轉繁體中文</div>
+                                </div>
                             </div>
                         </div>
                         

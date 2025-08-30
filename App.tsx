@@ -128,7 +128,24 @@ function App() {
             };
 
             const textPart = {
-                text: `你是一位專業的音訊轉錄和歌詞同步專家。你的任務是轉錄提供的音訊檔案，並將整個轉錄內容格式化為標準的 LRC 檔案格式。請確保所有轉錄文字都使用**繁體中文**。每一行都必須有時間戳 \`[mm:ss.xx]\`。請確保時間戳準確，並在音訊的整個長度內邏輯分佈。轉錄內容應清晰、標點符號正確。最後一行的時間戳不得超過音訊總長度。\n\n音訊總長度：${audioDuration.toFixed(2)} 秒。請僅回應 LRC 格式的文字，不要添加任何介紹性文字或摘要。`
+                text: `你是一位專業的音訊轉錄和歌詞同步專家，專門處理繁體中文內容。
+
+**重要要求：**
+1. **語言限制**：所有轉錄內容必須使用繁體中文，絕對不能使用簡體中文
+2. **字體規範**：使用標準繁體中文字體，如「臺灣」、「香港」等
+3. **標點符號**：使用繁體中文標點符號，如「，」「。」「？」「！」等
+
+**任務說明：**
+- 轉錄提供的音訊檔案內容
+- 將內容格式化為標準的 LRC 檔案格式
+- 每一行都必須有時間戳 \`[mm:ss.xx]\`
+- 時間戳必須準確，並在音訊的整個長度內邏輯分佈
+- 轉錄內容應清晰、標點符號正確
+- 最後一行的時間戳不得超過音訊總長度
+
+**音訊總長度：** ${audioDuration.toFixed(2)} 秒
+
+**回應格式：** 僅回應 LRC 格式的文字，不要添加任何介紹性文字、摘要或說明。`
             };
             
             const response = await ai.models.generateContent({
@@ -466,6 +483,8 @@ function App() {
                     <a href="/youtube-shorts-guide.html" className="text-gray-400 hover:text-cyan-400 transition-colors">YouTube Shorts 指南</a>
                     <span className="text-gray-600">|</span>
                     <a href="/subtitle-background-demo.html" className="text-gray-400 hover:text-cyan-400 transition-colors">字幕背景預覽</a>
+                    <span className="text-gray-600">|</span>
+                    <a href="/traditional-chinese-subtitles.html" className="text-gray-400 hover:text-cyan-400 transition-colors">繁體中文字幕</a>
                 </div>
             </footer>
         </div>
