@@ -11,6 +11,14 @@ export const EFFECT_CATEGORIES: EffectInfo[] = [
         tags: ['頻譜', '經典', '穩定', '適合初學者']
     },
     {
+        type: VisualizationType.MONSTERCAT_CLASSIC,
+        category: EffectCategory.BASIC,
+        description: '原始 Monstercat 設計，復古風格，更接近原版效果',
+        difficulty: 'easy',
+        performance: 'low',
+        tags: ['復古', '原版', '經典', '頻譜']
+    },
+    {
         type: VisualizationType.NEBULA_WAVE,
         category: EffectCategory.BASIC,
         description: '柔和的波浪效果，視覺舒適',

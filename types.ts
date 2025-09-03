@@ -2,6 +2,7 @@
 
 export enum VisualizationType {
     MONSTERCAT = 'Monstercat',
+    MONSTERCAT_CLASSIC = 'Monstercat (經典版)',
     MONSTERCAT_GLITCH = 'Monstercat (故障版)',
     NEBULA_WAVE = 'Nebula Wave',
     LUMINOUS_WAVE = 'Luminous Wave',
