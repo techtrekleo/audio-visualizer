@@ -10,6 +10,14 @@ export const EFFECT_CATEGORIES: EffectInfo[] = [
         performance: 'low',
         tags: ['頻譜', '經典', '穩定', '適合初學者']
     },
+    {
+        type: VisualizationType.MONSTERCAT_V2,
+        category: EffectCategory.BASIC,
+        description: '新版 Monstercat，更複雜的頻率映射和佈局',
+        difficulty: 'easy',
+        performance: 'low',
+        tags: ['頻譜', '新版', '複雜', '進階']
+    },
 
     {
         type: VisualizationType.NEBULA_WAVE,
