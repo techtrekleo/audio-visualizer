@@ -84,9 +84,7 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     }
 
     for (let i = 0; i < numBarsOnHalf; i++) {
-        // Map i to the correct frequency data for BA|AB layout
-        const mappedIndex = numBarsOnHalf - i - 1; // Reverse the frequency mapping
-        const dataIndex = Math.floor((mappedIndex / numBarsOnHalf) * dataSliceEnd);
+        const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceEnd);
         const amplitude = dataArray[dataIndex] / 255.0;
         const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
 
@@ -97,7 +95,7 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             const lightness = 85 + (amplitude * 15);
             color = `hsl(220, 10%, ${lightness}%)`;
         } else {
-            const hue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
+            const hue = startHue + ((i / numBarsOnHalf) * hueRangeSpan);
             const saturation = isBeat ? 100 : 90;
             const lightness = 60 + (amplitude * 10);
             color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
@@ -122,9 +120,8 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
             if (waveformStroke) ctx.stroke();
         };
 
-        // Changed from AB|BA to BA|AB - swapped high/low frequency positions
-        drawBars(centerX - (numBarsOnHalf - i) * barWidth + barGap / 2);
-        drawBars(centerX + (numBarsOnHalf - i - 1) * barWidth + barGap / 2);
+        drawBars(centerX - (i + 1) * barWidth + barGap / 2);
+        drawBars(centerX + i * barWidth + barGap / 2);
     }
 
     ctx.restore();
