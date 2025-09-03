@@ -485,8 +485,6 @@ function App() {
                     <a href="/subtitle-background-demo.html" className="text-gray-400 hover:text-cyan-400 transition-colors">字幕背景預覽</a>
                     <span className="text-gray-600">|</span>
                     <a href="/traditional-chinese-subtitles.html" className="text-gray-400 hover:text-cyan-400 transition-colors">繁體中文字幕</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/monstercat-classic-guide.html" className="text-gray-400 hover:text-cyan-400 transition-colors">Monstercat 經典版</a>
                 </div>
             </footer>
         </div>

@@ -65,140 +65,68 @@ const createRoundedRectPath = (ctx: CanvasRenderingContext2D, x: number, y: numb
 const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     ctx.save();
     
-    const centerY = height / 2;
+    // Global effects are now handled in drawCustomText
+    
+    const numBarsOnHalf = 64;
+    const totalBars = numBarsOnHalf * 2;
+    const barWidth = width / totalBars;
     const centerX = width / 2;
-    const maxBarHeight = height * 0.4;
-    const barSpacing = 20; // Increased space between bars
-    const barWidth = 8; // Increased width of each bar
+    const centerY = height / 2;
+    const maxHeight = height * 0.45;
+
+    const dataSliceEnd = Math.floor(dataArray.length * 0.7);
+    const [startHue, endHue] = colors.hueRange;
+    const hueRangeSpan = endHue - startHue;
     
-    // Check if we have audio data
-    const hasAudioData = dataArray.some(value => value > 0);
-    
-    // Draw base line
-    const baseLineY = centerY;
-    
-    // Calculate number of bars
-    const numBars = Math.floor(width / (barWidth + barSpacing));
-    
-    // Draw base line dots at each bar position
-    const drawBaseLineDot = (x: number) => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.beginPath();
-        ctx.arc(x, baseLineY, barWidth / 2, 0, Math.PI * 2);
-        ctx.fill();
-    };
-    
-    // Draw vertical bars with simplified mirroring
-    const dataSliceLength = dataArray.length * 0.6;
-    
-    // Function to draw a single bar
-    const drawBar = (x: number, y: number, height: number, index: number) => {
-        if (height < 1) return;
-        
-        // Create colorful bars with dynamic colors
-        let barColor: string;
-        
+    if (waveformStroke) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 1.5;
+    }
+
+    for (let i = 0; i < numBarsOnHalf; i++) {
+        // Map i to the correct frequency data for BA|AB layout
+        const mappedIndex = numBarsOnHalf - i - 1; // Reverse the frequency mapping
+        const dataIndex = Math.floor((mappedIndex / numBarsOnHalf) * dataSliceEnd);
+        const amplitude = dataArray[dataIndex] / 255.0;
+        const barHeight = Math.pow(amplitude, 2.5) * maxHeight * sensitivity;
+
+        if (barHeight < 2) continue;
+
+        let color;
         if (colors.name === ColorPaletteType.WHITE) {
-            // White palette: subtle color variations
-            const lightness = 70 + (Math.sin(index * 0.3 + frame * 0.02) * 10);
-            const hue = 220 + Math.sin(index * 0.2) * 20;
-            barColor = `hsla(${hue}, 15%, ${lightness}%, 0.9)`;
+            const lightness = 85 + (amplitude * 15);
+            color = `hsl(220, 10%, ${lightness}%)`;
         } else {
-            // Colorful palettes: use the palette colors
-            const [startHue, endHue] = colors.hueRange;
-            const hueRangeSpan = endHue - startHue;
-            const hue = startHue + (index / numBars) * hueRangeSpan;
-            const saturation = 70 + Math.sin(index * 0.2 + frame * 0.01) * 20;
-            const lightness = 50 + Math.sin(index * 0.15 + frame * 0.015) * 15;
-            barColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.9)`;
+            const hue = startHue + ((mappedIndex / numBarsOnHalf) * hueRangeSpan);
+            const saturation = isBeat ? 100 : 90;
+            const lightness = 60 + (amplitude * 10);
+            color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
         }
         
-        // Apply color and shadow effects
-        ctx.fillStyle = barColor;
-        ctx.shadowColor = barColor;
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = isBeat ? 10 : 5;
+       
+        ctx.fillStyle = color;
+
+        const barGap = 2;
+        const effectiveBarWidth = barWidth - barGap;
+        const cornerRadius = Math.min(4, effectiveBarWidth / 3);
         
-        // Draw vertical bar
-        const barX = x - barWidth / 2;
-        const barY = y;
-        
-        // Create rounded rectangle for the bar
-        const cornerRadius = 2;
-        createRoundedRectPath(ctx, barX, barY, barWidth, height, cornerRadius);
-        ctx.fill();
-    };
-    
-    // AB|BA design: Left side (low to high frequency), Right side (high to low frequency)
-    const numBarsOnHalf = Math.floor(numBars / 2);
-    
-    // Left side: from left to center, frequency from low to high
-    for (let i = 0; i < numBarsOnHalf; i++) {
-        const x = i * (barWidth + barSpacing) + barWidth / 2;
-        const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceLength);
-        const amplitude = dataArray[dataIndex] / 255.0;
-        
-        let barHeight: number;
-        if (hasAudioData && amplitude > 0.01) {
-            // Dynamic bars based on audio
-            barHeight = Math.pow(amplitude, 1.8) * maxBarHeight * sensitivity;
-            if (barHeight < 3) continue;
-        } else {
-            // Static bars should be at minimum height when no music
-            const staticHeight = maxBarHeight * 0.03; // Very minimal height
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.03 + 1; // Very subtle breathing
-            barHeight = staticHeight * breathingEffect;
-        }
-        
-        // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight, i);
-        
-        // Draw bar below base line (up-down mirroring)
-        drawBar(x, baseLineY, barHeight, i);
-        
-        // Draw base line dot
-        drawBaseLineDot(x);
-        
-        // Draw right mirror (symmetrical)
-        const rightX = width - x;
-        drawBar(rightX, baseLineY - barHeight, barHeight, numBars - i - 1);
-        drawBar(rightX, baseLineY, barHeight, numBars - i - 1);
-        drawBaseLineDot(rightX);
+        const drawBars = (x: number) => {
+            createRoundedRectPath(ctx, x, centerY - barHeight, effectiveBarWidth, barHeight, cornerRadius);
+            ctx.fill();
+            if (waveformStroke) ctx.stroke();
+
+            createRoundedRectPath(ctx, x, centerY, effectiveBarWidth, barHeight, cornerRadius);
+            ctx.fill();
+            if (waveformStroke) ctx.stroke();
+        };
+
+        // Changed from AB|BA to BA|AB - swapped high/low frequency positions
+        drawBars(centerX - (numBarsOnHalf - i) * barWidth + barGap / 2);
+        drawBars(centerX + (numBarsOnHalf - i - 1) * barWidth + barGap / 2);
     }
-    
-    // Right side: from center to right, frequency from high to low
-    for (let i = 0; i < numBarsOnHalf; i++) {
-        const x = centerX + i * (barWidth + barSpacing) + barWidth / 2;
-        const dataIndex = Math.floor((numBarsOnHalf - i - 1) / numBarsOnHalf) * dataSliceLength;
-        const amplitude = dataArray[dataIndex] / 255.0;
-        
-        let barHeight: number;
-        if (hasAudioData && amplitude > 0.01) {
-            // Dynamic bars based on audio
-            barHeight = Math.pow(amplitude, 1.8) * maxBarHeight * sensitivity;
-            if (barHeight < 3) continue;
-        } else {
-            // Static bars should be at minimum height when no music
-            const staticHeight = maxBarHeight * 0.03; // Very minimal height
-            const breathingEffect = Math.sin(frame * 0.02 + i * 0.15) * 0.03 + 1; // Very subtle breathing
-            barHeight = staticHeight * breathingEffect;
-        }
-        
-        // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight, numBarsOnHalf + i);
-        
-        // Draw bar below base line (up-down mirroring)
-        drawBar(x, baseLineY, barHeight, numBarsOnHalf + i);
-        
-        // Draw base line dot
-        drawBaseLineDot(x);
-        
-        // Draw left mirror (symmetrical)
-        const leftX = centerX - i * (barWidth + barSpacing) - barWidth / 2;
-        drawBar(leftX, baseLineY - barHeight, barHeight, numBarsOnHalf - i - 1);
-        drawBar(leftX, baseLineY, barHeight, numBarsOnHalf - i - 1);
-        drawBaseLineDot(leftX);
-    }
-    
+
     ctx.restore();
 };
 
@@ -1819,135 +1747,7 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.restore();
 };
 
-const drawMonstercatClassic = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
-    ctx.save();
-    
-    const centerY = height / 2;
-    const centerX = width / 2;
-    const maxBarHeight = height * 0.35; // Slightly smaller than modern version
-    const barSpacing = 16; // Original spacing
-    const barWidth = 6; // Original width
-    
-    // Check if we have audio data
-    const hasAudioData = dataArray.some(value => value > 0);
-    
-    // Draw base line
-    const baseLineY = centerY;
-    
-    // Calculate number of bars
-    const numBars = Math.floor(width / (barWidth + barSpacing));
-    
-    // Draw base line dots at each bar position
-    const drawBaseLineDot = (x: number) => {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.beginPath();
-        ctx.arc(x, baseLineY, 3, 0, Math.PI * 2);
-        ctx.fill();
-    };
-    
-    // Function to draw a single bar with classic styling
-    const drawBar = (x: number, y: number, height: number, index: number) => {
-        if (height < 1) return;
-        
-        // Classic Monstercat colors - more muted and vintage
-        let barColor: string;
-        
-        if (colors.name === ColorPaletteType.WHITE) {
-            // Classic white with subtle variations
-            const lightness = 75 + (Math.sin(index * 0.2 + frame * 0.01) * 5);
-            barColor = `hsla(0, 0%, ${lightness}%, 0.85)`;
-        } else {
-            // Classic color palette - more muted and vintage
-            const [startHue, endHue] = colors.hueRange;
-            const hueRangeSpan = endHue - startHue;
-            const hue = startHue + (index / numBars) * hueRangeSpan;
-            const saturation = 60 + Math.sin(index * 0.15 + frame * 0.008) * 15; // More muted
-            const lightness = 45 + Math.sin(index * 0.1 + frame * 0.012) * 10; // Darker
-            barColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.85)`;
-        }
-        
-        // Classic styling - no shadows, simpler design
-        ctx.fillStyle = barColor;
-        
-        // Draw simple rectangular bar (no rounded corners)
-        const barX = x - barWidth / 2;
-        const barY = y;
-        
-        ctx.fillRect(barX, barY, barWidth, height);
-    };
-    
-    // Classic AB|BA design with simpler logic
-    const numBarsOnHalf = Math.floor(numBars / 2);
-    const dataSliceLength = dataArray.length * 0.5; // Use less data for classic feel
-    
-    // Left side: from left to center
-    for (let i = 0; i < numBarsOnHalf; i++) {
-        const x = i * (barWidth + barSpacing) + barWidth / 2;
-        const dataIndex = Math.floor((i / numBarsOnHalf) * dataSliceLength);
-        const amplitude = dataArray[dataIndex] / 255.0;
-        
-        let barHeight: number;
-        if (hasAudioData && amplitude > 0.01) {
-            // Classic response curve - less aggressive
-            barHeight = Math.pow(amplitude, 2.2) * maxBarHeight * sensitivity;
-            if (barHeight < 2) continue;
-        } else {
-            // Classic static bars - minimal movement
-            const staticHeight = maxBarHeight * 0.02;
-            const breathingEffect = Math.sin(frame * 0.015 + i * 0.1) * 0.02 + 1;
-            barHeight = staticHeight * breathingEffect;
-        }
-        
-        // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight, i);
-        
-        // Draw bar below base line (mirror)
-        drawBar(x, baseLineY, barHeight, i);
-        
-        // Draw base line dot
-        drawBaseLineDot(x);
-        
-        // Draw right mirror
-        const rightX = width - x;
-        drawBar(rightX, baseLineY - barHeight, barHeight, numBars - i - 1);
-        drawBar(rightX, baseLineY, barHeight, numBars - i - 1);
-        drawBaseLineDot(rightX);
-    }
-    
-    // Right side: from center to right
-    for (let i = 0; i < numBarsOnHalf; i++) {
-        const x = centerX + i * (barWidth + barSpacing) + barWidth / 2;
-        const dataIndex = Math.floor((numBarsOnHalf - i - 1) / numBarsOnHalf) * dataSliceLength;
-        const amplitude = dataArray[dataIndex] / 255.0;
-        
-        let barHeight: number;
-        if (hasAudioData && amplitude > 0.01) {
-            barHeight = Math.pow(amplitude, 2.2) * maxBarHeight * sensitivity;
-            if (barHeight < 2) continue;
-        } else {
-            const staticHeight = maxBarHeight * 0.02;
-            const breathingEffect = Math.sin(frame * 0.015 + i * 0.1) * 0.02 + 1;
-            barHeight = staticHeight * breathingEffect;
-        }
-        
-        // Draw bar above base line
-        drawBar(x, baseLineY - barHeight, barHeight, numBarsOnHalf + i);
-        
-        // Draw bar below base line (mirror)
-        drawBar(x, baseLineY, barHeight, numBarsOnHalf + i);
-        
-        // Draw base line dot
-        drawBaseLineDot(x);
-        
-        // Draw left mirror
-        const leftX = centerX - i * (barWidth + barSpacing) - barWidth / 2;
-        drawBar(leftX, baseLineY - barHeight, barHeight, numBarsOnHalf - i - 1);
-        drawBar(leftX, baseLineY, barHeight, numBarsOnHalf - i - 1);
-        drawBaseLineDot(leftX);
-    }
-    
-    ctx.restore();
-};
+
 
 const drawMonstercatGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
     // 1. Draw the base Monstercat visual
@@ -3044,7 +2844,6 @@ type DrawFunction = (
 
 const VISUALIZATION_MAP: Record<VisualizationType, DrawFunction> = {
     [VisualizationType.MONSTERCAT]: drawMonstercat,
-    [VisualizationType.MONSTERCAT_CLASSIC]: drawMonstercatClassic,
     [VisualizationType.MONSTERCAT_GLITCH]: drawMonstercatGlitch,
     [VisualizationType.NEBULA_WAVE]: drawNebulaWave,
     [VisualizationType.LUMINOUS_WAVE]: drawLuminousWave,
