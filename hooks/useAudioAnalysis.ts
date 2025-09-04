@@ -6,6 +6,7 @@ export const useAudioAnalysis = () => {
     const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
     const destinationNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const audioDurationRef = useRef<number>(0);
 
     const initializeAudio = useCallback((audioElement: HTMLAudioElement) => {
         // Guard against re-initialization on the same audio setup
@@ -16,13 +17,31 @@ export const useAudioAnalysis = () => {
         const context = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioContextRef.current = context;
 
+        // 動態設定FFT大小，根據音頻長度優化
+        const audioDuration = audioElement.duration || 0;
+        audioDurationRef.current = audioDuration;
+        
+        // 根據音頻長度動態調整FFT大小
+        let optimalFftSize = 2048; // 默認值
+        if (audioDuration > 0) {
+            if (audioDuration < 30) {
+                // 短音頻：使用較小的FFT大小，提高時間分辨率
+                optimalFftSize = 1024;
+            } else if (audioDuration > 300) {
+                // 長音頻：使用較大的FFT大小，提高頻率分辨率
+                optimalFftSize = 4096;
+            }
+            // 30-300秒的音頻使用默認2048
+        }
+
         // This can throw an InvalidStateError if the HTMLMediaElement is already connected
         // to a source node from a previous AudioContext that wasn't fully torn down.
         // The robust `resetAudioAnalysis` function is designed to prevent this.
         sourceRef.current = context.createMediaElementSource(audioElement);
         
         const analyser = context.createAnalyser();
-        analyser.fftSize = 2048;
+        analyser.fftSize = optimalFftSize;
+        analyser.smoothingTimeConstant = 0.8; // 添加平滑設定
         analyserRef.current = analyser;
 
         const destinationNode = context.createMediaStreamDestination();
@@ -32,6 +51,8 @@ export const useAudioAnalysis = () => {
         sourceRef.current.connect(analyser);
         analyser.connect(context.destination); // Play through speakers
         analyser.connect(destinationNode); // Send to stream for recording
+        
+        console.log(`Audio initialized with FFT size: ${optimalFftSize}, Sample rate: ${context.sampleRate}Hz, Duration: ${audioDuration}s`);
         
         setIsInitialized(true);
     }, [isInitialized]);
@@ -57,13 +78,25 @@ export const useAudioAnalysis = () => {
         analyserRef.current = null;
         sourceRef.current = null;
         destinationNodeRef.current = null;
+        audioDurationRef.current = 0;
         // Allow re-initialization
         setIsInitialized(false);
     }, []);
 
-
     const getAudioStream = useCallback(() => {
         return destinationNodeRef.current?.stream ?? null;
+    }, []);
+
+    const getAudioInfo = useCallback(() => {
+        if (!audioContextRef.current || !analyserRef.current) return null;
+        
+        return {
+            sampleRate: audioContextRef.current.sampleRate,
+            fftSize: analyserRef.current.fftSize,
+            frequencyBinCount: analyserRef.current.frequencyBinCount,
+            duration: audioDurationRef.current,
+            contextState: audioContextRef.current.state
+        };
     }, []);
 
     return {
@@ -72,5 +105,6 @@ export const useAudioAnalysis = () => {
         isAudioInitialized: isInitialized,
         getAudioStream,
         resetAudioAnalysis,
+        getAudioInfo,
     };
 };

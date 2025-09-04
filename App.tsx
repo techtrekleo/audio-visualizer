@@ -26,6 +26,8 @@ function App() {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [visualizationType, setVisualizationType] = useState<VisualizationType>(VisualizationType.MONSTERCAT);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [recordingDuration, setRecordingDuration] = useState<number>(0);
+    const [recordingStartTime, setRecordingStartTime] = useState<number>(0);
     const [customText, setCustomText] = useState<string>('Sonic Pulse');
     const [textColor, setTextColor] = useState<string>('#67E8F9');
     const [fontFamily, setFontFamily] = useState<FontType>(FontType.ROCKNROLL_ONE);
@@ -207,8 +209,8 @@ function App() {
         setShowWarning(false);
     }, []);
 
-    const { analyser, initializeAudio, isAudioInitialized, getAudioStream, resetAudioAnalysis } = useAudioAnalysis();
-    const { isRecording, startRecording, stopRecording } = useMediaRecorder(handleRecordingComplete);
+    const { analyser, initializeAudio, isAudioInitialized, getAudioStream, resetAudioAnalysis, getAudioInfo } = useAudioAnalysis();
+    const { isRecording, startRecording, stopRecording, getRecordingInfo } = useMediaRecorder(handleRecordingComplete);
 
     const handleFileSelect = (file: File) => {
         setAudioFile(file);
@@ -269,6 +271,13 @@ function App() {
     const handleTimeUpdate = () => {
         if (audioRef.current) {
             setCurrentTime(audioRef.current.currentTime);
+            
+            // 更新錄製時長
+            if (isRecording && recordingStartTime > 0) {
+                const elapsed = (Date.now() - recordingStartTime) / 1000;
+                setRecordingDuration(elapsed);
+            }
+            
             if (audioRef.current.ended) {
                 setIsPlaying(false);
                 if (isRecording) {
@@ -282,6 +291,8 @@ function App() {
         if (isRecording) {
             stopRecording();
             setIsLoading(true);
+            setRecordingDuration(0);
+            setRecordingStartTime(0);
         } else {
             if (showSubtitles && subtitles.length === 0) {
                 alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
@@ -292,9 +303,29 @@ function App() {
             if (canvasRef.current && audioStream && audioRef.current) {
                 setShowWarning(true);
                 const isTransparent = backgroundColor === BackgroundColorType.TRANSPARENT;
-                startRecording(canvasRef.current, audioStream, isTransparent);
+                const audioInfo = getAudioInfo();
+                startRecording(canvasRef.current, audioStream, isTransparent, audioInfo);
+                
+                // 設置錄製開始時間
+                setRecordingStartTime(Date.now());
+                setRecordingDuration(0);
+                
+                // 自動錄製：從開始到結束
                 audioRef.current.currentTime = 0;
-                audioRef.current.play().then(() => setIsPlaying(true));
+                audioRef.current.play().then(() => {
+                    setIsPlaying(true);
+                    
+                    // 監聽音樂結束事件，自動停止錄製
+                    const handleEnded = () => {
+                        if (isRecording) {
+                            stopRecording();
+                            setIsLoading(true);
+                        }
+                        audioRef.current?.removeEventListener('ended', handleEnded);
+                    };
+                    
+                    audioRef.current?.addEventListener('ended', handleEnded);
+                });
             } else {
                  alert("無法開始錄製。請確認音訊已載入並準備就緒。");
             }
@@ -397,7 +428,14 @@ function App() {
                                 role="alert"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-yellow-400 flex-shrink-0"><path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.74c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" /></svg>
-                                <p><strong>錄製中...</strong> 為了確保影片完整，請將此分頁保持在前景顯示。高解析度錄製可能會導致介面回應緩慢。</p>
+                                <div className="flex flex-col items-center gap-1">
+                                    <p><strong>錄製中...</strong> 為了確保影片完整，請將此分頁保持在前景顯示。高解析度錄製可能會導致介面回應緩慢。</p>
+                                    {isRecording && (
+                                        <p className="text-sm text-yellow-300">
+                                            錄製時長: {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toFixed(1).padStart(4, '0')} / 音樂總長: {Math.floor(audioDuration / 60)}:{(audioDuration % 60).toFixed(1).padStart(4, '0')}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         )}
 
