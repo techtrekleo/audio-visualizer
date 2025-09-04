@@ -210,7 +210,7 @@ function App() {
     }, []);
 
     const { analyser, initializeAudio, isAudioInitialized, getAudioStream, resetAudioAnalysis, getAudioInfo } = useAudioAnalysis();
-    const { isRecording, startRecording, stopRecording, getRecordingInfo } = useMediaRecorder(handleRecordingComplete);
+    const { isRecording, startRecording, stopRecording } = useMediaRecorder(handleRecordingComplete);
 
     const handleFileSelect = (file: File) => {
         setAudioFile(file);
@@ -303,8 +303,7 @@ function App() {
             if (canvasRef.current && audioStream && audioRef.current) {
                 setShowWarning(true);
                 const isTransparent = backgroundColor === BackgroundColorType.TRANSPARENT;
-                const audioInfo = getAudioInfo();
-                startRecording(canvasRef.current, audioStream, isTransparent, audioInfo);
+                startRecording(canvasRef.current, audioStream, isTransparent);
                 
                 // 設置錄製開始時間
                 setRecordingStartTime(Date.now());

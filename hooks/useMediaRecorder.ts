@@ -6,14 +6,9 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const recordedChunksRef = useRef<Blob[]>([]);
-    const recordingStartTimeRef = useRef<number>(0);
-    const audioInfoRef = useRef<any>(null);
 
-    const startRecording = useCallback((canvasElement: HTMLCanvasElement, audioStream: MediaStream, isTransparent: boolean = false, audioInfo?: any) => {
+    const startRecording = useCallback((canvasElement: HTMLCanvasElement, audioStream: MediaStream, isTransparent: boolean = false) => {
         if (!canvasElement) return;
-
-        // 保存音頻信息用於調試
-        audioInfoRef.current = audioInfo;
 
         const webmTransparentOptions = { mimeType: 'video/webm; codecs=vp9,opus', extension: 'webm' };
         const webmFallbackOptions = { mimeType: 'video/webm', extension: 'webm' };
@@ -45,34 +40,15 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
             }
         }
         
-        // 根據音頻信息動態調整幀率
-        let optimalFps = 60;
-        if (audioInfo && audioInfo.duration) {
-            if (audioInfo.duration < 30) {
-                // 短音頻：使用較高幀率確保流暢
-                optimalFps = 60;
-            } else if (audioInfo.duration > 300) {
-                // 長音頻：使用較低幀率節省資源
-                optimalFps = 30;
-            }
-        }
-        
-        // 使用動態幀率來確保時間同步
-        const canvasStream = canvasElement.captureStream(optimalFps);
+        // 使用固定幀率確保一致性
+        const canvasStream = canvasElement.captureStream(60); // 固定60fps
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioStream.getAudioTracks()
         ]);
 
-        // 動態調整比特率
-        let videoBitsPerSecond = 8000000; // 8 Mbps
-        if (audioInfo && audioInfo.duration) {
-            if (audioInfo.duration < 30) {
-                videoBitsPerSecond = 12000000; // 12 Mbps for short videos
-            } else if (audioInfo.duration > 300) {
-                videoBitsPerSecond = 6000000; // 6 Mbps for long videos
-            }
-        }
+        // 使用固定比特率確保文件大小一致性
+        const videoBitsPerSecond = 8000000; // 固定8 Mbps
 
         try {
             mediaRecorderRef.current = new MediaRecorder(combinedStream, { 
@@ -97,25 +73,12 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
             onRecordingComplete(url, selectedConfig.extension);
             recordedChunksRef.current = [];
         };
-
-        // 記錄開始時間
-        recordingStartTimeRef.current = Date.now();
-        
-        // 根據音頻長度動態調整數據收集頻率
-        let timeslice = 1000; // 默認每秒收集一次
-        if (audioInfo && audioInfo.duration) {
-            if (audioInfo.duration < 30) {
-                timeslice = 500; // 短音頻：每0.5秒收集一次
-            } else if (audioInfo.duration > 300) {
-                timeslice = 2000; // 長音頻：每2秒收集一次
-            }
-        }
         
         recordedChunksRef.current = [];
-        mediaRecorderRef.current.start(timeslice);
+        mediaRecorderRef.current.start(1000); // 固定1秒間隔
         setIsRecording(true);
 
-        console.log(`Recording started with FPS: ${optimalFps}, Bitrate: ${videoBitsPerSecond/1000000}Mbps, Timeslice: ${timeslice}ms`);
+        console.log(`Recording started with FPS: 60, Bitrate: 8Mbps, Timeslice: 1000ms`);
 
     }, [onRecordingComplete]);
 
@@ -124,29 +87,7 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
             mediaRecorderRef.current.stop();
         }
         setIsRecording(false);
-        recordingStartTimeRef.current = 0;
-        audioInfoRef.current = null;
     }, []);
 
-    const getRecordingDuration = useCallback(() => {
-        if (recordingStartTimeRef.current === 0) return 0;
-        return (Date.now() - recordingStartTimeRef.current) / 1000;
-    }, []);
-
-    const getRecordingInfo = useCallback(() => {
-        return {
-            isRecording,
-            duration: getRecordingDuration(),
-            audioInfo: audioInfoRef.current,
-            startTime: recordingStartTimeRef.current
-        };
-    }, [isRecording, getRecordingDuration]);
-
-    return { 
-        isRecording, 
-        startRecording, 
-        stopRecording, 
-        getRecordingDuration,
-        getRecordingInfo
-    };
+    return { isRecording, startRecording, stopRecording };
 };
