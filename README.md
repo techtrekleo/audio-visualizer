@@ -58,7 +58,9 @@ Follow these steps to set up the project on your own computer for development, d
     Navigate to `chrome://extensions` in your Chrome browser.
 
 3.  **Enable Developer Mode:**
-    In the top-right corner, toggle the "Developer mode" switch on.
+    In the top-right corner, toggle the "Developer mode" switch on
+    
+    .
 
 4.  **Load the Extension:**
     Click the **"Load unpacked"** button.

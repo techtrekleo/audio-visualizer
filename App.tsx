@@ -7,6 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 import AudioUploader from './components/AudioUploader';
 import AudioVisualizer from './components/AudioVisualizer';
 import Controls from './components/Controls';
+import OptimizedControls from './components/OptimizedControls';
 import Icon from './components/Icon';
 import AdSenseAd from './components/AdSenseAd';
 import LyricsDisplay from './components/LyricsDisplay';
@@ -102,7 +103,7 @@ function App() {
             return;
         }
         
-        const apiKey = process.env.VITE_API_KEY;
+        const apiKey = (import.meta as any).env.VITE_API_KEY;
 
         if (!apiKey) {
             console.error("API Key is not configured. Please set 'VITE_API_KEY' in your deployment environment variables and redeploy.");
@@ -420,7 +421,7 @@ function App() {
                             </div>
                         )}
 
-                        <Controls
+                        <OptimizedControls
                             isPlaying={isPlaying}
                             onPlayPause={handlePlayPause}
                             isRecording={isRecording}
