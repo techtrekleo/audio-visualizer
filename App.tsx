@@ -507,6 +507,7 @@ function App() {
                 currentTime={currentTime}
                 isVisible={showLyricsDisplay}
                 onToggle={() => setShowLyricsDisplay(!showLyricsDisplay)}
+                bgStyle={subtitleBgStyle}
             />
         </div>
     );

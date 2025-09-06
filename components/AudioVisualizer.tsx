@@ -2830,7 +2830,7 @@ const drawLyricsDisplay = (
     height: number,
     subtitles: Subtitle[],
     currentTime: number,
-    { fontFamily }: { fontFamily: string }
+    { fontFamily, bgStyle }: { fontFamily: string; bgStyle: SubtitleBgStyle }
 ) => {
     if (subtitles.length === 0) return;
     
@@ -2873,7 +2873,33 @@ const drawLyricsDisplay = (
         const x = width / 2;
         const y = startY + (index * lineHeight) + (lineHeight / 2);
         
-        // 設置顏色和透明度
+        // 測量文字寬度用於背景
+        const metrics = ctx.measureText(line.text);
+        const textWidth = metrics.width;
+        const textHeight = metrics.fontBoundingBoxAscent ?? fontSize;
+        
+        // 繪製背景（如果需要的話）
+        if (bgStyle !== SubtitleBgStyle.NONE) {
+            const bgPaddingX = fontSize * 0.4;
+            const bgPaddingY = fontSize * 0.2;
+            const bgWidth = textWidth + bgPaddingX * 2;
+            const bgHeight = textHeight + bgPaddingY * 2;
+            const bgX = x - bgWidth / 2;
+            const bgY = y - textHeight / 2 - bgPaddingY;
+            
+            // 設置背景顏色
+            if (bgStyle === SubtitleBgStyle.SOLID) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            } else if (bgStyle === SubtitleBgStyle.SEMI_TRANSPARENT) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            }
+            
+            // 繪製圓角矩形背景
+            createRoundedRectPath(ctx, bgX, bgY, bgWidth, bgHeight, 5);
+            ctx.fill();
+        }
+        
+        // 設置文字顏色和透明度
         if (isCurrentLine) {
             // 當前歌詞：白色，發光效果
             ctx.fillStyle = '#FFFFFF';
@@ -3309,7 +3335,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         }
         // 歌詞顯示 (測試中)
         if (propsRef.current.showLyricsDisplay && subtitles.length > 0) {
-            drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { fontFamily: subtitleFontFamily });
+            drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { fontFamily: subtitleFontFamily, bgStyle: subtitleBgStyle });
         }
         if (customText) {
             drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });

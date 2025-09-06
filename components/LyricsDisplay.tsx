@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Subtitle } from '../types';
+import { Subtitle, SubtitleBgStyle } from '../types';
 
 interface LyricsDisplayProps {
   subtitles: Subtitle[];
   currentTime: number;
   isVisible: boolean;
   onToggle: () => void;
+  bgStyle: SubtitleBgStyle;
 }
 
 interface LyricsLine {
@@ -19,7 +20,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
   subtitles,
   currentTime,
   isVisible,
-  onToggle
+  onToggle,
+  bgStyle
 }) => {
   const [lyricsLines, setLyricsLines] = useState<LyricsLine[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -107,6 +109,28 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
             const isCurrentLine = line.isActive;
             const isPastLine = line.isPast;
             
+            // 根據背景樣式設置背景樣式
+            const getBackgroundStyle = () => {
+              if (bgStyle === SubtitleBgStyle.NONE) {
+                return {};
+              } else if (bgStyle === SubtitleBgStyle.SOLID) {
+                return {
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  display: 'inline-block'
+                };
+              } else if (bgStyle === SubtitleBgStyle.SEMI_TRANSPARENT) {
+                return {
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  display: 'inline-block'
+                };
+              }
+              return {};
+            };
+
             return (
               <div
                 key={`${line.time}-${index}`}
@@ -121,7 +145,8 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
                   textShadow: isCurrentLine 
                     ? '0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.4)'
                     : '0 0 10px rgba(0, 0, 0, 0.5)',
-                  filter: isCurrentLine ? 'brightness(1.2)' : 'brightness(0.8)'
+                  filter: isCurrentLine ? 'brightness(1.2)' : 'brightness(0.8)',
+                  ...getBackgroundStyle()
                 }}
               >
                 {line.text}
