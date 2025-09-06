@@ -30,6 +30,9 @@ interface AudioVisualizerProps {
     effectScale: number;
     effectOffsetX: number;
     effectOffsetY: number;
+    // Lyrics Display props (測試中)
+    showLyricsDisplay: boolean;
+    currentTime: number;
 }
 
 /**
@@ -2820,6 +2823,79 @@ const drawSubtitles = (
     ctx.restore();
 };
 
+// 歌詞顯示函數 (測試中)
+const drawLyricsDisplay = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    subtitles: Subtitle[],
+    currentTime: number,
+    { fontFamily }: { fontFamily: string }
+) => {
+    if (subtitles.length === 0) return;
+    
+    ctx.save();
+    
+    // 找到當前時間對應的歌詞
+    let currentIndex = 0;
+    for (let i = 0; i < subtitles.length; i++) {
+        if (currentTime >= subtitles[i].time) {
+            currentIndex = i;
+        } else {
+            break;
+        }
+    }
+    
+    // 獲取要顯示的10行歌詞（當前行前後各5行）
+    const startIndex = Math.max(0, currentIndex - 5);
+    const endIndex = Math.min(subtitles.length, startIndex + 10);
+    const displayLines = subtitles.slice(startIndex, endIndex);
+    
+    if (displayLines.length === 0) {
+        ctx.restore();
+        return;
+    }
+    
+    // 計算每行的位置
+    const lineHeight = height * 0.08; // 每行高度
+    const startY = (height - (displayLines.length * lineHeight)) / 2; // 垂直置中
+    
+    displayLines.forEach((line, index) => {
+        const isCurrentLine = startIndex + index === currentIndex;
+        const isPastLine = startIndex + index < currentIndex;
+        
+        // 設置字體大小和顏色
+        const fontSize = isCurrentLine ? width * 0.06 : width * 0.04;
+        ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const x = width / 2;
+        const y = startY + (index * lineHeight) + (lineHeight / 2);
+        
+        // 設置顏色和透明度
+        if (isCurrentLine) {
+            // 當前歌詞：白色，發光效果
+            ctx.fillStyle = '#FFFFFF';
+            ctx.shadowColor = '#FFFFFF';
+            ctx.shadowBlur = 20;
+        } else if (isPastLine) {
+            // 過去歌詞：灰色，透明度60%
+            ctx.fillStyle = 'rgba(156, 163, 175, 0.6)';
+            ctx.shadowBlur = 0;
+        } else {
+            // 未來歌詞：淺灰色，透明度80%
+            ctx.fillStyle = 'rgba(209, 213, 219, 0.8)';
+            ctx.shadowBlur = 0;
+        }
+        
+        // 繪製文字
+        ctx.fillText(line.text, x, y);
+    });
+    
+    ctx.restore();
+};
+
 
 const drawCustomText = (
     ctx: CanvasRenderingContext2D,
@@ -3230,6 +3306,10 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         }
         if (currentSubtitle) {
             drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
+        }
+        // 歌詞顯示 (測試中)
+        if (propsRef.current.showLyricsDisplay && subtitles.length > 0) {
+            drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { fontFamily: subtitleFontFamily });
         }
         if (customText) {
             drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });

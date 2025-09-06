@@ -292,6 +292,11 @@ function App() {
                 return;
             }
             
+            if (showLyricsDisplay && subtitles.length === 0) {
+                alert("錄製提示：您已啟用歌詞顯示，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保歌詞能被正確錄進影片中。");
+                return;
+            }
+            
             const audioStream = getAudioStream();
             if (canvasRef.current && audioStream && audioRef.current) {
                 setShowWarning(true);
@@ -386,6 +391,8 @@ function App() {
                                     effectScale={effectScale}
                                     effectOffsetX={effectOffsetX}
                                     effectOffsetY={effectOffsetY}
+                                    showLyricsDisplay={showLyricsDisplay}
+                                    currentTime={currentTime}
                                 />
                             </div>
                         </div>
