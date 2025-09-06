@@ -40,21 +40,14 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
             }
         }
         
-        // 使用固定幀率確保一致性
-        const canvasStream = canvasElement.captureStream(60); // 固定60fps
+        const canvasStream = canvasElement.captureStream(30); // 30 fps
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioStream.getAudioTracks()
         ]);
 
-        // 使用固定比特率確保文件大小一致性
-        const videoBitsPerSecond = 8000000; // 固定8 Mbps
-
         try {
-            mediaRecorderRef.current = new MediaRecorder(combinedStream, { 
-                mimeType: selectedConfig.mimeType,
-                videoBitsPerSecond: videoBitsPerSecond
-            });
+            mediaRecorderRef.current = new MediaRecorder(combinedStream, { mimeType: selectedConfig.mimeType });
         } catch (e) {
             console.error("MediaRecorder instantiation error:", e);
             alert("An unexpected error occurred while starting the recorder.");
@@ -75,10 +68,8 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
         };
         
         recordedChunksRef.current = [];
-        mediaRecorderRef.current.start(1000); // 固定1秒間隔
+        mediaRecorderRef.current.start();
         setIsRecording(true);
-
-        console.log(`Recording started with FPS: 60, Bitrate: 8Mbps, Timeslice: 1000ms`);
 
     }, [onRecordingComplete]);
 
