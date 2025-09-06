@@ -325,6 +325,15 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                     <QuickSettingsPanel
                         visualizationType={props.visualizationType}
                         onVisualizationChange={props.onVisualizationChange}
+                        waveformStroke={props.waveformStroke}
+                        onWaveformStrokeChange={props.onWaveformStrokeChange}
+                        effectScale={props.effectScale}
+                        onEffectScaleChange={props.onEffectScaleChange}
+                        effectOffsetX={props.effectOffsetX}
+                        onEffectOffsetXChange={props.onEffectOffsetXChange}
+                        effectOffsetY={props.effectOffsetY}
+                        onEffectOffsetYChange={props.onEffectOffsetYChange}
+                        isRecording={props.isRecording}
                     />
                 </div>
             )}
@@ -714,59 +723,6 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                             </div>
                         </CollapsibleControlSection>
                     )}
-
-                    {/* 進階設定 */}
-                    <CollapsibleControlSection
-                        title="進階設定"
-                        icon={ICON_PATHS.ADVANCED}
-                        priority="low"
-                        defaultExpanded={false}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">聲波描邊</label>
-                                <button
-                                    onClick={() => props.onWaveformStrokeChange(!props.waveformStroke)}
-                                    disabled={props.isRecording}
-                                    type="button"
-                                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed ${props.waveformStroke ? 'bg-cyan-600' : 'bg-gray-600'}`}
-                                    aria-pressed={props.waveformStroke}
-                                >
-                                    <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.waveformStroke ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
-                            </div>
-                            
-                            <SliderControl
-                                label="特效大小"
-                                value={props.effectScale}
-                                onChange={props.onEffectScaleChange}
-                                min={0.1}
-                                max={2.0}
-                                step={0.05}
-                                colorType="scale"
-                            />
-                            
-                            <SliderControl
-                                label="水平位移"
-                                value={props.effectOffsetX}
-                                onChange={props.onEffectOffsetXChange}
-                                min={-500}
-                                max={500}
-                                step={10}
-                                colorType="position"
-                            />
-                            
-                            <SliderControl
-                                label="垂直位移"
-                                value={props.effectOffsetY}
-                                onChange={props.onEffectOffsetYChange}
-                                min={-500}
-                                max={500}
-                                step={10}
-                                colorType="position"
-                            />
-                        </div>
-                    </CollapsibleControlSection>
 
                     {/* 設置管理 */}
                     <CollapsibleControlSection
