@@ -324,22 +324,6 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                     <QuickSettingsPanel
                         visualizationType={props.visualizationType}
                         onVisualizationChange={props.onVisualizationChange}
-                        colorPalette={props.colorPalette}
-                        onColorPaletteChange={props.onColorPaletteChange}
-                        resolution={props.resolution}
-                        onResolutionChange={props.onResolutionChange}
-                        backgroundColor={props.backgroundColor}
-                        onBackgroundColorChange={props.onBackgroundColorChange}
-                        sensitivity={props.sensitivity}
-                        onSensitivityChange={props.onSensitivityChange}
-                        smoothing={props.smoothing}
-                        onSmoothingChange={props.onSmoothingChange}
-                        customText={props.customText}
-                        onTextChange={props.onTextChange}
-                        textColor={props.textColor}
-                        onTextColorChange={props.onTextColorChange}
-                        fontFamily={props.fontFamily}
-                        onFontFamilyChange={props.onFontFamilyChange}
                     />
                 </div>
             )}
