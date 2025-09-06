@@ -180,6 +180,87 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50% !important;
 }
 
+/* 增強版滑桿樣式 */
+input[type="range"].slider-enhanced,
+.slider-enhanced {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  outline: none !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* 增強版滑桿軌道 */
+input[type="range"].slider-enhanced::-webkit-slider-track,
+.slider-enhanced::-webkit-slider-track {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: transparent !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  border: none !important;
+}
+
+/* 增強版滑桿拇指 */
+input[type="range"].slider-enhanced::-webkit-slider-thumb,
+.slider-enhanced::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background: #ffffff !important;
+  height: 24px !important;
+  width: 24px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  border: 3px solid #06b6d4 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+  margin-top: -8px !important;
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+input[type="range"].slider-enhanced::-webkit-slider-thumb:hover,
+.slider-enhanced::-webkit-slider-thumb:hover {
+  background: #f8fafc !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
+  border-color: #0891b2 !important;
+}
+
+/* Mozilla 增強版滑桿 */
+input[type="range"].slider-enhanced::-moz-range-track,
+.slider-enhanced::-moz-range-track {
+  background: transparent !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  border: none !important;
+}
+
+input[type="range"].slider-enhanced::-moz-range-thumb,
+.slider-enhanced::-moz-range-thumb {
+  background: #ffffff !important;
+  height: 24px !important;
+  width: 24px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  border: 3px solid #06b6d4 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+input[type="range"].slider-enhanced::-moz-range-thumb:hover,
+.slider-enhanced::-moz-range-thumb:hover {
+  background: #f8fafc !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
+  border-color: #0891b2 !important;
+}
+
 /* 響應式設計優化 */
 @import './responsive.css';
 

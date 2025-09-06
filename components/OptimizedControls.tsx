@@ -126,23 +126,85 @@ const SliderControl: React.FC<{
     max: number;
     step: number;
     className?: string;
-}> = ({ label, value, onChange, min, max, step, className = '' }) => (
-    <div className={`space-y-2 ${className}`}>
-        <div className="flex justify-between items-center">
-            <label className="text-sm font-medium text-gray-300">{label}</label>
-            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{value.toFixed(2)}</span>
+    colorType?: 'default' | 'sensitivity' | 'position' | 'scale';
+}> = ({ label, value, onChange, min, max, step, className = '', colorType = 'default' }) => {
+    // 計算滑桿的百分比位置
+    const percentage = ((value - min) / (max - min)) * 100;
+    
+    // 根據不同類型設置顏色
+    const getSliderStyle = () => {
+        switch (colorType) {
+            case 'sensitivity':
+                return {
+                    background: `linear-gradient(to right, 
+                        #ef4444 0%, 
+                        #f97316 25%, 
+                        #eab308 50%, 
+                        #22c55e 75%, 
+                        #10b981 100%)`
+                };
+            case 'position':
+                return {
+                    background: `linear-gradient(to right, 
+                        #3b82f6 0%, 
+                        #8b5cf6 50%, 
+                        #ec4899 100%)`
+                };
+            case 'scale':
+                return {
+                    background: `linear-gradient(to right, 
+                        #6b7280 0%, 
+                        #10b981 50%, 
+                        #f59e0b 100%)`
+                };
+            default:
+                return {
+                    background: `linear-gradient(to right, 
+                        #374151 0%, 
+                        #06b6d4 50%, 
+                        #8b5cf6 100%)`
+                };
+        }
+    };
+
+    return (
+        <div className={`space-y-2 ${className}`}>
+            <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-300">{label}</label>
+                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{value.toFixed(2)}</span>
+            </div>
+            <div className="relative">
+                {/* 背景漸變條 */}
+                <div 
+                    className="w-full h-2 rounded-lg absolute top-0 left-0"
+                    style={getSliderStyle()}
+                />
+                {/* 滑桿 */}
+                <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={value}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                    style={{
+                        background: 'transparent'
+                    }}
+                />
+                {/* 當前值指示器 */}
+                <div 
+                    className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                    style={{
+                        left: 0,
+                        width: `${percentage}%`,
+                        transition: 'width 0.1s ease'
+                    }}
+                />
+            </div>
         </div>
-        <input
-            type="range"
-            min={min}
-            max={max}
-            step={step}
-            value={value}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-        />
-    </div>
-);
+    );
+};
 
 const SelectControl: React.FC<{
     label: string;
@@ -414,6 +476,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={0.1}
                                 max={3.0}
                                 step={0.1}
+                                colorType="sensitivity"
                             />
                             
                             <SliderControl
@@ -423,6 +486,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={0}
                                 max={10}
                                 step={1}
+                                colorType="default"
                             />
                             
                             <SliderControl
@@ -432,6 +496,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={0}
                                 max={1}
                                 step={0.05}
+                                colorType="default"
                             />
                         </div>
                     </CollapsibleControlSection>
@@ -626,6 +691,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={0.1}
                                 max={2.0}
                                 step={0.05}
+                                colorType="scale"
                             />
                             
                             <SliderControl
@@ -635,6 +701,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={-500}
                                 max={500}
                                 step={10}
+                                colorType="position"
                             />
                             
                             <SliderControl
@@ -644,6 +711,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 min={-500}
                                 max={500}
                                 step={10}
+                                colorType="position"
                             />
                         </div>
                     </CollapsibleControlSection>

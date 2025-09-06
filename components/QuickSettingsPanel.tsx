@@ -174,15 +174,36 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
                             <label className="text-sm font-medium text-gray-300">靈敏度</label>
                             <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{sensitivity.toFixed(1)}</span>
                         </div>
-                        <input
-                            type="range"
-                            min={0.1}
-                            max={3.0}
-                            step={0.1}
-                            value={sensitivity}
-                            onChange={(e) => onSensitivityChange(parseFloat(e.target.value))}
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                        />
+                        <div className="relative">
+                            <div 
+                                className="w-full h-2 rounded-lg absolute top-0 left-0"
+                                style={{
+                                    background: `linear-gradient(to right, 
+                                        #ef4444 0%, 
+                                        #f97316 25%, 
+                                        #eab308 50%, 
+                                        #22c55e 75%, 
+                                        #10b981 100%)`
+                                }}
+                            />
+                            <input
+                                type="range"
+                                min={0.1}
+                                max={3.0}
+                                step={0.1}
+                                value={sensitivity}
+                                onChange={(e) => onSensitivityChange(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                            />
+                            <div 
+                                className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                                style={{
+                                    left: 0,
+                                    width: `${((sensitivity - 0.1) / (3.0 - 0.1)) * 100}%`,
+                                    transition: 'width 0.1s ease'
+                                }}
+                            />
+                        </div>
                     </div>
                     
                     <div className="space-y-2">
@@ -190,15 +211,34 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
                             <label className="text-sm font-medium text-gray-300">平滑度</label>
                             <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{smoothing}</span>
                         </div>
-                        <input
-                            type="range"
-                            min={0}
-                            max={10}
-                            step={1}
-                            value={smoothing}
-                            onChange={(e) => onSmoothingChange(parseInt(e.target.value))}
-                            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                        />
+                        <div className="relative">
+                            <div 
+                                className="w-full h-2 rounded-lg absolute top-0 left-0"
+                                style={{
+                                    background: `linear-gradient(to right, 
+                                        #374151 0%, 
+                                        #06b6d4 50%, 
+                                        #8b5cf6 100%)`
+                                }}
+                            />
+                            <input
+                                type="range"
+                                min={0}
+                                max={10}
+                                step={1}
+                                value={smoothing}
+                                onChange={(e) => onSmoothingChange(parseInt(e.target.value))}
+                                className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                            />
+                            <div 
+                                className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                                style={{
+                                    left: 0,
+                                    width: `${(smoothing / 10) * 100}%`,
+                                    transition: 'width 0.1s ease'
+                                }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
