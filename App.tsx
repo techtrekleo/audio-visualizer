@@ -60,6 +60,9 @@ function App() {
     
     // Lyrics Display State (測試中)
     const [showLyricsDisplay, setShowLyricsDisplay] = useState<boolean>(false);
+    const [lyricsFontSize, setLyricsFontSize] = useState<number>(4); // 字體大小百分比
+    const [lyricsPositionX, setLyricsPositionX] = useState<number>(0); // 水平位置偏移 (-50 到 50)
+    const [lyricsPositionY, setLyricsPositionY] = useState<number>(0); // 垂直位置偏移 (-50 到 50)
     
     const audioRef = useRef<HTMLAudioElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -393,6 +396,9 @@ function App() {
                                     effectOffsetY={effectOffsetY}
                                     showLyricsDisplay={showLyricsDisplay}
                                     currentTime={currentTime}
+                                    lyricsFontSize={lyricsFontSize}
+                                    lyricsPositionX={lyricsPositionX}
+                                    lyricsPositionY={lyricsPositionY}
                                 />
                             </div>
                         </div>
@@ -473,6 +479,14 @@ function App() {
                             onEffectOffsetXChange={setEffectOffsetX}
                             effectOffsetY={effectOffsetY}
                             onEffectOffsetYChange={setEffectOffsetY}
+                            showLyricsDisplay={showLyricsDisplay}
+                            onShowLyricsDisplayChange={setShowLyricsDisplay}
+                            lyricsFontSize={lyricsFontSize}
+                            onLyricsFontSizeChange={setLyricsFontSize}
+                            lyricsPositionX={lyricsPositionX}
+                            onLyricsPositionXChange={setLyricsPositionX}
+                            lyricsPositionY={lyricsPositionY}
+                            onLyricsPositionYChange={setLyricsPositionY}
                         />
                     </div>
                 )}

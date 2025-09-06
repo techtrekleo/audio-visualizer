@@ -66,6 +66,15 @@ interface ControlsProps {
     onEffectOffsetXChange: (value: number) => void;
     effectOffsetY: number;
     onEffectOffsetYChange: (value: number) => void;
+    // Lyrics Display props (測試中)
+    showLyricsDisplay: boolean;
+    onShowLyricsDisplayChange: (show: boolean) => void;
+    lyricsFontSize: number;
+    onLyricsFontSizeChange: (size: number) => void;
+    lyricsPositionX: number;
+    onLyricsPositionXChange: (value: number) => void;
+    lyricsPositionY: number;
+    onLyricsPositionYChange: (value: number) => void;
     // Ad dashboard - temporarily removed
     // onOpenAdDashboard?: () => void;
 }
@@ -707,6 +716,58 @@ const Controls: React.FC<ControlsProps> = ({
                             </div>
                         </div>
                     </div>
+                </div>
+            </ControlSection>
+            
+            {/* --- Lyrics Display Section (測試中) --- */}
+            <ControlSection title="歌詞顯示 (測試中)" className="mb-6">
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="show-lyrics-display"
+                                checked={showLyricsDisplay}
+                                onChange={(e) => onShowLyricsDisplayChange(e.target.checked)}
+                                className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                            />
+                            <label htmlFor="show-lyrics-display" className="text-sm text-gray-300">顯示歌詞</label>
+                        </div>
+                        <div className="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded">
+                            🧪 測試中
+                        </div>
+                    </div>
+                    
+                    {showLyricsDisplay && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <SliderControl
+                                label="字體大小 (%)"
+                                value={lyricsFontSize}
+                                onChange={onLyricsFontSizeChange}
+                                min={2}
+                                max={10}
+                                step={0.5}
+                            />
+                            
+                            <SliderControl
+                                label="水平位置 (%)"
+                                value={lyricsPositionX}
+                                onChange={onLyricsPositionXChange}
+                                min={-50}
+                                max={50}
+                                step={5}
+                            />
+                            
+                            <SliderControl
+                                label="垂直位置 (%)"
+                                value={lyricsPositionY}
+                                onChange={onLyricsPositionYChange}
+                                min={-50}
+                                max={50}
+                                step={5}
+                            />
+                        </div>
+                    )}
                 </div>
             </ControlSection>
             

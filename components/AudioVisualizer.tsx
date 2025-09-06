@@ -33,6 +33,9 @@ interface AudioVisualizerProps {
     // Lyrics Display props (測試中)
     showLyricsDisplay: boolean;
     currentTime: number;
+    lyricsFontSize: number;
+    lyricsPositionX: number;
+    lyricsPositionY: number;
 }
 
 /**
@@ -2830,7 +2833,13 @@ const drawLyricsDisplay = (
     height: number,
     subtitles: Subtitle[],
     currentTime: number,
-    { fontFamily, bgStyle }: { fontFamily: string; bgStyle: SubtitleBgStyle }
+    { fontFamily, bgStyle, fontSize, positionX, positionY }: { 
+        fontFamily: string; 
+        bgStyle: SubtitleBgStyle;
+        fontSize: number;
+        positionX: number;
+        positionY: number;
+    }
 ) => {
     if (subtitles.length === 0) return;
     
@@ -2858,19 +2867,22 @@ const drawLyricsDisplay = (
     
     // 計算每行的位置
     const lineHeight = height * 0.08; // 每行高度
-    const startY = (height - (displayLines.length * lineHeight)) / 2; // 垂直置中
+    const centerX = width / 2 + (positionX * width / 100); // 水平位置調整
+    const centerY = height / 2 + (positionY * height / 100); // 垂直位置調整
+    const startY = centerY - (displayLines.length * lineHeight) / 2; // 以調整後的中心為基準
     
     displayLines.forEach((line, index) => {
         const isCurrentLine = startIndex + index === currentIndex;
         const isPastLine = startIndex + index < currentIndex;
         
         // 設置字體大小和顏色
-        const fontSize = isCurrentLine ? width * 0.06 : width * 0.04;
-        ctx.font = `bold ${fontSize}px "${fontFamily}", sans-serif`;
+        const baseFontSize = width * (fontSize / 100); // 字體大小百分比
+        const currentFontSize = isCurrentLine ? baseFontSize * 1.5 : baseFontSize; // 當前行放大1.5倍
+        ctx.font = `bold ${currentFontSize}px "${fontFamily}", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        const x = width / 2;
+        const x = centerX;
         const y = startY + (index * lineHeight) + (lineHeight / 2);
         
         // 測量文字寬度用於背景
@@ -3330,12 +3342,18 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 }
             }
         }
-        if (currentSubtitle) {
-            drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
-        }
-        // 歌詞顯示 (測試中)
+        // 歌詞顯示 (測試中) - 取代原本的字幕顯示
         if (propsRef.current.showLyricsDisplay && subtitles.length > 0) {
-            drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { fontFamily: subtitleFontFamily, bgStyle: subtitleBgStyle });
+            drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { 
+                fontFamily: subtitleFontFamily, 
+                bgStyle: subtitleBgStyle,
+                fontSize: propsRef.current.lyricsFontSize,
+                positionX: propsRef.current.lyricsPositionX,
+                positionY: propsRef.current.lyricsPositionY
+            });
+        } else if (currentSubtitle) {
+            // 如果沒有開啟歌詞顯示，則顯示原本的字幕
+            drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
         }
         if (customText) {
             drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });
