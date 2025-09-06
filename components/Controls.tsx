@@ -319,6 +319,17 @@ const Controls: React.FC<ControlsProps> = ({
     onEffectOffsetXChange,
     effectOffsetY,
     onEffectOffsetYChange,
+    // Lyrics Display props (測試中)
+    showLyricsDisplay,
+    onShowLyricsDisplayChange,
+    lyricsFontSize,
+    onLyricsFontSizeChange,
+    lyricsPositionX,
+    onLyricsPositionXChange,
+    lyricsPositionY,
+    onLyricsPositionYChange,
+    subtitleDisplayMode,
+    onSubtitleDisplayModeChange,
 }) => {
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
 
