@@ -14,7 +14,7 @@ import LyricsDisplay from './components/LyricsDisplay';
 // import PopupAdManager from './components/PopupAdManager';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle, SubtitleDisplayMode } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
@@ -57,6 +57,7 @@ function App() {
     const [subtitleColor, setSubtitleColor] = useState<string>('#FFFFFF');
     const [subtitleEffect, setSubtitleEffect] = useState<GraphicEffectType>(GraphicEffectType.SHADOW);
     const [subtitleBgStyle, setSubtitleBgStyle] = useState<SubtitleBgStyle>(SubtitleBgStyle.SEMI_TRANSPARENT);
+    const [subtitleDisplayMode, setSubtitleDisplayMode] = useState<SubtitleDisplayMode>(SubtitleDisplayMode.CLASSIC);
     
     // Lyrics Display State (測試中)
     const [showLyricsDisplay, setShowLyricsDisplay] = useState<boolean>(false);
@@ -399,6 +400,7 @@ function App() {
                                     lyricsFontSize={lyricsFontSize}
                                     lyricsPositionX={lyricsPositionX}
                                     lyricsPositionY={lyricsPositionY}
+                                    subtitleDisplayMode={subtitleDisplayMode}
                                 />
                             </div>
                         </div>
@@ -487,6 +489,8 @@ function App() {
                             onLyricsPositionXChange={setLyricsPositionX}
                             lyricsPositionY={lyricsPositionY}
                             onLyricsPositionYChange={setLyricsPositionY}
+                            subtitleDisplayMode={subtitleDisplayMode}
+                            onSubtitleDisplayModeChange={setSubtitleDisplayMode}
                         />
                     </div>
                 )}
@@ -515,14 +519,6 @@ function App() {
                 </div>
             </footer>
             
-            {/* Lyrics Display Component (測試中) */}
-            <LyricsDisplay
-                subtitles={subtitles}
-                currentTime={currentTime}
-                isVisible={showLyricsDisplay}
-                onToggle={() => setShowLyricsDisplay(!showLyricsDisplay)}
-                bgStyle={subtitleBgStyle}
-            />
         </div>
     );
 }

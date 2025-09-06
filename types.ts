@@ -102,6 +102,12 @@ export enum SubtitleBgStyle {
     SOLID = '實色',
 }
 
+export enum SubtitleDisplayMode {
+    NONE = '無字幕',
+    CLASSIC = '傳統字幕',
+    LYRICS_SCROLL = '捲軸歌詞',
+}
+
 export type Subtitle = {
     time: number;
     text: string;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle, SubtitleDisplayMode } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 import CategorizedEffectSelector from './CategorizedEffectSelector';
@@ -75,6 +75,8 @@ interface ControlsProps {
     onLyricsPositionXChange: (value: number) => void;
     lyricsPositionY: number;
     onLyricsPositionYChange: (value: number) => void;
+    subtitleDisplayMode: SubtitleDisplayMode;
+    onSubtitleDisplayModeChange: (mode: SubtitleDisplayMode) => void;
     // Ad dashboard - temporarily removed
     // onOpenAdDashboard?: () => void;
 }
@@ -627,6 +629,48 @@ const Controls: React.FC<ControlsProps> = ({
                         </div>
                     </div>
                     
+                    {/* 字幕顯示模式選擇器 */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">字幕顯示模式</label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {Object.values(SubtitleDisplayMode).map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => onSubtitleDisplayModeChange(mode)}
+                                    className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                                        subtitleDisplayMode === mode
+                                            ? 'border-cyan-400 bg-cyan-500/20 text-cyan-200'
+                                            : 'border-gray-600 bg-gray-700 hover:border-gray-500 hover:bg-gray-600 text-gray-300'
+                                    }`}
+                                >
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-center">
+                                            {mode === SubtitleDisplayMode.NONE && (
+                                                <div className="w-8 h-5 bg-transparent border border-gray-400 rounded flex items-center justify-center">
+                                                    <span className="text-gray-400 text-xs">✕</span>
+                                                </div>
+                                            )}
+                                            {mode === SubtitleDisplayMode.CLASSIC && (
+                                                <div className="w-8 h-5 bg-black/50 border border-gray-400 rounded flex items-center justify-center">
+                                                    <span className="text-white text-xs">A</span>
+                                                </div>
+                                            )}
+                                            {mode === SubtitleDisplayMode.LYRICS_SCROLL && (
+                                                <div className="w-8 h-5 bg-black/50 border border-gray-400 rounded flex items-center justify-center">
+                                                    <span className="text-white text-xs">📜</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-center text-xs font-medium">{mode}</div>
+                                        {mode === SubtitleDisplayMode.LYRICS_SCROLL && (
+                                            <div className="text-xs text-yellow-400">🧪 測試中</div>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <SliderControl
                             label="字幕字體大小"
@@ -719,26 +763,17 @@ const Controls: React.FC<ControlsProps> = ({
                 </div>
             </ControlSection>
             
-            {/* --- Lyrics Display Section (測試中) --- */}
-            <ControlSection title="歌詞顯示 (測試中)" className="mb-6">
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                id="show-lyrics-display"
-                                checked={showLyricsDisplay}
-                                onChange={(e) => onShowLyricsDisplayChange(e.target.checked)}
-                                className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
-                            />
-                            <label htmlFor="show-lyrics-display" className="text-sm text-gray-300">顯示歌詞</label>
+            {/* --- Lyrics Display Controls (測試中) - 只在捲軸歌詞模式下顯示 --- */}
+            {subtitleDisplayMode === SubtitleDisplayMode.LYRICS_SCROLL && (
+                <ControlSection title="捲軸歌詞設定 (測試中)" className="mb-6">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-300">捲軸歌詞控制選項</div>
+                            <div className="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded">
+                                🧪 測試中
+                            </div>
                         </div>
-                        <div className="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded">
-                            🧪 測試中
-                        </div>
-                    </div>
-                    
-                    {showLyricsDisplay && (
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <SliderControl
                                 label="字體大小 (%)"
@@ -767,9 +802,9 @@ const Controls: React.FC<ControlsProps> = ({
                                 step={5}
                             />
                         </div>
-                    )}
-                </div>
-            </ControlSection>
+                    </div>
+                </ControlSection>
+            )}
             
             {/* --- Advanced Controls --- */}
             <ControlSection title="進階設定" className="mb-6">

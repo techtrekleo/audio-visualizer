@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useCallback } from 'react';
-import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle } from '../types';
+import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle, SubtitleDisplayMode } from '../types';
 import ImageBasedVisualizer from './ImageBasedVisualizer';
 
 interface AudioVisualizerProps {
@@ -36,6 +36,7 @@ interface AudioVisualizerProps {
     lyricsFontSize: number;
     lyricsPositionX: number;
     lyricsPositionY: number;
+    subtitleDisplayMode: SubtitleDisplayMode;
 }
 
 /**
@@ -3342,8 +3343,9 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 }
             }
         }
-        // 歌詞顯示 (測試中) - 取代原本的字幕顯示
-        if (propsRef.current.showLyricsDisplay && subtitles.length > 0) {
+        // 根據字幕顯示模式決定顯示內容
+        if (propsRef.current.subtitleDisplayMode === SubtitleDisplayMode.LYRICS_SCROLL && subtitles.length > 0) {
+            // 捲軸歌詞模式
             drawLyricsDisplay(ctx, width, height, subtitles, currentTime, { 
                 fontFamily: subtitleFontFamily, 
                 bgStyle: subtitleBgStyle,
@@ -3351,10 +3353,11 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 positionX: propsRef.current.lyricsPositionX,
                 positionY: propsRef.current.lyricsPositionY
             });
-        } else if (currentSubtitle) {
-            // 如果沒有開啟歌詞顯示，則顯示原本的字幕
+        } else if (propsRef.current.subtitleDisplayMode === SubtitleDisplayMode.CLASSIC && currentSubtitle) {
+            // 傳統字幕模式
             drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
         }
+        // 無字幕模式：不顯示任何字幕
         if (customText) {
             drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });
         }
