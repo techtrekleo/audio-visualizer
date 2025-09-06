@@ -31,6 +31,7 @@ interface OptimizedControlsProps {
     onEqualizationChange: (value: number) => void;
     audioFile: File | null;
     onClearAudio: () => void;
+    onFileSelect: (file: File) => void;
     videoUrl: string;
     videoExtension: string;
     backgroundColor: BackgroundColorType;
@@ -360,10 +361,25 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                             </Button>
                         </div>
                         <div className="flex items-center space-x-3">
+                            <label className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-xl cursor-pointer">
+                                <Icon path={ICON_PATHS.UPLOAD} className="w-5 h-5"/>
+                                <span>{props.audioFile ? '更換音樂' : '上傳音樂'}</span>
+                                <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="audio/*" 
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            props.onFileSelect(e.target.files[0]);
+                                        }
+                                        e.target.value = '';
+                                    }} 
+                                />
+                            </label>
                             {props.audioFile && (
-                                <Button onClick={props.onClearAudio} variant="secondary">
+                                <Button onClick={props.onClearAudio} variant="danger">
                                     <Icon path={ICON_PATHS.CHANGE_MUSIC} className="w-5 h-5"/>
-                                    <span>更換音樂</span>
+                                    <span>清除音樂</span>
                                 </Button>
                             )}
                             {props.audioFile && (

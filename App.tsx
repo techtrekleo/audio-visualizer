@@ -353,12 +353,7 @@ function App() {
             </header>
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
-                {!audioFile ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <AudioUploader onFileSelect={handleFileSelect} />
-                    </div>
-                ) : (
-                    <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
+                <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
                          <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
                             <div 
                                 style={{
@@ -445,6 +440,7 @@ function App() {
                             onEqualizationChange={setEqualization}
                             audioFile={audioFile}
                             onClearAudio={handleClearAudio}
+                            onFileSelect={handleFileSelect}
                             videoUrl={videoUrl}
                             videoExtension={videoExtension}
                             backgroundColor={backgroundColor}
@@ -494,7 +490,6 @@ function App() {
                             onSubtitleDisplayModeChange={setSubtitleDisplayMode}
                         />
                     </div>
-                )}
             </main>
             {/* 頁腳廣告 */}
             <div className="w-full max-w-7xl mx-auto px-4 mb-4">
