@@ -436,9 +436,18 @@ function App() {
                     key={audioUrl}
                     ref={audioRef}
                     src={audioUrl}
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => setIsPlaying(false)}
-                    onEnded={() => setIsPlaying(false)}
+                    onPlay={() => {
+                        console.log('音頻 onPlay 事件觸發');
+                        setIsPlaying(true);
+                    }}
+                    onPause={() => {
+                        console.log('音頻 onPause 事件觸發');
+                        setIsPlaying(false);
+                    }}
+                    onEnded={() => {
+                        console.log('音頻 onEnded 事件觸發');
+                        setIsPlaying(false);
+                    }}
                     onLoadedMetadata={handleMetadataLoaded}
                     onTimeUpdate={handleTimeUpdate}
                     crossOrigin="anonymous"
