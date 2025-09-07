@@ -364,7 +364,12 @@ const Controls: React.FC<ControlsProps> = ({
             <ControlSection title="播放控制" className="mb-6">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center space-x-3">
-                        <Button onClick={onPlayPause} variant="primary" className="w-14 h-14 text-2xl !p-0 shadow-xl">
+                        <Button 
+                            onClick={onPlayPause} 
+                            variant="primary" 
+                            className="w-14 h-14 text-2xl !p-0 shadow-xl"
+                            disabled={!audioFile}
+                        >
                             <Icon path={isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-7 h-7" />
                         </Button>
                         <Button 
