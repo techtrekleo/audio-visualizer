@@ -122,19 +122,19 @@ function App() {
                 console.log('開始轉場動畫');
                 setIsTransitioning(true);
                 
-                // 在過場動畫中間（0.5秒）切換圖片，讓雜訊結束時新圖片已經準備好
+                // 在過場動畫中間（1.5秒）切換圖片，讓水波效果更慢更優雅
                 setTimeout(() => {
                     console.log('切換圖片');
                     setCurrentImageIndex((prevIndex) => 
                         (prevIndex + 1) % backgroundImages.length
                     );
-                }, 500);
+                }, 1500);
                 
-                // 過場動畫持續 1 秒
+                // 過場動畫持續 3 秒，讓水波效果更慢更美
                 setTimeout(() => {
                     console.log('結束轉場動畫');
                     setIsTransitioning(false);
-                }, 1000);
+                }, 3000);
             }
         }, slideshowInterval * 1000);
 
