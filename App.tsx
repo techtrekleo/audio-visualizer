@@ -113,7 +113,7 @@ function App() {
         }
 
         const interval = setInterval(() => {
-            if (backgroundImages.length > 1) {
+            if (backgroundImages.length > 1 && isPlaying) {
                 setIsTransitioning(true);
                 
                 // 在過場動畫中間（0.5秒）切換圖片，讓雜訊結束時新圖片已經準備好
@@ -131,7 +131,7 @@ function App() {
         }, slideshowInterval * 1000);
 
         return () => clearInterval(interval);
-    }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval, isPlaying]);
+    }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval]);
 
     // 更新當前背景圖片
     useEffect(() => {
