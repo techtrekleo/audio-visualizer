@@ -287,6 +287,13 @@ function App() {
         }
     };
 
+    const handleSeek = (newTime: number) => {
+        if (audioRef.current) {
+            audioRef.current.currentTime = newTime;
+            setCurrentTime(newTime);
+        }
+    };
+
     const handleStartRecording = () => {
         if (isRecording) {
             stopRecording();
@@ -491,6 +498,9 @@ function App() {
                             onLyricsPositionYChange={setLyricsPositionY}
                             subtitleDisplayMode={subtitleDisplayMode}
                             onSubtitleDisplayModeChange={setSubtitleDisplayMode}
+                            currentTime={currentTime}
+                            audioDuration={audioDuration}
+                            onSeek={handleSeek}
                         />
                     </div>
             </main>

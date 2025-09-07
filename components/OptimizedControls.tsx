@@ -81,6 +81,10 @@ interface OptimizedControlsProps {
     onLyricsPositionYChange: (value: number) => void;
     subtitleDisplayMode: SubtitleDisplayMode;
     onSubtitleDisplayModeChange: (mode: SubtitleDisplayMode) => void;
+    // Progress bar props
+    currentTime: number;
+    audioDuration: number;
+    onSeek: (time: number) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean; variant?: 'primary' | 'secondary' | 'danger' }>> = ({ children, onClick, className = '', disabled=false, variant = 'primary' }) => {
@@ -230,6 +234,63 @@ const SelectControl: React.FC<{
     </div>
 );
 
+const ProgressBar: React.FC<{
+    currentTime: number;
+    duration: number;
+    onSeek: (time: number) => void;
+    className?: string;
+}> = ({ currentTime, duration, onSeek, className = '' }) => {
+    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+    
+    const formatTime = (time: number) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTime = parseFloat(e.target.value);
+        onSeek(newTime);
+    };
+
+    return (
+        <div className={`space-y-2 ${className}`}>
+            <div className="flex justify-between items-center text-sm text-gray-300">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+            </div>
+            <div className="relative">
+                {/* 背景漸變條 */}
+                <div 
+                    className="w-full h-2 rounded-lg absolute top-0 left-0 bg-gradient-to-r from-cyan-500 to-purple-500"
+                />
+                {/* 進度條 */}
+                <input
+                    type="range"
+                    min={0}
+                    max={duration || 0}
+                    step={0.1}
+                    value={currentTime}
+                    onChange={handleSeek}
+                    className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                    style={{
+                        background: 'transparent'
+                    }}
+                />
+                {/* 當前進度指示器 */}
+                <div 
+                    className="absolute top-0 h-2 bg-white/30 rounded-lg pointer-events-none"
+                    style={{
+                        left: 0,
+                        width: `${progress}%`,
+                        transition: 'width 0.1s ease'
+                    }}
+                />
+            </div>
+        </div>
+    );
+};
+
 const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
     const [showQuickSettings, setShowQuickSettings] = useState(true);
     const PRESET_COLORS = ['#FFFFFF', '#67E8F9', '#F472B6', '#FFD700', '#FF4500', '#A78BFA'];
@@ -377,6 +438,18 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 }
                             </Button>
                         </div>
+                        
+                        {/* 播放進度條 - 只在有音訊檔案時顯示 */}
+                        {props.audioFile && props.audioDuration > 0 && (
+                            <div className="flex-1 mx-6 min-w-0">
+                                <ProgressBar
+                                    currentTime={props.currentTime}
+                                    duration={props.audioDuration}
+                                    onSeek={props.onSeek}
+                                />
+                            </div>
+                        )}
+                        
                         <div className="flex items-center space-x-3">
                             <label className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-xl cursor-pointer">
                                 <Icon path={ICON_PATHS.UPLOAD} className="w-5 h-5"/>
