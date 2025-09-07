@@ -3485,16 +3485,14 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                         
                         ctx.restore();
                         
-                        // 簡單的音波邊緣效果
-                        if (currentRadius > 5) {
-                            ctx.save();
-                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.6 * (1 - transitionProgress)})`;
-                            ctx.lineWidth = 2;
-                            ctx.beginPath();
-                            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-                            ctx.stroke();
-                            ctx.restore();
-                        }
+                        // 只畫一個簡單的圓圈
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
                     }
                 }
                 
