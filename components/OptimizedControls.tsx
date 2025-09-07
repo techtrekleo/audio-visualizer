@@ -434,7 +434,12 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                     </div>
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center space-x-3">
-                            <Button onClick={props.onPlayPause} variant="primary" className="w-14 h-14 text-2xl !p-0 shadow-xl">
+                            <Button 
+                                onClick={props.onPlayPause} 
+                                variant="primary" 
+                                className="w-14 h-14 text-2xl !p-0 shadow-xl"
+                                disabled={!props.audioFile}
+                            >
                                 <Icon path={props.isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-7 h-7" />
                             </Button>
                             <Button 
