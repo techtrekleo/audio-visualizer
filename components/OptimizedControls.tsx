@@ -336,6 +336,12 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                         isRecording={props.isRecording}
                         colorPalette={props.colorPalette}
                         onColorPaletteChange={props.onColorPaletteChange}
+                        sensitivity={props.sensitivity}
+                        onSensitivityChange={props.onSensitivityChange}
+                        smoothing={props.smoothing}
+                        onSmoothingChange={props.onSmoothingChange}
+                        equalization={props.equalization}
+                        onEqualizationChange={props.onEqualizationChange}
                     />
                 </div>
             )}
@@ -462,46 +468,6 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </CollapsibleControlSection>
-
-                    {/* 音頻響應設定 */}
-                    <CollapsibleControlSection
-                        title="音頻響應設定"
-                        icon={ICON_PATHS.SETTINGS}
-                        priority="high"
-                        defaultExpanded={false}
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <SliderControl
-                                label="靈敏度"
-                                value={props.sensitivity}
-                                onChange={props.onSensitivityChange}
-                                min={0.1}
-                                max={3.0}
-                                step={0.1}
-                                colorType="sensitivity"
-                            />
-                            
-                            <SliderControl
-                                label="平滑度"
-                                value={props.smoothing}
-                                onChange={props.onSmoothingChange}
-                                min={0}
-                                max={10}
-                                step={1}
-                                colorType="default"
-                            />
-                            
-                            <SliderControl
-                                label="均衡器"
-                                value={props.equalization}
-                                onChange={props.onEqualizationChange}
-                                min={0}
-                                max={1}
-                                step={0.05}
-                                colorType="default"
-                            />
                         </div>
                     </CollapsibleControlSection>
 

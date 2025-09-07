@@ -18,6 +18,12 @@ interface QuickSettingsPanelProps {
     isRecording: boolean;
     colorPalette: ColorPaletteType;
     onColorPaletteChange: (palette: ColorPaletteType) => void;
+    sensitivity: number;
+    onSensitivityChange: (value: number) => void;
+    smoothing: number;
+    onSmoothingChange: (value: number) => void;
+    equalization: number;
+    onEqualizationChange: (value: number) => void;
 }
 
 const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
@@ -34,6 +40,12 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
     isRecording,
     colorPalette,
     onColorPaletteChange,
+    sensitivity,
+    onSensitivityChange,
+    smoothing,
+    onSmoothingChange,
+    equalization,
+    onEqualizationChange,
 }) => {
     return (
         <div className="quick-settings-panel bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-sm rounded-xl p-4 border border-cyan-400/30">
@@ -198,6 +210,125 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
                                     transition: 'width 0.1s ease'
                                 }}
                             />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 音頻響應設定 */}
+                <div className="space-y-4">
+                    <label className="text-sm font-medium text-gray-300">音頻響應設定</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 靈敏度 */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-gray-300">靈敏度</label>
+                                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{sensitivity.toFixed(2)}</span>
+                            </div>
+                            <div className="relative">
+                                <div
+                                    className="w-full h-2 rounded-lg absolute top-0 left-0"
+                                    style={{
+                                        background: `linear-gradient(to right,
+                                            #ef4444 0%,
+                                            #f97316 25%,
+                                            #eab308 50%,
+                                            #22c55e 75%,
+                                            #10b981 100%)`
+                                    }}
+                                />
+                                <input
+                                    type="range"
+                                    min={0.1}
+                                    max={3.0}
+                                    step={0.1}
+                                    value={sensitivity}
+                                    onChange={(e) => onSensitivityChange(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                                    style={{ background: 'transparent' }}
+                                />
+                                <div
+                                    className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                                    style={{
+                                        left: 0,
+                                        width: `${((sensitivity - 0.1) / (3.0 - 0.1)) * 100}%`,
+                                        transition: 'width 0.1s ease'
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 平滑度 */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-gray-300">平滑度</label>
+                                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{smoothing}</span>
+                            </div>
+                            <div className="relative">
+                                <div
+                                    className="w-full h-2 rounded-lg absolute top-0 left-0"
+                                    style={{
+                                        background: `linear-gradient(to right,
+                                            #374151 0%,
+                                            #06b6d4 50%,
+                                            #8b5cf6 100%)`
+                                    }}
+                                />
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={10}
+                                    step={1}
+                                    value={smoothing}
+                                    onChange={(e) => onSmoothingChange(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                                    style={{ background: 'transparent' }}
+                                />
+                                <div
+                                    className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                                    style={{
+                                        left: 0,
+                                        width: `${(smoothing / 10) * 100}%`,
+                                        transition: 'width 0.1s ease'
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 均衡器 */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-gray-300">均衡器</label>
+                                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">{equalization.toFixed(2)}</span>
+                            </div>
+                            <div className="relative">
+                                <div
+                                    className="w-full h-2 rounded-lg absolute top-0 left-0"
+                                    style={{
+                                        background: `linear-gradient(to right,
+                                            #374151 0%,
+                                            #06b6d4 50%,
+                                            #8b5cf6 100%)`
+                                    }}
+                                />
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={1}
+                                    step={0.05}
+                                    value={equalization}
+                                    onChange={(e) => onEqualizationChange(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer slider-enhanced relative z-10"
+                                    style={{ background: 'transparent' }}
+                                />
+                                <div
+                                    className="absolute top-0 h-2 bg-white/20 rounded-lg pointer-events-none"
+                                    style={{
+                                        left: 0,
+                                        width: `${equalization * 100}%`,
+                                        transition: 'width 0.1s ease'
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
