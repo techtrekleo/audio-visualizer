@@ -292,14 +292,17 @@ function App() {
             stopRecording();
             setIsLoading(true);
         } else {
-            if (showSubtitles && subtitles.length === 0) {
-                alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
-                return;
-            }
-            
-            if (showLyricsDisplay && subtitles.length === 0) {
-                alert("錄製提示：您已啟用歌詞顯示，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保歌詞能被正確錄進影片中。");
-                return;
+            // 只有在字幕顯示模式不是「無字幕」時才檢查字幕內容
+            if (subtitleDisplayMode !== SubtitleDisplayMode.NONE) {
+                if (showSubtitles && subtitles.length === 0) {
+                    alert("錄製提示：您已啟用字幕，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保字幕能被正確錄進影片中。");
+                    return;
+                }
+                
+                if (showLyricsDisplay && subtitles.length === 0) {
+                    alert("錄製提示：您已啟用歌詞顯示，但尚未產生任何內容。\n\n請先使用「AI 產生字幕」或在文字區塊貼上 [00:00.00] 格式的歌詞，然後再開始錄製，以確保歌詞能被正確錄進影片中。");
+                    return;
+                }
             }
             
             const audioStream = getAudioStream();
