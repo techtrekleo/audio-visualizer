@@ -115,11 +115,15 @@ function App() {
             if (backgroundImages.length > 1) {
                 setIsTransitioning(true);
                 
-                // 電視雜訊過場動畫持續 1 秒
+                // 在過場動畫中間（0.5秒）切換圖片，讓雜訊結束時新圖片已經準備好
                 setTimeout(() => {
                     setCurrentImageIndex((prevIndex) => 
                         (prevIndex + 1) % backgroundImages.length
                     );
+                }, 500);
+                
+                // 過場動畫持續 1 秒
+                setTimeout(() => {
                     setIsTransitioning(false);
                 }, 1000);
             }
