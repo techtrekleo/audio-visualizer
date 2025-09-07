@@ -619,19 +619,6 @@ function App() {
                     </a>
                 </div>
                 
-                <div className="flex justify-center gap-4 text-xs">
-                    <a href="/privacy-policy.html" className="text-gray-400 hover:text-cyan-400 transition-colors">隱私政策</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/terms-of-service.html" className="text-gray-400 hover:text-cyan-400 transition-colors">使用條款</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/youtube-shorts-guide.html" className="text-gray-400 hover:text-cyan-400 transition-colors">YouTube Shorts 指南</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/subtitle-background-demo.html" className="text-gray-400 hover:text-cyan-400 transition-colors">字幕背景預覽</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/traditional-chinese-subtitles.html" className="text-gray-400 hover:text-cyan-400 transition-colors">繁體中文字幕</a>
-                    <span className="text-gray-600">|</span>
-                    <a href="/monstercat-dual-versions.html" className="text-gray-400 hover:text-cyan-400 transition-colors">Monstercat 雙版本</a>
-                </div>
             </footer>
             
         </div>
