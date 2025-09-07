@@ -142,7 +142,7 @@ function App() {
             console.log('清理輪播 interval');
             clearInterval(interval);
         };
-    }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval]);
+    }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval, isPlaying]);
 
     // 更新當前背景圖片
     useEffect(() => {
