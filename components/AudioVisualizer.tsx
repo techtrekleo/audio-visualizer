@@ -3391,7 +3391,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
         // 繪製轉場動畫（只在背景圖片區域）
         if (isTransitioning && backgroundImages.length > 0) {
-            const transitionProgress = (Date.now() % 1000) / 1000; // 1秒循環
+            // 使用固定的轉場進度，避免循環計算
+            const transitionProgress = 0.5; // 固定在中間進度，讓轉場效果穩定
             
             if (transitionType === TransitionType.TV_STATIC) {
                 // 只在背景圖片區域繪製雜訊效果
