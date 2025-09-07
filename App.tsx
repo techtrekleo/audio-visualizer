@@ -112,25 +112,32 @@ function App() {
             return;
         }
 
+        const timeoutIds: NodeJS.Timeout[] = [];
+
         const interval = setInterval(() => {
             if (backgroundImages.length > 1 && isPlaying) {
                 setIsTransitioning(true);
                 
                 // 在過場動畫中間（0.5秒）切換圖片，讓雜訊結束時新圖片已經準備好
-                setTimeout(() => {
+                const timeoutId1 = setTimeout(() => {
                     setCurrentImageIndex((prevIndex) => 
                         (prevIndex + 1) % backgroundImages.length
                     );
                 }, 500);
+                timeoutIds.push(timeoutId1);
                 
                 // 過場動畫持續 1 秒
-                setTimeout(() => {
+                const timeoutId2 = setTimeout(() => {
                     setIsTransitioning(false);
                 }, 1000);
+                timeoutIds.push(timeoutId2);
             }
         }, slideshowInterval * 1000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            timeoutIds.forEach(id => clearTimeout(id));
+        };
     }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval]);
 
     // 更新當前背景圖片
