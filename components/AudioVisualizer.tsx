@@ -3319,7 +3319,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             visualizationType, customText, textColor, fontFamily, graphicEffect, 
             textSize, textPositionX, textPositionY,
             sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
-            waveformStroke, isTransitioning, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
+            waveformStroke, isTransitioning, transitionType, backgroundImages, currentImageIndex,
+            subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
             subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
         } = propsRef.current;
 
