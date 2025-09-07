@@ -32,6 +32,9 @@ function App() {
     const [textColor, setTextColor] = useState<string>('#67E8F9');
     const [fontFamily, setFontFamily] = useState<FontType>(FontType.ROCKNROLL_ONE);
     const [graphicEffect, setGraphicEffect] = useState<GraphicEffectType>(GraphicEffectType.GLOW);
+    const [textSize, setTextSize] = useState<number>(4); // 字體大小 (vw 單位)
+    const [textPositionX, setTextPositionX] = useState<number>(0); // 水平位置偏移 (-50 到 50)
+    const [textPositionY, setTextPositionY] = useState<number>(0); // 垂直位置偏移 (-50 到 50)
     const [sensitivity, setSensitivity] = useState<number>(1.0);
     const [smoothing, setSmoothing] = useState<number>(0);
     const [equalization, setEqualization] = useState<number>(0.25);
@@ -383,6 +386,9 @@ function App() {
                                     textColor={textColor}
                                     fontFamily={fontFamily}
                                     graphicEffect={graphicEffect}
+                                    textSize={textSize}
+                                    textPositionX={textPositionX}
+                                    textPositionY={textPositionY}
                                     sensitivity={sensitivity}
                                     smoothing={smoothing}
                                     equalization={equalization}
@@ -442,6 +448,12 @@ function App() {
                             onFontFamilyChange={setFontFamily}
                             graphicEffect={graphicEffect}
                             onGraphicEffectChange={setGraphicEffect}
+                            textSize={textSize}
+                            onTextSizeChange={setTextSize}
+                            textPositionX={textPositionX}
+                            onTextPositionXChange={setTextPositionX}
+                            textPositionY={textPositionY}
+                            onTextPositionYChange={setTextPositionY}
                             sensitivity={sensitivity}
                             onSensitivityChange={setSensitivity}
                             smoothing={smoothing}

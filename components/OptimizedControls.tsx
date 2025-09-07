@@ -23,6 +23,12 @@ interface OptimizedControlsProps {
     onFontFamilyChange: (font: FontType) => void;
     graphicEffect: GraphicEffectType;
     onGraphicEffectChange: (effect: GraphicEffectType) => void;
+    textSize: number;
+    onTextSizeChange: (size: number) => void;
+    textPositionX: number;
+    onTextPositionXChange: (value: number) => void;
+    textPositionY: number;
+    onTextPositionYChange: (value: number) => void;
     sensitivity: number;
     onSensitivityChange: (value: number) => void;
     smoothing: number;
@@ -596,6 +602,58 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                         />
                                     ))}
                                 </div>
+                            </div>
+                        </div>
+                        
+                        {/* 文字大小和位置控制 */}
+                        <div className="mt-6">
+                            <div className="flex items-center space-x-2 mb-4">
+                                <Icon path={ICON_PATHS.SETTINGS} className="w-4 h-4 text-cyan-400" />
+                                <h4 className="text-md font-semibold text-gray-200">文字大小與位置</h4>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <SliderControl
+                                    label="字體大小 (vw)"
+                                    value={props.textSize}
+                                    onChange={props.onTextSizeChange}
+                                    min={1}
+                                    max={10}
+                                    step={0.5}
+                                    colorType="scale"
+                                />
+                                
+                                <SliderControl
+                                    label="水平位置 (%)"
+                                    value={props.textPositionX}
+                                    onChange={props.onTextPositionXChange}
+                                    min={-50}
+                                    max={50}
+                                    step={5}
+                                    colorType="position"
+                                />
+                                
+                                <SliderControl
+                                    label="垂直位置 (%)"
+                                    value={props.textPositionY}
+                                    onChange={props.onTextPositionYChange}
+                                    min={-50}
+                                    max={50}
+                                    step={5}
+                                    colorType="position"
+                                />
+                            </div>
+                            
+                            {/* 拖拽提示 */}
+                            <div className="mt-4 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg text-sm">
+                                <div className="flex items-center gap-2 text-blue-300">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                    <span className="font-medium">💡 拖拽提示</span>
+                                </div>
+                                <p className="text-blue-200 text-xs mt-1">
+                                    使用滑桿調整文字大小和位置，數值範圍為 -50% 到 +50%，0% 為畫面中心位置
+                                </p>
                             </div>
                         </div>
                     </CollapsibleControlSection>

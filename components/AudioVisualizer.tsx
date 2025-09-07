@@ -11,6 +11,9 @@ interface AudioVisualizerProps {
     textColor: string;
     fontFamily: FontType;
     graphicEffect: GraphicEffectType;
+    textSize: number;
+    textPositionX: number;
+    textPositionY: number;
     sensitivity: number;
     smoothing: number;
     equalization: number;
@@ -2941,13 +2944,16 @@ const drawCustomText = (
     ctx: CanvasRenderingContext2D,
     text: string,
     dataArray: Uint8Array,
-    { width, height, color, fontFamily, graphicEffect, position, isBeat }: {
+    { width, height, color, fontFamily, graphicEffect, position, textSize, textPositionX, textPositionY, isBeat }: {
         width: number;
         height: number;
         color: string;
         fontFamily: string;
         graphicEffect: GraphicEffectType;
         position: WatermarkPosition;
+        textSize: number;
+        textPositionX: number;
+        textPositionY: number;
         isBeat?: boolean;
     }
 ) => {
@@ -2960,9 +2966,9 @@ const drawCustomText = (
     
     const bass = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
     const normalizedBass = bass / 255;
-    const baseFontSize = position === WatermarkPosition.CENTER
-        ? Math.min(width, height) * 0.1
-        : Math.min(width, height) * 0.035;
+    
+    // 使用自訂的文字大小 (vw 單位)
+    const baseFontSize = width * (textSize / 100);
     const pulseAmount = baseFontSize * 0.05;
     const fontSize = baseFontSize + (normalizedBass * pulseAmount);
 
@@ -2970,6 +2976,7 @@ const drawCustomText = (
     ctx.lineJoin = 'round';
     ctx.lineWidth = fontSize * 0.1;
 
+    // 計算基礎位置
     switch (position) {
         case WatermarkPosition.BOTTOM_RIGHT:
             positionX = width - paddingX;
@@ -3002,6 +3009,12 @@ const drawCustomText = (
             ctx.textBaseline = 'middle';
             break;
     }
+
+    // 應用自訂位置偏移
+    const offsetX = width * (textPositionX / 100);
+    const offsetY = height * (textPositionY / 100);
+    positionX += offsetX;
+    positionY += offsetY;
 
     const drawText = (offsetX = 0, offsetY = 0, customColor?: string) => {
         ctx.fillText(text, positionX + offsetX, positionY + offsetY);
@@ -3195,6 +3208,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
     const renderFrame = useCallback(() => {
         const {
             visualizationType, customText, textColor, fontFamily, graphicEffect, 
+            textSize, textPositionX, textPositionY,
             sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
             waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
             subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
@@ -3361,7 +3375,18 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         }
         // 無字幕模式：不顯示任何字幕
         if (customText) {
-            drawCustomText(ctx, customText, smoothedData, { width, height, color: textColor, fontFamily, graphicEffect, position: watermarkPosition, isBeat });
+            drawCustomText(ctx, customText, smoothedData, { 
+                width, 
+                height, 
+                color: textColor, 
+                fontFamily, 
+                graphicEffect, 
+                position: watermarkPosition, 
+                textSize: textSize,
+                textPositionX: textPositionX,
+                textPositionY: textPositionY,
+                isBeat 
+            });
         }
         
         if (propsRef.current.isPlaying) {
