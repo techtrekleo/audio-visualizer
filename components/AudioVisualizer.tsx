@@ -3484,20 +3484,11 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                         
                         ctx.restore();
                         
-                        // 添加音波邊緣效果
-                        if (currentRadius > 10) {
+                        // 簡單的音波邊緣效果
+                        if (currentRadius > 5) {
                             ctx.save();
-                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.8 * (1 - transitionProgress)})`;
-                            ctx.lineWidth = 3;
-                            ctx.beginPath();
-                            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-                            ctx.stroke();
-                            
-                            // 添加發光效果
-                            ctx.shadowColor = '#06b6d4';
-                            ctx.shadowBlur = 10;
-                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.4 * (1 - transitionProgress)})`;
-                            ctx.lineWidth = 1;
+                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.6 * (1 - transitionProgress)})`;
+                            ctx.lineWidth = 2;
                             ctx.beginPath();
                             ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
                             ctx.stroke();
