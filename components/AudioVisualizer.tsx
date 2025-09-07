@@ -3415,15 +3415,10 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 ctx.putImageData(imageData, 0, 0);
                 ctx.restore();
             } else if (transitionType === TransitionType.WAVE_EXPANSION) {
-                // 真正的音波擴散效果
+                // 粒子消失特效
                 ctx.save();
                 
-                const centerX = width / 2;
-                const centerY = height / 2;
-                const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
-                const currentRadius = transitionProgress * maxRadius;
-                
-                // 繪製當前圖片（使用正確的索引）
+                // 繪製當前圖片
                 if (backgroundImages[currentImageIndex]) {
                     const tempImg = document.createElement('img');
                     tempImg.src = backgroundImages[currentImageIndex];
@@ -3448,24 +3443,39 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                     }
                 }
                 
-                // 創建圓形遮罩來顯示新圖片
-                if (currentRadius > 0 && backgroundImages.length > 1) {
-                    const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
+                // 粒子消失效果
+                const particleCount = 200;
+                const particleSize = 3;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const x = (i % Math.floor(width / particleSize)) * particleSize;
+                    const y = Math.floor(i / Math.floor(width / particleSize)) * particleSize;
                     
-                    // 創建一個臨時圖片元素來檢查是否已加載
+                    // 計算粒子消失的進度
+                    const distanceFromCenter = Math.sqrt((x - width/2) ** 2 + (y - height/2) ** 2);
+                    const maxDistance = Math.sqrt((width/2) ** 2 + (height/2) ** 2);
+                    const disappearProgress = Math.min(distanceFromCenter / maxDistance, 1);
+                    
+                    // 如果粒子應該消失
+                    if (transitionProgress > disappearProgress) {
+                        ctx.save();
+                        ctx.globalAlpha = 1 - (transitionProgress - disappearProgress) * 2;
+                        ctx.fillStyle = '#06b6d4';
+                        ctx.fillRect(x, y, particleSize, particleSize);
+                        ctx.restore();
+                    }
+                }
+                
+                // 繪製新圖片（在粒子消失後顯示）
+                if (transitionProgress > 0.5 && backgroundImages.length > 1) {
+                    const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
                     const tempImg = document.createElement('img');
                     tempImg.src = backgroundImages[nextIndex];
                     
-                    // 如果圖片已經在緩存中，直接使用
                     if (tempImg.complete && tempImg.naturalWidth > 0) {
                         ctx.save();
+                        ctx.globalAlpha = (transitionProgress - 0.5) * 2;
                         
-                        // 創建圓形路徑
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-                        ctx.clip();
-                        
-                        // 繪製新圖片
                         const canvasAspect = width / height;
                         const imageAspect = tempImg.width / tempImg.height;
                         let sx, sy, sWidth, sHeight;
@@ -3482,49 +3492,6 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                             sx = (tempImg.width - sWidth) / 2;
                         }
                         ctx.drawImage(tempImg, sx, sy, sWidth, sHeight, 0, 0, width, height);
-                        
-                        ctx.restore();
-                        
-                        // 水波紋路效果
-                        ctx.save();
-                        
-                        // 繪製多層水波紋路
-                        const waveCount = 3; // 3層水波
-                        for (let i = 0; i < waveCount; i++) {
-                            const waveRadius = currentRadius + (i * 20); // 每層間隔20px
-                            const waveAlpha = (0.8 - i * 0.2) * (1 - transitionProgress); // 透明度隨進度減少
-                            
-                            if (waveAlpha > 0) {
-                                ctx.strokeStyle = `rgba(6, 182, 212, ${waveAlpha})`;
-                                ctx.lineWidth = 2 - i * 0.5; // 外層線條更細
-                                ctx.beginPath();
-                                ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
-                                ctx.stroke();
-                            }
-                        }
-                        
-                        // 主要圓圈
-                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.9)';
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-                        ctx.stroke();
-                        
-                        // 添加水波漣漪效果
-                        const rippleCount = 5;
-                        for (let i = 0; i < rippleCount; i++) {
-                            const rippleRadius = currentRadius - (i * 15); // 內層漣漪
-                            const rippleAlpha = (0.3 - i * 0.05) * (1 - transitionProgress);
-                            
-                            if (rippleRadius > 0 && rippleAlpha > 0) {
-                                ctx.strokeStyle = `rgba(6, 182, 212, ${rippleAlpha})`;
-                                ctx.lineWidth = 1;
-                                ctx.beginPath();
-                                ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
-                                ctx.stroke();
-                            }
-                        }
-                        
                         ctx.restore();
                     }
                 }

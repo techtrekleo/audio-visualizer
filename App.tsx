@@ -122,19 +122,21 @@ function App() {
                 console.log('開始轉場動畫');
                 setIsTransitioning(true);
                 
-                // 在過場動畫中間（1.5秒）切換圖片，讓水波效果更慢更優雅
+                // 根據轉場類型設定不同的時間
+                const transitionDuration = transitionType === TransitionType.TV_STATIC ? 1000 : 3000; // 電視雜訊1秒，粒子消失3秒
+                const switchTime = transitionType === TransitionType.TV_STATIC ? 500 : 1500; // 電視雜訊0.5秒切換，粒子消失1.5秒切換
+                
                 setTimeout(() => {
                     console.log('切換圖片');
                     setCurrentImageIndex((prevIndex) => 
                         (prevIndex + 1) % backgroundImages.length
                     );
-                }, 1500);
+                }, switchTime);
                 
-                // 過場動畫持續 3 秒，讓水波效果更慢更美
                 setTimeout(() => {
                     console.log('結束轉場動畫');
                     setIsTransitioning(false);
-                }, 3000);
+                }, transitionDuration);
             }
         }, slideshowInterval * 1000);
 
