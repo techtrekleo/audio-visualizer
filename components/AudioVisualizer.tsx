@@ -3422,25 +3422,29 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
                 const currentRadius = transitionProgress * maxRadius;
                 
-                // 繪製當前圖片
-                if (backgroundImageRef.current) {
-                    const img = backgroundImageRef.current;
-                    const canvasAspect = width / height;
-                    const imageAspect = img.width / img.height;
-                    let sx, sy, sWidth, sHeight;
+                // 繪製當前圖片（使用正確的索引）
+                if (backgroundImages[currentImageIndex]) {
+                    const tempImg = document.createElement('img');
+                    tempImg.src = backgroundImages[currentImageIndex];
+                    
+                    if (tempImg.complete && tempImg.naturalWidth > 0) {
+                        const canvasAspect = width / height;
+                        const imageAspect = tempImg.width / tempImg.height;
+                        let sx, sy, sWidth, sHeight;
 
-                    if (canvasAspect > imageAspect) {
-                        sWidth = img.width;
-                        sHeight = sWidth / canvasAspect;
-                        sx = 0;
-                        sy = (img.height - sHeight) / 2;
-                    } else {
-                        sHeight = img.height;
-                        sWidth = sHeight * canvasAspect;
-                        sy = 0;
-                        sx = (img.width - sWidth) / 2;
+                        if (canvasAspect > imageAspect) {
+                            sWidth = tempImg.width;
+                            sHeight = sWidth / canvasAspect;
+                            sx = 0;
+                            sy = (tempImg.height - sHeight) / 2;
+                        } else {
+                            sHeight = tempImg.height;
+                            sWidth = sHeight * canvasAspect;
+                            sy = 0;
+                            sx = (tempImg.width - sWidth) / 2;
+                        }
+                        ctx.drawImage(tempImg, sx, sy, sWidth, sHeight, 0, 0, width, height);
                     }
-                    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
                 }
                 
                 // 創建圓形遮罩來顯示新圖片
