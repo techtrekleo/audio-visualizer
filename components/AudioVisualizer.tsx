@@ -2989,7 +2989,7 @@ const drawTVStaticTransition = (
     ctx.restore();
 };
 
-// 音波擴散過場動畫
+// 淡入淡出過場動畫
 const drawWaveExpansionTransition = (
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -3415,15 +3415,18 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 ctx.putImageData(imageData, 0, 0);
                 ctx.restore();
             } else if (transitionType === TransitionType.WAVE_EXPANSION) {
-                // 粒子消失特效
+                // 淡入淡出特效
                 ctx.save();
                 
-                // 繪製當前圖片
+                // 繪製當前圖片（逐漸變暗）
                 if (backgroundImages[currentImageIndex]) {
                     const tempImg = document.createElement('img');
                     tempImg.src = backgroundImages[currentImageIndex];
                     
                     if (tempImg.complete && tempImg.naturalWidth > 0) {
+                        ctx.save();
+                        ctx.globalAlpha = 1 - transitionProgress; // 當前圖片逐漸消失
+                        
                         const canvasAspect = width / height;
                         const imageAspect = tempImg.width / tempImg.height;
                         let sx, sy, sWidth, sHeight;
@@ -3440,41 +3443,19 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                             sx = (tempImg.width - sWidth) / 2;
                         }
                         ctx.drawImage(tempImg, sx, sy, sWidth, sHeight, 0, 0, width, height);
-                    }
-                }
-                
-                // 粒子消失效果
-                const particleCount = 200;
-                const particleSize = 3;
-                
-                for (let i = 0; i < particleCount; i++) {
-                    const x = (i % Math.floor(width / particleSize)) * particleSize;
-                    const y = Math.floor(i / Math.floor(width / particleSize)) * particleSize;
-                    
-                    // 計算粒子消失的進度
-                    const distanceFromCenter = Math.sqrt((x - width/2) ** 2 + (y - height/2) ** 2);
-                    const maxDistance = Math.sqrt((width/2) ** 2 + (height/2) ** 2);
-                    const disappearProgress = Math.min(distanceFromCenter / maxDistance, 1);
-                    
-                    // 如果粒子應該消失
-                    if (transitionProgress > disappearProgress) {
-                        ctx.save();
-                        ctx.globalAlpha = 1 - (transitionProgress - disappearProgress) * 2;
-                        ctx.fillStyle = '#06b6d4';
-                        ctx.fillRect(x, y, particleSize, particleSize);
                         ctx.restore();
                     }
                 }
                 
-                // 繪製新圖片（在粒子消失後顯示）
-                if (transitionProgress > 0.5 && backgroundImages.length > 1) {
+                // 繪製新圖片（逐漸顯現）
+                if (backgroundImages.length > 1) {
                     const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
                     const tempImg = document.createElement('img');
                     tempImg.src = backgroundImages[nextIndex];
                     
                     if (tempImg.complete && tempImg.naturalWidth > 0) {
                         ctx.save();
-                        ctx.globalAlpha = (transitionProgress - 0.5) * 2;
+                        ctx.globalAlpha = transitionProgress; // 新圖片逐漸顯現
                         
                         const canvasAspect = width / height;
                         const imageAspect = tempImg.width / tempImg.height;

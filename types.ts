@@ -110,7 +110,7 @@ export enum SubtitleDisplayMode {
 
 export enum TransitionType {
     TV_STATIC = '電視雜訊',
-    WAVE_EXPANSION = '音波擴散',
+    WAVE_EXPANSION = '淡入淡出',
 }
 
 export type Subtitle = {
