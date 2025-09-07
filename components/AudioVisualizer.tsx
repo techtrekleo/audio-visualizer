@@ -3485,13 +3485,46 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                         
                         ctx.restore();
                         
-                        // 只畫一個簡單的圓圈
+                        // 水波紋路效果
                         ctx.save();
-                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)';
+                        
+                        // 繪製多層水波紋路
+                        const waveCount = 3; // 3層水波
+                        for (let i = 0; i < waveCount; i++) {
+                            const waveRadius = currentRadius + (i * 20); // 每層間隔20px
+                            const waveAlpha = (0.8 - i * 0.2) * (1 - transitionProgress); // 透明度隨進度減少
+                            
+                            if (waveAlpha > 0) {
+                                ctx.strokeStyle = `rgba(6, 182, 212, ${waveAlpha})`;
+                                ctx.lineWidth = 2 - i * 0.5; // 外層線條更細
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        // 主要圓圈
+                        ctx.strokeStyle = 'rgba(6, 182, 212, 0.9)';
                         ctx.lineWidth = 3;
                         ctx.beginPath();
                         ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
                         ctx.stroke();
+                        
+                        // 添加水波漣漪效果
+                        const rippleCount = 5;
+                        for (let i = 0; i < rippleCount; i++) {
+                            const rippleRadius = currentRadius - (i * 15); // 內層漣漪
+                            const rippleAlpha = (0.3 - i * 0.05) * (1 - transitionProgress);
+                            
+                            if (rippleRadius > 0 && rippleAlpha > 0) {
+                                ctx.strokeStyle = `rgba(6, 182, 212, ${rippleAlpha})`;
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+                        }
+                        
                         ctx.restore();
                     }
                 }
