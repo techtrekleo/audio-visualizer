@@ -499,6 +499,20 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                     <span>下載 {props.videoExtension.toUpperCase()}</span>
                                 </a>
                             )}
+                            
+                            {/* 抖內按鈕 */}
+                            <a 
+                                href="https://www.paypal.com/ncp/payment/PK49RJYSTAV6Y" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                                title="支持開發者，請我喝咖啡 ☕"
+                            >
+                                <div className="w-5 h-5 rounded-full overflow-hidden bg-orange-200 flex items-center justify-center">
+                                    <span className="text-xs">🐱</span>
+                                </div>
+                                <span>抖內支持</span>
+                            </a>
                         </div>
                     </div>
                 </div>

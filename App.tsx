@@ -599,9 +599,26 @@ function App() {
             </div>
             
             <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
-                <div className="mb-2">
+                <div className="mb-4">
                     一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
                 </div>
+                
+                {/* 抖內支持按鈕 */}
+                <div className="mb-4">
+                    <a 
+                        href="https://www.paypal.com/ncp/payment/PK49RJYSTAV6Y" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                        title="支持開發者，請我喝咖啡 ☕"
+                    >
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-orange-200 flex items-center justify-center">
+                            <span className="text-sm">🐱</span>
+                        </div>
+                        <span>抖內支持開發者</span>
+                    </a>
+                </div>
+                
                 <div className="flex justify-center gap-4 text-xs">
                     <a href="/privacy-policy.html" className="text-gray-400 hover:text-cyan-400 transition-colors">隱私政策</a>
                     <span className="text-gray-600">|</span>
