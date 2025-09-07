@@ -3388,25 +3388,41 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
         }
 
-        // 繪製轉場動畫
-        if (isTransitioning) {
+        // 繪製轉場動畫（只在背景圖片區域）
+        if (isTransitioning && backgroundImages.length > 0) {
             const transitionProgress = (Date.now() % 1000) / 1000; // 1秒循環
             
             if (transitionType === TransitionType.TV_STATIC) {
-                drawTVStaticTransition(ctx, width, height, transitionProgress);
+                // 只在背景圖片區域繪製雜訊效果
+                ctx.save();
+                ctx.globalCompositeOperation = 'multiply';
+                ctx.globalAlpha = Math.sin(transitionProgress * Math.PI) * 0.3;
+                
+                // 創建雜訊效果
+                const imageData = ctx.createImageData(width, height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = Math.random() * 255;
+                    data[i] = noise;     // R
+                    data[i + 1] = noise; // G
+                    data[i + 2] = noise; // B
+                    data[i + 3] = 255;   // A
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                ctx.restore();
             } else if (transitionType === TransitionType.WAVE_EXPANSION) {
-                // 獲取當前和下一張圖片
-                const currentImg = backgroundImages[currentImageIndex] ? new Image() : null;
-                const nextImg = backgroundImages[(currentImageIndex + 1) % backgroundImages.length] ? new Image() : null;
-                
-                if (currentImg && backgroundImages[currentImageIndex]) {
-                    currentImg.src = backgroundImages[currentImageIndex];
+                // 對於音波擴散，使用簡單的淡入淡出效果
+                const alpha = Math.sin(transitionProgress * Math.PI);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                if (backgroundImages[currentImageIndex]) {
+                    const img = new Image();
+                    img.src = backgroundImages[currentImageIndex];
+                    ctx.drawImage(img, 0, 0, width, height);
                 }
-                if (nextImg && backgroundImages[(currentImageIndex + 1) % backgroundImages.length]) {
-                    nextImg.src = backgroundImages[(currentImageIndex + 1) % backgroundImages.length];
-                }
-                
-                drawWaveExpansionTransition(ctx, width, height, transitionProgress, currentImg, nextImg);
+                ctx.restore();
             }
         }
 
