@@ -3414,13 +3414,30 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 ctx.restore();
             } else if (transitionType === TransitionType.WAVE_EXPANSION) {
                 // 對於音波擴散，使用簡單的淡入淡出效果
+                // 由於圖片加載是異步的，我們使用已經加載好的 backgroundImageRef
                 const alpha = Math.sin(transitionProgress * Math.PI);
                 ctx.save();
                 ctx.globalAlpha = alpha;
-                if (backgroundImages[currentImageIndex]) {
-                    const img = new Image();
-                    img.src = backgroundImages[currentImageIndex];
-                    ctx.drawImage(img, 0, 0, width, height);
+                if (backgroundImageRef.current) {
+                    const img = backgroundImageRef.current;
+                    
+                    // 使用與背景圖片相同的寬高比處理
+                    const canvasAspect = width / height;
+                    const imageAspect = img.width / img.height;
+                    let sx, sy, sWidth, sHeight;
+
+                    if (canvasAspect > imageAspect) {
+                        sWidth = img.width;
+                        sHeight = sWidth / canvasAspect;
+                        sx = 0;
+                        sy = (img.height - sHeight) / 2;
+                    } else {
+                        sHeight = img.height;
+                        sWidth = sHeight * canvasAspect;
+                        sy = 0;
+                        sx = (img.width - sWidth) / 2;
+                    }
+                    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
                 }
                 ctx.restore();
             }
