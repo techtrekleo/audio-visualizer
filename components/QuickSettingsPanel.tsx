@@ -1,5 +1,5 @@
 import React from 'react';
-import { VisualizationType } from '../types';
+import { VisualizationType, ColorPaletteType } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 import CategorizedEffectSelector from './CategorizedEffectSelector';
@@ -16,6 +16,8 @@ interface QuickSettingsPanelProps {
     effectOffsetY: number;
     onEffectOffsetYChange: (value: number) => void;
     isRecording: boolean;
+    colorPalette: ColorPaletteType;
+    onColorPaletteChange: (palette: ColorPaletteType) => void;
 }
 
 const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
@@ -30,6 +32,8 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
     effectOffsetY,
     onEffectOffsetYChange,
     isRecording,
+    colorPalette,
+    onColorPaletteChange,
 }) => {
     return (
         <div className="quick-settings-panel bg-gradient-to-r from-cyan-500/20 to-blue-500/20 backdrop-blur-sm rounded-xl p-4 border border-cyan-400/30">
@@ -49,6 +53,25 @@ const QuickSettingsPanel: React.FC<QuickSettingsPanelProps> = ({
                         currentType={visualizationType}
                         onTypeChange={onVisualizationChange}
                     />
+                </div>
+
+                {/* 顏色主題 */}
+                <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">顏色主題</label>
+                    <select
+                        value={colorPalette}
+                        onChange={(e) => onColorPaletteChange(e.target.value as ColorPaletteType)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                    >
+                        <option value={ColorPaletteType.DEFAULT}>預設</option>
+                        <option value={ColorPaletteType.CYBERPUNK}>賽博朋克</option>
+                        <option value={ColorPaletteType.SUNSET}>日落</option>
+                        <option value={ColorPaletteType.GLACIER}>冰川</option>
+                        <option value={ColorPaletteType.LAVA}>熔岩</option>
+                        <option value={ColorPaletteType.MIDNIGHT}>午夜</option>
+                        <option value={ColorPaletteType.WHITE}>白色</option>
+                        <option value={ColorPaletteType.RAINBOW}>彩虹</option>
+                    </select>
                 </div>
 
                 {/* 進階控制選項 */}

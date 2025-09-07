@@ -334,6 +334,8 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                         effectOffsetY={props.effectOffsetY}
                         onEffectOffsetYChange={props.onEffectOffsetYChange}
                         isRecording={props.isRecording}
+                        colorPalette={props.colorPalette}
+                        onColorPaletteChange={props.onColorPaletteChange}
                     />
                 </div>
             )}
@@ -417,13 +419,6 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                         defaultExpanded={false}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <SelectControl
-                                label="顏色主題"
-                                value={props.colorPalette}
-                                onChange={(value) => props.onColorPaletteChange(value as ColorPaletteType)}
-                                options={Object.values(ColorPaletteType).map(v => ({ value: v, label: v }))}
-                            />
-                            
                             <div className="space-y-2">
                                 <SelectControl
                                     label="解析度"
@@ -616,18 +611,42 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id="show-subtitles"
-                                            checked={props.showSubtitles}
-                                            onChange={(e) => props.onShowSubtitlesChange(e.target.checked)}
-                                            className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
-                                        />
-                                        <label htmlFor="show-subtitles" className="text-sm text-gray-300">顯示字幕</label>
-                                    </div>
+                            </div>
+                            
+                            {/* 字幕顯示模式選擇器 */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">字幕顯示模式</label>
+                                <div className="flex space-x-2">
+                                    {Object.values(SubtitleDisplayMode).map((mode) => (
+                                        <button
+                                            key={mode}
+                                            onClick={() => props.onSubtitleDisplayModeChange(mode)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                props.subtitleDisplayMode === mode
+                                                    ? 'bg-cyan-600 text-white'
+                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                            }`}
+                                        >
+                                            {mode === SubtitleDisplayMode.NONE && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>🚫</span>
+                                                    <span>無字幕</span>
+                                                </span>
+                                            )}
+                                            {mode === SubtitleDisplayMode.CLASSIC && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>📝</span>
+                                                    <span>傳統字幕</span>
+                                                </span>
+                                            )}
+                                            {mode === SubtitleDisplayMode.LYRICS_SCROLL && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>🎵</span>
+                                                    <span>捲軸字幕</span>
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                             
