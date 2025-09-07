@@ -108,11 +108,16 @@ function App() {
 
     // 背景圖片輪播邏輯
     useEffect(() => {
+        console.log('輪播 useEffect 觸發:', { isSlideshowEnabled, backgroundImagesLength: backgroundImages.length, isPlaying });
+        
         if (!isSlideshowEnabled || backgroundImages.length <= 1 || !isPlaying) {
+            console.log('輪播條件不滿足:', { isSlideshowEnabled, backgroundImagesLength: backgroundImages.length, isPlaying });
             return;
         }
 
+        console.log('開始設置輪播 interval');
         const interval = setInterval(() => {
+            console.log('Interval 執行:', { backgroundImagesLength: backgroundImages.length, isPlaying });
             if (backgroundImages.length > 1 && isPlaying) {
                 console.log('開始轉場動畫');
                 setIsTransitioning(true);
@@ -133,7 +138,10 @@ function App() {
             }
         }, slideshowInterval * 1000);
 
-        return () => clearInterval(interval);
+        return () => {
+            console.log('清理輪播 interval');
+            clearInterval(interval);
+        };
     }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval]);
 
     // 更新當前背景圖片
