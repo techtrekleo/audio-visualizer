@@ -43,6 +43,11 @@ function App() {
     const [colorPalette, setColorPalette] = useState<ColorPaletteType>(ColorPaletteType.DEFAULT);
     const [resolution, setResolution] = useState<Resolution>(Resolution.P1080);
     const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+    const [backgroundImages, setBackgroundImages] = useState<string[]>([]); // 多張背景圖片
+    const [currentImageIndex, setCurrentImageIndex] = useState<number>(0); // 當前圖片索引
+    const [isSlideshowEnabled, setIsSlideshowEnabled] = useState<boolean>(false); // 輪播開關
+    const [slideshowInterval, setSlideshowInterval] = useState<number>(15); // 輪播間隔（秒）
+    const [isTransitioning, setIsTransitioning] = useState<boolean>(false); // 是否正在過場
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
     const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
 
@@ -99,6 +104,36 @@ function App() {
         });
         setSubtitles(newSubtitles.sort((a, b) => a.time - b.time));
     }, [subtitlesRawText]);
+
+    // 背景圖片輪播邏輯
+    useEffect(() => {
+        if (!isSlideshowEnabled || backgroundImages.length <= 1 || !isPlaying) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (backgroundImages.length > 1) {
+                setIsTransitioning(true);
+                
+                // 電視雜訊過場動畫持續 1 秒
+                setTimeout(() => {
+                    setCurrentImageIndex((prevIndex) => 
+                        (prevIndex + 1) % backgroundImages.length
+                    );
+                    setIsTransitioning(false);
+                }, 1000);
+            }
+        }, slideshowInterval * 1000);
+
+        return () => clearInterval(interval);
+    }, [isSlideshowEnabled, backgroundImages.length, slideshowInterval, isPlaying]);
+
+    // 更新當前背景圖片
+    useEffect(() => {
+        if (backgroundImages.length > 0) {
+            setBackgroundImage(backgroundImages[currentImageIndex]);
+        }
+    }, [backgroundImages, currentImageIndex]);
 
     const handleGenerateSubtitles = async () => {
         if (!audioFile) {
@@ -205,11 +240,39 @@ function App() {
         setBackgroundImage(url);
     };
 
+    const handleMultipleBackgroundImagesSelect = (files: FileList) => {
+        // 清除舊的圖片
+        backgroundImages.forEach(url => URL.revokeObjectURL(url));
+        
+        const newUrls: string[] = [];
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                newUrls.push(URL.createObjectURL(file));
+            }
+        });
+        
+        setBackgroundImages(newUrls);
+        setCurrentImageIndex(0);
+        
+        // 如果只有一張圖片，關閉輪播
+        if (newUrls.length <= 1) {
+            setIsSlideshowEnabled(false);
+        }
+    };
+
     const clearBackgroundImage = () => {
         if (backgroundImage) {
             URL.revokeObjectURL(backgroundImage);
         }
         setBackgroundImage(null);
+    };
+
+    const clearAllBackgroundImages = () => {
+        backgroundImages.forEach(url => URL.revokeObjectURL(url));
+        setBackgroundImages([]);
+        setCurrentImageIndex(0);
+        setBackgroundImage(null);
+        setIsSlideshowEnabled(false);
     };
 
     const handleRecordingComplete = useCallback((url: string, extension: string) => {
@@ -397,6 +460,7 @@ function App() {
                                     backgroundImage={backgroundImage}
                                     watermarkPosition={watermarkPosition}
                                     waveformStroke={waveformStroke}
+                                    isTransitioning={isTransitioning}
                                     subtitles={subtitles}
                                     showSubtitles={showSubtitles}
                                     subtitleFontSize={subtitleFontSize}
@@ -474,6 +538,15 @@ function App() {
                             backgroundImage={backgroundImage}
                             onBackgroundImageSelect={handleBackgroundImageSelect}
                             onClearBackgroundImage={clearBackgroundImage}
+                            backgroundImages={backgroundImages}
+                            onMultipleBackgroundImagesSelect={handleMultipleBackgroundImagesSelect}
+                            onClearAllBackgroundImages={clearAllBackgroundImages}
+                            currentImageIndex={currentImageIndex}
+                            isSlideshowEnabled={isSlideshowEnabled}
+                            onSlideshowEnabledChange={setIsSlideshowEnabled}
+                            slideshowInterval={slideshowInterval}
+                            onSlideshowIntervalChange={setSlideshowInterval}
+                            isTransitioning={isTransitioning}
                             watermarkPosition={watermarkPosition}
                             onWatermarkPositionChange={handleWatermarkPositionChange}
                             waveformStroke={waveformStroke}

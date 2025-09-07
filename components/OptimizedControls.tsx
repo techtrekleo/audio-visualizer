@@ -49,6 +49,15 @@ interface OptimizedControlsProps {
     backgroundImage: string | null;
     onBackgroundImageSelect: (file: File) => void;
     onClearBackgroundImage: () => void;
+    backgroundImages: string[];
+    onMultipleBackgroundImagesSelect: (files: FileList) => void;
+    onClearAllBackgroundImages: () => void;
+    currentImageIndex: number;
+    isSlideshowEnabled: boolean;
+    onSlideshowEnabledChange: (enabled: boolean) => void;
+    slideshowInterval: number;
+    onSlideshowIntervalChange: (interval: number) => void;
+    isTransitioning: boolean;
     watermarkPosition: WatermarkPosition;
     onWatermarkPositionChange: (position: WatermarkPosition) => void;
     waveformStroke: boolean;
@@ -537,15 +546,84 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 <label className="text-sm font-medium text-gray-300">背景圖片</label>
                                 <div className="flex flex-col gap-2">
                                     <label className="text-center bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer">
-                                        上傳圖片
+                                        上傳單張圖片
                                         <input type="file" className="hidden" accept="image/*" onChange={handleBackgroundImageChange} />
                                     </label>
-                                    {props.backgroundImage && (
-                                        <Button onClick={props.onClearBackgroundImage} variant="danger" className="px-2 py-1 text-sm">
-                                            清除
+                                    <label className="text-center bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg font-semibold transition-all duration-200 cursor-pointer">
+                                        上傳多張圖片 (輪播)
+                                        <input 
+                                            type="file" 
+                                            className="hidden" 
+                                            accept="image/*" 
+                                            multiple 
+                                            onChange={(e) => {
+                                                if (e.target.files) {
+                                                    props.onMultipleBackgroundImagesSelect(e.target.files);
+                                                }
+                                                e.target.value = '';
+                                            }} 
+                                        />
+                                    </label>
+                                    {props.backgroundImages.length > 0 && (
+                                        <Button onClick={props.onClearAllBackgroundImages} variant="danger" className="px-2 py-1 text-sm">
+                                            清除所有圖片
                                         </Button>
                                     )}
                                 </div>
+                                
+                                {/* 圖片預覽和輪播控制 */}
+                                {props.backgroundImages.length > 0 && (
+                                    <div className="mt-4 space-y-3">
+                                        <div className="text-sm text-gray-300">
+                                            已上傳 {props.backgroundImages.length} 張圖片，當前顯示第 {props.currentImageIndex + 1} 張
+                                        </div>
+                                        
+                                        {/* 輪播開關 */}
+                                        {props.backgroundImages.length > 1 && (
+                                            <div className="flex items-center space-x-3">
+                                                <label className="flex items-center space-x-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={props.isSlideshowEnabled}
+                                                        onChange={(e) => props.onSlideshowEnabledChange(e.target.checked)}
+                                                        className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+                                                    />
+                                                    <span className="text-sm text-gray-300">啟用自動輪播</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                        
+                                        {/* 輪播間隔設定 */}
+                                        {props.isSlideshowEnabled && (
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-300">輪播間隔 (秒)</label>
+                                                <input
+                                                    type="number"
+                                                    min="5"
+                                                    max="60"
+                                                    value={props.slideshowInterval}
+                                                    onChange={(e) => props.onSlideshowIntervalChange(parseInt(e.target.value))}
+                                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                                />
+                                            </div>
+                                        )}
+                                        
+                                        {/* 過場動畫提示 */}
+                                        {props.isSlideshowEnabled && (
+                                            <div className="p-3 bg-purple-500/20 border border-purple-400/30 rounded-lg text-sm">
+                                                <div className="flex items-center gap-2 text-purple-300">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span className="font-medium">📺 電視雜訊過場</span>
+                                                </div>
+                                                <p className="text-purple-200 text-xs mt-1">
+                                                    每 {props.slideshowInterval} 秒自動切換，使用電視雜訊晃動效果過場
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </CollapsibleControlSection>

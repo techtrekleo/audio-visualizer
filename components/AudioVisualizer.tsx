@@ -22,6 +22,7 @@ interface AudioVisualizerProps {
     backgroundImage: string | null;
     watermarkPosition: WatermarkPosition;
     waveformStroke: boolean;
+    isTransitioning: boolean;
     // Subtitle props
     subtitles: Subtitle[];
     showSubtitles: boolean;
@@ -2939,6 +2940,51 @@ const drawLyricsDisplay = (
     ctx.restore();
 };
 
+// 電視雜訊過場動畫
+const drawTVStaticTransition = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    progress: number // 0-1 的進度值
+) => {
+    ctx.save();
+    
+    // 創建雜訊效果
+    const imageData = ctx.createImageData(width, height);
+    const data = imageData.data;
+    
+    // 生成隨機雜訊
+    for (let i = 0; i < data.length; i += 4) {
+        const noise = Math.random() * 255;
+        const intensity = Math.sin(progress * Math.PI) * 0.8; // 正弦波強度變化
+        
+        data[i] = noise * intensity;     // R
+        data[i + 1] = noise * intensity; // G
+        data[i + 2] = noise * intensity; // B
+        data[i + 3] = 255;               // A
+    }
+    
+    // 添加掃描線效果
+    for (let y = 0; y < height; y += 4) {
+        const scanIntensity = Math.sin((y / height) * Math.PI * 4 + progress * Math.PI * 2) * 0.3;
+        for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4;
+            data[index] += scanIntensity * 100;
+            data[index + 1] += scanIntensity * 100;
+            data[index + 2] += scanIntensity * 100;
+        }
+    }
+    
+    // 添加水平晃動效果
+    const shakeIntensity = Math.sin(progress * Math.PI * 8) * 3;
+    ctx.putImageData(imageData, shakeIntensity, 0);
+    
+    // 添加垂直晃動效果
+    const verticalShake = Math.sin(progress * Math.PI * 6) * 2;
+    ctx.putImageData(imageData, 0, verticalShake);
+    
+    ctx.restore();
+};
 
 const drawCustomText = (
     ctx: CanvasRenderingContext2D,
@@ -3210,7 +3256,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             visualizationType, customText, textColor, fontFamily, graphicEffect, 
             textSize, textPositionX, textPositionY,
             sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
-            waveformStroke, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
+            waveformStroke, isTransitioning, subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
             subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
         } = propsRef.current;
 
@@ -3277,6 +3323,12 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 sx = (img.width - sWidth) / 2;
             }
             ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
+        }
+
+        // 繪製電視雜訊過場動畫
+        if (isTransitioning) {
+            const transitionProgress = (Date.now() % 1000) / 1000; // 1秒循環
+            drawTVStaticTransition(ctx, width, height, transitionProgress);
         }
 
         const drawFunction = VISUALIZATION_MAP[visualizationType];
