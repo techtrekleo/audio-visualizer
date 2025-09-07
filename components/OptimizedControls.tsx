@@ -691,21 +691,17 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                         </div>
                     </CollapsibleControlSection>
 
-                    {/* 卷軸歌詞設定 (測試中) - 只在捲軸歌詞模式下顯示 */}
+                    {/* 卷軸歌詞設定 - 只在捲軸歌詞模式下顯示 */}
                     {props.subtitleDisplayMode === SubtitleDisplayMode.LYRICS_SCROLL && (
                         <CollapsibleControlSection
-                            title="捲軸歌詞設定 (測試中)"
+                            title="捲軸歌詞設定"
                             icon={ICON_PATHS.SETTINGS}
                             priority="medium"
                             defaultExpanded={true}
-                            badge="🧪 測試中"
                         >
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="text-sm text-gray-300">捲軸歌詞控制選項</div>
-                                    <div className="text-xs text-yellow-400 bg-yellow-400/20 px-2 py-1 rounded">
-                                        🧪 測試中
-                                    </div>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -30,7 +30,7 @@ interface AudioVisualizerProps {
     effectScale: number;
     effectOffsetX: number;
     effectOffsetY: number;
-    // Lyrics Display props (測試中)
+    // Lyrics Display props
     showLyricsDisplay: boolean;
     currentTime: number;
     lyricsFontSize: number;
@@ -2827,7 +2827,7 @@ const drawSubtitles = (
     ctx.restore();
 };
 
-// 歌詞顯示函數 (測試中)
+// 歌詞顯示函數
 const drawLyricsDisplay = (
     ctx: CanvasRenderingContext2D,
     width: number,
