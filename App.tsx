@@ -600,7 +600,17 @@ function App() {
             
             <footer className="w-full text-center p-4 text-gray-500 text-sm flex-shrink-0">
                 <div className="mb-4">
-                    一個與 <a href="https://www.youtube.com/channel/UCZVT570EWJ64ibL-re9CFpQ" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Sonic Pulse</a> 合作的專案成果。
+                    <p>© {new Date().getFullYear()} Sonic Pulse. Built with ❤️ by 音樂脈動-Sonic Pulse</p>
+                    <p className="mt-2">
+                        <a 
+                            href="https://www.youtube.com/@%E9%9F%B3%E6%A8%82%E8%84%88%E5%8B%95SonicPulse" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                            🎵 Sonic Pulse YouTube Channel
+                        </a>
+                    </p>
                 </div>
                 
                 {/* 抖內支持按鈕 */}
@@ -609,12 +619,9 @@ function App() {
                         href="https://www.paypal.com/ncp/payment/PK49RJYSTAV6Y" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
-                        title="支持開發者，請我喝咖啡 ☕"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-6 py-3 rounded-full font-medium transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
                     >
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-orange-200 flex items-center justify-center">
-                            <span className="text-sm">🐱</span>
-                        </div>
+                        <span className="text-xl">🐱</span>
                         <span>抖內支持開發者</span>
                     </a>
                 </div>
