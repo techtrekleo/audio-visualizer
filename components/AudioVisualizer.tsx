@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useCallback } from 'react';
-import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle, SubtitleDisplayMode } from '../types';
+import { VisualizationType, Palette, GraphicEffectType, ColorPaletteType, WatermarkPosition, FontType, Subtitle, SubtitleBgStyle, SubtitleDisplayMode, TransitionType } from '../types';
 import ImageBasedVisualizer from './ImageBasedVisualizer';
 
 interface AudioVisualizerProps {
@@ -23,6 +23,9 @@ interface AudioVisualizerProps {
     watermarkPosition: WatermarkPosition;
     waveformStroke: boolean;
     isTransitioning: boolean;
+    transitionType: TransitionType;
+    backgroundImages: string[];
+    currentImageIndex: number;
     // Subtitle props
     subtitles: Subtitle[];
     showSubtitles: boolean;
@@ -2986,6 +2989,66 @@ const drawTVStaticTransition = (
     ctx.restore();
 };
 
+// 音波擴散過場動畫
+const drawWaveExpansionTransition = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    progress: number, // 0-1 的進度值
+    oldImage: HTMLImageElement | null,
+    newImage: HTMLImageElement | null
+) => {
+    ctx.save();
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+    const currentRadius = progress * maxRadius;
+    
+    // 繪製舊圖片作為背景
+    if (oldImage) {
+        ctx.drawImage(oldImage, 0, 0, width, height);
+    }
+    
+    // 創建圓形遮罩來顯示新圖片
+    if (newImage && currentRadius > 0) {
+        ctx.save();
+        
+        // 創建圓形路徑
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+        ctx.clip();
+        
+        // 繪製新圖片
+        ctx.drawImage(newImage, 0, 0, width, height);
+        
+        ctx.restore();
+        
+        // 添加音波邊緣效果
+        if (currentRadius > 10) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(6, 182, 212, ${0.8 * (1 - progress)})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 添加發光效果
+            ctx.shadowColor = '#06b6d4';
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = `rgba(6, 182, 212, ${0.4 * (1 - progress)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+    }
+    
+    ctx.restore();
+};
+
 const drawCustomText = (
     ctx: CanvasRenderingContext2D,
     text: string,
@@ -3325,10 +3388,26 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
         }
 
-        // 繪製電視雜訊過場動畫
+        // 繪製轉場動畫
         if (isTransitioning) {
             const transitionProgress = (Date.now() % 1000) / 1000; // 1秒循環
-            drawTVStaticTransition(ctx, width, height, transitionProgress);
+            
+            if (transitionType === TransitionType.TV_STATIC) {
+                drawTVStaticTransition(ctx, width, height, transitionProgress);
+            } else if (transitionType === TransitionType.WAVE_EXPANSION) {
+                // 獲取當前和下一張圖片
+                const currentImg = backgroundImages[currentImageIndex] ? new Image() : null;
+                const nextImg = backgroundImages[(currentImageIndex + 1) % backgroundImages.length] ? new Image() : null;
+                
+                if (currentImg && backgroundImages[currentImageIndex]) {
+                    currentImg.src = backgroundImages[currentImageIndex];
+                }
+                if (nextImg && backgroundImages[(currentImageIndex + 1) % backgroundImages.length]) {
+                    nextImg.src = backgroundImages[(currentImageIndex + 1) % backgroundImages.length];
+                }
+                
+                drawWaveExpansionTransition(ctx, width, height, transitionProgress, currentImg, nextImg);
+            }
         }
 
         const drawFunction = VISUALIZATION_MAP[visualizationType];

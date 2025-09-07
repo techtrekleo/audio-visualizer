@@ -15,7 +15,7 @@ import LyricsDisplay from './components/LyricsDisplay';
 // import PopupAdManager from './components/PopupAdManager';
 import { useAudioAnalysis } from './hooks/useAudioAnalysis';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle, SubtitleDisplayMode } from './types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Palette, Resolution, GraphicEffectType, WatermarkPosition, Subtitle, SubtitleBgStyle, SubtitleDisplayMode, TransitionType } from './types';
 import { ICON_PATHS, COLOR_PALETTES, RESOLUTION_MAP } from './constants';
 
 function App() {
@@ -48,6 +48,7 @@ function App() {
     const [isSlideshowEnabled, setIsSlideshowEnabled] = useState<boolean>(false); // 輪播開關
     const [slideshowInterval, setSlideshowInterval] = useState<number>(15); // 輪播間隔（秒）
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false); // 是否正在過場
+    const [transitionType, setTransitionType] = useState<TransitionType>(TransitionType.TV_STATIC); // 轉場效果類型
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
     const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
 
@@ -465,6 +466,9 @@ function App() {
                                     watermarkPosition={watermarkPosition}
                                     waveformStroke={waveformStroke}
                                     isTransitioning={isTransitioning}
+                                    transitionType={transitionType}
+                                    backgroundImages={backgroundImages}
+                                    currentImageIndex={currentImageIndex}
                                     subtitles={subtitles}
                                     showSubtitles={showSubtitles}
                                     subtitleFontSize={subtitleFontSize}
@@ -551,6 +555,8 @@ function App() {
                             slideshowInterval={slideshowInterval}
                             onSlideshowIntervalChange={setSlideshowInterval}
                             isTransitioning={isTransitioning}
+                            transitionType={transitionType}
+                            onTransitionTypeChange={setTransitionType}
                             watermarkPosition={watermarkPosition}
                             onWatermarkPositionChange={handleWatermarkPositionChange}
                             waveformStroke={waveformStroke}

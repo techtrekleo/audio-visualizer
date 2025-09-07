@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle, SubtitleDisplayMode } from '../types';
+import { VisualizationType, FontType, BackgroundColorType, ColorPaletteType, Resolution, GraphicEffectType, WatermarkPosition, SubtitleBgStyle, SubtitleDisplayMode, TransitionType } from '../types';
 import Icon from './Icon';
 import { ICON_PATHS } from '../constants';
 import CollapsibleControlSection from './CollapsibleControlSection';
@@ -58,6 +58,8 @@ interface OptimizedControlsProps {
     slideshowInterval: number;
     onSlideshowIntervalChange: (interval: number) => void;
     isTransitioning: boolean;
+    transitionType: TransitionType;
+    onTransitionTypeChange: (type: TransitionType) => void;
     watermarkPosition: WatermarkPosition;
     onWatermarkPositionChange: (position: WatermarkPosition) => void;
     waveformStroke: boolean;
@@ -608,6 +610,35 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                             </div>
                                         )}
                                         
+                                        {/* 轉場效果選擇 */}
+                                        {props.isSlideshowEnabled && (
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-300">轉場效果</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        onClick={() => props.onTransitionTypeChange(TransitionType.TV_STATIC)}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                            props.transitionType === TransitionType.TV_STATIC
+                                                                ? 'bg-cyan-600 text-white'
+                                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                        }`}
+                                                    >
+                                                        📺 電視雜訊
+                                                    </button>
+                                                    <button
+                                                        onClick={() => props.onTransitionTypeChange(TransitionType.WAVE_EXPANSION)}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                                            props.transitionType === TransitionType.WAVE_EXPANSION
+                                                                ? 'bg-cyan-600 text-white'
+                                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                        }`}
+                                                    >
+                                                        🌊 音波擴散
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
                                         {/* 過場動畫提示 */}
                                         {props.isSlideshowEnabled && (
                                             <div className="p-3 bg-purple-500/20 border border-purple-400/30 rounded-lg text-sm">
@@ -615,10 +646,12 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                                     </svg>
-                                                    <span className="font-medium">📺 電視雜訊過場</span>
+                                                    <span className="font-medium">
+                                                        {props.transitionType === TransitionType.TV_STATIC ? '📺 電視雜訊過場' : '🌊 音波擴散過場'}
+                                                    </span>
                                                 </div>
                                                 <p className="text-purple-200 text-xs mt-1">
-                                                    每 {props.slideshowInterval} 秒自動切換，使用電視雜訊晃動效果過場
+                                                    每 {props.slideshowInterval} 秒自動切換，使用{props.transitionType === TransitionType.TV_STATIC ? '電視雜訊晃動' : '音波擴散'}效果過場
                                                 </p>
                                             </div>
                                         )}

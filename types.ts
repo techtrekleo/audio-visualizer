@@ -108,6 +108,11 @@ export enum SubtitleDisplayMode {
     LYRICS_SCROLL = '捲軸歌詞',
 }
 
+export enum TransitionType {
+    TV_STATIC = '電視雜訊',
+    WAVE_EXPANSION = '音波擴散',
+}
+
 export type Subtitle = {
     time: number;
     text: string;
