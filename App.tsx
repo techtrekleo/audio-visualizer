@@ -343,12 +343,21 @@ function App() {
         }
 
         const newIsPlaying = !isPlaying;
+        console.log('播放/暫停:', { currentIsPlaying: isPlaying, newIsPlaying });
+        
         if (newIsPlaying) {
-            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+            audioRef.current.play().then(() => {
+                console.log('音頻播放成功');
+                setIsPlaying(true);
+            }).catch(e => {
+                console.error("Audio play failed:", e);
+                setIsPlaying(false);
+            });
         } else {
             audioRef.current.pause();
+            console.log('音頻暫停');
+            setIsPlaying(false);
         }
-        setIsPlaying(newIsPlaying);
     }, [isPlaying, isAudioInitialized, initializeAudio]);
     
     const handleMetadataLoaded = () => {
