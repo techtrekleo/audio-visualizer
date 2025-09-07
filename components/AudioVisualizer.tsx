@@ -3414,15 +3414,17 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 ctx.putImageData(imageData, 0, 0);
                 ctx.restore();
             } else if (transitionType === TransitionType.WAVE_EXPANSION) {
-                // 對於音波擴散，使用簡單的淡入淡出效果
-                // 由於圖片加載是異步的，我們使用已經加載好的 backgroundImageRef
-                const alpha = Math.sin(transitionProgress * Math.PI);
+                // 真正的音波擴散效果
                 ctx.save();
-                ctx.globalAlpha = alpha;
+                
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+                const currentRadius = transitionProgress * maxRadius;
+                
+                // 繪製當前圖片
                 if (backgroundImageRef.current) {
                     const img = backgroundImageRef.current;
-                    
-                    // 使用與背景圖片相同的寬高比處理
                     const canvasAspect = width / height;
                     const imageAspect = img.width / img.height;
                     let sx, sy, sWidth, sHeight;
@@ -3440,6 +3442,66 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                     }
                     ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
                 }
+                
+                // 創建圓形遮罩來顯示新圖片
+                if (currentRadius > 0 && backgroundImages.length > 1) {
+                    const nextIndex = (currentImageIndex + 1) % backgroundImages.length;
+                    
+                    // 創建一個臨時圖片元素來檢查是否已加載
+                    const tempImg = document.createElement('img');
+                    tempImg.src = backgroundImages[nextIndex];
+                    
+                    // 如果圖片已經在緩存中，直接使用
+                    if (tempImg.complete && tempImg.naturalWidth > 0) {
+                        ctx.save();
+                        
+                        // 創建圓形路徑
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+                        ctx.clip();
+                        
+                        // 繪製新圖片
+                        const canvasAspect = width / height;
+                        const imageAspect = tempImg.width / tempImg.height;
+                        let sx, sy, sWidth, sHeight;
+
+                        if (canvasAspect > imageAspect) {
+                            sWidth = tempImg.width;
+                            sHeight = sWidth / canvasAspect;
+                            sx = 0;
+                            sy = (tempImg.height - sHeight) / 2;
+                        } else {
+                            sHeight = tempImg.height;
+                            sWidth = sHeight * canvasAspect;
+                            sy = 0;
+                            sx = (tempImg.width - sWidth) / 2;
+                        }
+                        ctx.drawImage(tempImg, sx, sy, sWidth, sHeight, 0, 0, width, height);
+                        
+                        ctx.restore();
+                        
+                        // 添加音波邊緣效果
+                        if (currentRadius > 10) {
+                            ctx.save();
+                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.8 * (1 - transitionProgress)})`;
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+                            ctx.stroke();
+                            
+                            // 添加發光效果
+                            ctx.shadowColor = '#06b6d4';
+                            ctx.shadowBlur = 10;
+                            ctx.strokeStyle = `rgba(6, 182, 212, ${0.4 * (1 - transitionProgress)})`;
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                }
+                
                 ctx.restore();
             }
         }
