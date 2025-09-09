@@ -1034,16 +1034,16 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                                     <span>無背景</span>
                                                 </span>
                                             )}
-                                            {style === SubtitleBgStyle.SEMI_TRANSPARENT && (
+                                            {style === SubtitleBgStyle.TRANSPARENT && (
                                                 <span className="flex items-center space-x-2">
                                                     <span>🔳</span>
-                                                    <span>半透明</span>
+                                                    <span>透明背景</span>
                                                 </span>
                                             )}
-                                            {style === SubtitleBgStyle.SOLID && (
+                                            {style === SubtitleBgStyle.BLACK && (
                                                 <span className="flex items-center space-x-2">
                                                     <span>⬛</span>
-                                                    <span>實心</span>
+                                                    <span>黑色背景</span>
                                                 </span>
                                             )}
                                         </button>

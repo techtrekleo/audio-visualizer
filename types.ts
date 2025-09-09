@@ -96,9 +96,9 @@ export enum WatermarkPosition {
 }
 
 export enum SubtitleBgStyle {
-    NONE = '無',
-    SEMI_TRANSPARENT = '半透明',
-    SOLID = '實色',
+    NONE = '無背景',
+    TRANSPARENT = '透明背景',
+    BLACK = '黑色背景',
 }
 
 export enum SubtitleDisplayMode {

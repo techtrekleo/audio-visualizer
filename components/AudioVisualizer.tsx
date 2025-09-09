@@ -2787,7 +2787,7 @@ const drawSubtitles = (
         const bgX = positionX - bgWidth / 2;
         const bgY = positionY - textHeight - bgPaddingY;
         
-        ctx.fillStyle = bgStyle === SubtitleBgStyle.SOLID ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)';
+        ctx.fillStyle = bgStyle === SubtitleBgStyle.BLACK ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)';
         createRoundedRectPath(ctx, bgX, bgY, bgWidth, bgHeight, 5);
         ctx.fill();
     }
@@ -2904,9 +2904,9 @@ const drawLyricsDisplay = (
             const bgY = y - textHeight / 2 - bgPaddingY;
             
             // 設置背景顏色
-            if (bgStyle === SubtitleBgStyle.SOLID) {
+            if (bgStyle === SubtitleBgStyle.BLACK) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            } else if (bgStyle === SubtitleBgStyle.SEMI_TRANSPARENT) {
+            } else if (bgStyle === SubtitleBgStyle.TRANSPARENT) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             }
             

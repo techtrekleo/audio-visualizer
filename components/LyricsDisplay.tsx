@@ -113,14 +113,14 @@ const LyricsDisplay: React.FC<LyricsDisplayProps> = ({
             const getBackgroundStyle = () => {
               if (bgStyle === SubtitleBgStyle.NONE) {
                 return {};
-              } else if (bgStyle === SubtitleBgStyle.SOLID) {
+              } else if (bgStyle === SubtitleBgStyle.BLACK) {
                 return {
                   backgroundColor: 'rgba(0, 0, 0, 0.8)',
                   padding: '8px 16px',
                   borderRadius: '8px',
                   display: 'inline-block'
                 };
-              } else if (bgStyle === SubtitleBgStyle.SEMI_TRANSPARENT) {
+              } else if (bgStyle === SubtitleBgStyle.TRANSPARENT) {
                 return {
                   backgroundColor: 'rgba(0, 0, 0, 0.5)',
                   padding: '8px 16px',

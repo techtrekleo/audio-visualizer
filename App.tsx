@@ -65,8 +65,8 @@ function App() {
     const [subtitleFontSize, setSubtitleFontSize] = useState<number>(4); // Relative vw unit
     const [subtitleFontFamily, setSubtitleFontFamily] = useState<FontType>(FontType.POPPINS);
     const [subtitleColor, setSubtitleColor] = useState<string>('#FFFFFF');
-    const [subtitleEffect, setSubtitleEffect] = useState<GraphicEffectType>(GraphicEffectType.SHADOW);
-    const [subtitleBgStyle, setSubtitleBgStyle] = useState<SubtitleBgStyle>(SubtitleBgStyle.SEMI_TRANSPARENT);
+    const [subtitleEffect, setSubtitleEffect] = useState<GraphicEffectType>(GraphicEffectType.NONE);
+    const [subtitleBgStyle, setSubtitleBgStyle] = useState<SubtitleBgStyle>(SubtitleBgStyle.TRANSPARENT);
     const [subtitleDisplayMode, setSubtitleDisplayMode] = useState<SubtitleDisplayMode>(SubtitleDisplayMode.CLASSIC);
     
     // Lyrics Display State (測試中)
