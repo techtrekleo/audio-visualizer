@@ -481,7 +481,9 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                     className="hidden" 
                                     accept="audio/*" 
                                     onChange={(e) => {
+                                        console.log('文件輸入變化:', e.target.files);
                                         if (e.target.files && e.target.files[0]) {
+                                            console.log('選擇文件:', e.target.files[0]);
                                             props.onFileSelect(e.target.files[0]);
                                         }
                                         e.target.value = '';

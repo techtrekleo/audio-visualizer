@@ -304,6 +304,7 @@ function App() {
     const { isRecording, startRecording, stopRecording } = useMediaRecorder(handleRecordingComplete);
 
     const handleFileSelect = (file: File) => {
+        console.log('選擇音訊文件:', { name: file.name, type: file.type, size: file.size });
         setAudioFile(file);
         const url = URL.createObjectURL(file);
         setAudioUrl(url);
