@@ -122,9 +122,9 @@ function App() {
                 console.log('開始轉場動畫');
                 setIsTransitioning(true);
                 
-                // 根據轉場類型設定不同的時間
-                const transitionDuration = transitionType === TransitionType.TV_STATIC ? 1000 : 3000; // 電視雜訊1秒，粒子消失3秒
-                const switchTime = transitionType === TransitionType.TV_STATIC ? 500 : 1500; // 電視雜訊0.5秒切換，粒子消失1.5秒切換
+                // 電視雜訊轉場時間設定
+                const transitionDuration = 1000; // 電視雜訊1秒
+                const switchTime = 500; // 電視雜訊0.5秒切換
                 
                 setTimeout(() => {
                     console.log('切換圖片');
