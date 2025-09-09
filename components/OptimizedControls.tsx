@@ -5,6 +5,82 @@ import { ICON_PATHS } from '../constants';
 import CollapsibleControlSection from './CollapsibleControlSection';
 import QuickSettingsPanel from './QuickSettingsPanel';
 import SettingsManagerComponent from './SettingsManagerComponent';
+
+// 將原始字幕文本轉換為標準SRT格式
+const convertToSRT = (rawText: string): string => {
+    if (!rawText.trim()) return '';
+    
+    const lines = rawText.trim().split('\n');
+    const subtitles: Array<{ time: number; text: string }> = [];
+    
+    // First, try to parse [00:00.00] format
+    const timeRegex1 = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
+    
+    // Then, try to parse "00:00:05 - 文本" format
+    const timeRegex2 = /^(\d{1,2}):(\d{1,2}):(\d{1,2})(?:\.(\d{1,3}))?\s*[-–]\s*(.+)$/;
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        let time: number | null = null;
+        let text: string | null = null;
+        
+        // Try [00:00.00] format first
+        const match1 = line.match(timeRegex1);
+        if (match1) {
+            const minutes = parseInt(match1[1], 10);
+            const seconds = parseInt(match1[2], 10);
+            const centiseconds = parseInt(match1[3], 10);
+            time = minutes * 60 + seconds + centiseconds / 100;
+            text = line.replace(timeRegex1, '').trim();
+        } else {
+            // Try "00:00:05 - 文本" format
+            const match2 = line.match(timeRegex2);
+            if (match2) {
+                const hours = parseInt(match2[1], 10);
+                const minutes = parseInt(match2[2], 10);
+                const seconds = parseInt(match2[3], 10);
+                const milliseconds = match2[4] ? parseInt(match2[4], 10) : 0;
+                time = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+                text = match2[5];
+            } else {
+                // If no time format found, skip this line
+                continue;
+            }
+        }
+        
+        if (time !== null && text) {
+            subtitles.push({ time, text });
+        }
+    }
+    
+    // Sort by time
+    subtitles.sort((a, b) => a.time - b.time);
+    
+    // Convert to SRT format
+    let srtContent = '';
+    subtitles.forEach((subtitle, index) => {
+        const startTime = formatSRTTime(subtitle.time);
+        const endTime = formatSRTTime(subtitle.time + 3); // Default 3 seconds duration
+        
+        srtContent += `${index + 1}\n`;
+        srtContent += `${startTime} --> ${endTime}\n`;
+        srtContent += `${subtitle.text}\n\n`;
+    });
+    
+    return srtContent;
+};
+
+// 格式化時間為SRT格式 (HH:MM:SS,mmm)
+const formatSRTTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const milliseconds = Math.floor((seconds % 1) * 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
+};
 import { SettingsManager, SavedSettings } from '../utils/settingsManager';
 
 interface OptimizedControlsProps {
@@ -832,6 +908,34 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                         </div>
                                     </div>
                                 </div>
+                                
+                                {/* 字幕下載按鈕 */}
+                                <Button
+                                    onClick={() => {
+                                        if (!props.subtitlesRawText.trim()) {
+                                            alert('請先產生字幕！\n\n您可以：\n1. 手動輸入字幕文字\n2. 點擊「AI 產生字幕」按鈕自動產生');
+                                            return;
+                                        }
+                                        
+                                        // 將原始字幕文本轉換為標準SRT格式
+                                        const srtContent = convertToSRT(props.subtitlesRawText);
+                                        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = 'subtitles.srt';
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        URL.revokeObjectURL(url);
+                                    }}
+                                    variant="secondary"
+                                    className={`${props.subtitlesRawText.trim() ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-500 hover:bg-gray-400'}`}
+                                    disabled={!props.subtitlesRawText.trim()}
+                                >
+                                    <Icon path={ICON_PATHS.DOWNLOAD} className="w-5 h-5" />
+                                    <span>下載字幕 (SRT)</span>
+                                </Button>
                             </div>
                             
                             {/* 字幕顯示模式選擇器 */}
@@ -908,6 +1012,43 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                     onChange={(value) => props.onSubtitleEffectChange(value as GraphicEffectType)}
                                     options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
                                 />
+                            </div>
+                            
+                            {/* 字幕背景樣式控制 */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">字幕背景樣式</label>
+                                <div className="flex space-x-2">
+                                    {Object.values(SubtitleBgStyle).map((style) => (
+                                        <button
+                                            key={style}
+                                            onClick={() => props.onSubtitleBgStyleChange(style)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                props.subtitleBgStyle === style
+                                                    ? 'bg-cyan-600 text-white'
+                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                            }`}
+                                        >
+                                            {style === SubtitleBgStyle.NONE && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>🚫</span>
+                                                    <span>無背景</span>
+                                                </span>
+                                            )}
+                                            {style === SubtitleBgStyle.SEMI_TRANSPARENT && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>🔳</span>
+                                                    <span>半透明</span>
+                                                </span>
+                                            )}
+                                            {style === SubtitleBgStyle.SOLID && (
+                                                <span className="flex items-center space-x-2">
+                                                    <span>⬛</span>
+                                                    <span>實心</span>
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </CollapsibleControlSection>
