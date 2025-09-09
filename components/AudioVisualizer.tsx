@@ -2809,12 +2809,6 @@ const drawSubtitles = (
             ctx.shadowColor = color;
             ctx.shadowBlur = 15;
             break;
-        case GraphicEffectType.SHADOW:
-            ctx.shadowColor = 'rgba(0,0,0,0.7)';
-            ctx.shadowBlur = 8;
-            ctx.shadowOffsetX = fontSize * 0.04;
-            ctx.shadowOffsetY = fontSize * 0.04;
-            break;
         case GraphicEffectType.GLITCH:
             if (isBeat) {
                 ctx.globalCompositeOperation = 'lighter';
@@ -2938,17 +2932,12 @@ const drawLyricsDisplay = (
         }
         
         // 應用字幕效果
-        if (effect === GraphicEffectType.SHADOW) {
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-            ctx.shadowBlur = 8;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-        } else if (effect === GraphicEffectType.GLOW) {
+        if (effect === GraphicEffectType.GLOW) {
             ctx.shadowColor = color;
             ctx.shadowBlur = 15;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
-        } else if (effect === GraphicEffectType.OUTLINE) {
+        } else if (effect === GraphicEffectType.STROKE) {
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
             ctx.lineWidth = 3;
             ctx.strokeText(line.text, x, y);
@@ -3158,12 +3147,6 @@ const drawCustomText = (
             drawText();
             ctx.shadowBlur = 10;
             drawText();
-            break;
-        case GraphicEffectType.SHADOW:
-            ctx.shadowColor = 'rgba(0,0,0,0.7)';
-            ctx.shadowBlur = 10;
-            ctx.shadowOffsetX = fontSize * 0.05;
-            ctx.shadowOffsetY = fontSize * 0.05;
             break;
         case GraphicEffectType.GLITCH:
             if (isBeat) {

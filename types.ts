@@ -73,7 +73,6 @@ export enum ColorPaletteType {
 
 export enum GraphicEffectType {
     GLOW = '霓虹光',
-    SHADOW = '陰影',
     STROKE = '描邊',
     GLITCH = '故障感',
     NONE = '無',
