@@ -573,17 +573,35 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                             }} 
                                         />
                                     </label>
-                                    {props.backgroundImages.length > 0 && (
-                                        <Button 
-                                            onClick={() => {
-                                                console.log('清除所有背景圖片，當前數量:', props.backgroundImages.length);
-                                                props.onClearAllBackgroundImages();
-                                            }} 
-                                            variant="danger" 
-                                            className="px-2 py-1 text-sm"
-                                        >
-                                            🗑️ 清除所有圖片
-                                        </Button>
+                                    
+                                    {/* 清除按鈕 - 單張圖片或多張圖片 */}
+                                    {(props.backgroundImage || props.backgroundImages.length > 0) && (
+                                        <div className="flex gap-2">
+                                            {props.backgroundImage && (
+                                                <Button 
+                                                    onClick={() => {
+                                                        console.log('清除單張背景圖片');
+                                                        props.onClearBackgroundImage();
+                                                    }} 
+                                                    variant="danger" 
+                                                    className="px-2 py-1 text-sm flex-1"
+                                                >
+                                                    🗑️ 清除單張圖片
+                                                </Button>
+                                            )}
+                                            {props.backgroundImages.length > 0 && (
+                                                <Button 
+                                                    onClick={() => {
+                                                        console.log('清除所有背景圖片，當前數量:', props.backgroundImages.length);
+                                                        props.onClearAllBackgroundImages();
+                                                    }} 
+                                                    variant="danger" 
+                                                    className="px-2 py-1 text-sm flex-1"
+                                                >
+                                                    🗑️ 清除所有圖片
+                                                </Button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                                 
