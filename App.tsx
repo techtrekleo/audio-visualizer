@@ -65,7 +65,6 @@ function App() {
     const [subtitleFontSize, setSubtitleFontSize] = useState<number>(4); // Relative vw unit
     const [subtitleFontFamily, setSubtitleFontFamily] = useState<FontType>(FontType.POPPINS);
     const [subtitleColor, setSubtitleColor] = useState<string>('#FFFFFF');
-    const [subtitleEffect, setSubtitleEffect] = useState<GraphicEffectType>(GraphicEffectType.NONE);
     const [subtitleBgStyle, setSubtitleBgStyle] = useState<SubtitleBgStyle>(SubtitleBgStyle.TRANSPARENT);
     const [subtitleDisplayMode, setSubtitleDisplayMode] = useState<SubtitleDisplayMode>(SubtitleDisplayMode.CLASSIC);
     
@@ -508,7 +507,6 @@ function App() {
                                     subtitleFontSize={subtitleFontSize}
                                     subtitleFontFamily={subtitleFontFamily}
                                     subtitleColor={subtitleColor}
-                                    subtitleEffect={subtitleEffect}
                                     subtitleBgStyle={subtitleBgStyle}
                                     effectScale={effectScale}
                                     effectOffsetX={effectOffsetX}
@@ -607,8 +605,6 @@ function App() {
                             onSubtitleFontFamilyChange={setSubtitleFontFamily}
                             subtitleColor={subtitleColor}
                             onSubtitleColorChange={setSubtitleColor}
-                            subtitleEffect={subtitleEffect}
-                            onSubtitleEffectChange={setSubtitleEffect}
                             subtitleBgStyle={subtitleBgStyle}
                             onSubtitleBgStyleChange={setSubtitleBgStyle}
                             effectScale={effectScale}

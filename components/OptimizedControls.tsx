@@ -153,8 +153,6 @@ interface OptimizedControlsProps {
     onSubtitleFontFamilyChange: (font: FontType) => void;
     subtitleColor: string;
     onSubtitleColorChange: (color: string) => void;
-    subtitleEffect: GraphicEffectType;
-    onSubtitleEffectChange: (effect: GraphicEffectType) => void;
     subtitleBgStyle: SubtitleBgStyle;
     onSubtitleBgStyleChange: (style: SubtitleBgStyle) => void;
     effectScale: number;
@@ -1007,48 +1005,11 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 </div>
                                 
                                 <SelectControl
-                                    label="字幕效果"
-                                    value={props.subtitleEffect}
-                                    onChange={(value) => props.onSubtitleEffectChange(value as GraphicEffectType)}
-                                    options={Object.values(GraphicEffectType).map(v => ({ value: v, label: v }))}
+                                    label="字幕背景樣式"
+                                    value={props.subtitleBgStyle}
+                                    onChange={(value) => props.onSubtitleBgStyleChange(value as SubtitleBgStyle)}
+                                    options={Object.values(SubtitleBgStyle).map(v => ({ value: v, label: v }))}
                                 />
-                            </div>
-                            
-                            {/* 字幕背景樣式控制 */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300">字幕背景樣式</label>
-                                <div className="flex space-x-2">
-                                    {Object.values(SubtitleBgStyle).map((style) => (
-                                        <button
-                                            key={style}
-                                            onClick={() => props.onSubtitleBgStyleChange(style)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                props.subtitleBgStyle === style
-                                                    ? 'bg-cyan-600 text-white'
-                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            }`}
-                                        >
-                                            {style === SubtitleBgStyle.NONE && (
-                                                <span className="flex items-center space-x-2">
-                                                    <span>🚫</span>
-                                                    <span>無背景</span>
-                                                </span>
-                                            )}
-                                            {style === SubtitleBgStyle.TRANSPARENT && (
-                                                <span className="flex items-center space-x-2">
-                                                    <span>🔳</span>
-                                                    <span>透明背景</span>
-                                                </span>
-                                            )}
-                                            {style === SubtitleBgStyle.BLACK && (
-                                                <span className="flex items-center space-x-2">
-                                                    <span>⬛</span>
-                                                    <span>黑色背景</span>
-                                                </span>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
                         </div>
                     </CollapsibleControlSection>

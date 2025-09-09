@@ -32,7 +32,6 @@ interface AudioVisualizerProps {
     subtitleFontSize: number;
     subtitleFontFamily: FontType;
     subtitleColor: string;
-    subtitleEffect: GraphicEffectType;
     subtitleBgStyle: SubtitleBgStyle;
     effectScale: number;
     effectOffsetX: number;
@@ -3322,7 +3321,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             sensitivity, smoothing, equalization, backgroundColor, colors, watermarkPosition, 
             waveformStroke, isTransitioning, transitionType, backgroundImages, currentImageIndex,
             subtitles, showSubtitles, subtitleFontSize, subtitleFontFamily, 
-            subtitleColor, subtitleEffect, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
+            subtitleColor, subtitleBgStyle, effectScale, effectOffsetX, effectOffsetY
         } = propsRef.current;
 
         const canvas = (ref as React.RefObject<HTMLCanvasElement>).current;
@@ -3507,11 +3506,11 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 positionX: propsRef.current.lyricsPositionX,
                 positionY: propsRef.current.lyricsPositionY,
                 color: subtitleColor,
-                effect: subtitleEffect
+                effect: GraphicEffectType.NONE
             });
         } else if (propsRef.current.subtitleDisplayMode === SubtitleDisplayMode.CLASSIC && currentSubtitle) {
             // 傳統字幕模式
-            drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: subtitleEffect, bgStyle: subtitleBgStyle, isBeat });
+            drawSubtitles(ctx, width, height, currentSubtitle, { fontSizeVw: subtitleFontSize, fontFamily: subtitleFontFamily, color: subtitleColor, effect: GraphicEffectType.NONE, bgStyle: subtitleBgStyle, isBeat });
         }
         // 無字幕模式：不顯示任何字幕
         if (customText) {
