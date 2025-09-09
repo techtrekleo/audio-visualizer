@@ -286,11 +286,13 @@ function App() {
     };
 
     const clearAllBackgroundImages = () => {
+        console.log('清除所有背景圖片，當前數量:', backgroundImages.length);
         backgroundImages.forEach(url => URL.revokeObjectURL(url));
         setBackgroundImages([]);
         setCurrentImageIndex(0);
         setBackgroundImage(null);
         setIsSlideshowEnabled(false);
+        console.log('背景圖片已清除');
     };
 
     const handleRecordingComplete = useCallback((url: string, extension: string) => {

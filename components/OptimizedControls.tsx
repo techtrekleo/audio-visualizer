@@ -574,8 +574,15 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                         />
                                     </label>
                                     {props.backgroundImages.length > 0 && (
-                                        <Button onClick={props.onClearAllBackgroundImages} variant="danger" className="px-2 py-1 text-sm">
-                                            清除所有圖片
+                                        <Button 
+                                            onClick={() => {
+                                                console.log('清除所有背景圖片，當前數量:', props.backgroundImages.length);
+                                                props.onClearAllBackgroundImages();
+                                            }} 
+                                            variant="danger" 
+                                            className="px-2 py-1 text-sm"
+                                        >
+                                            🗑️ 清除所有圖片
                                         </Button>
                                     )}
                                 </div>
