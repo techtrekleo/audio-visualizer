@@ -2841,13 +2841,14 @@ const drawLyricsDisplay = (
     height: number,
     subtitles: Subtitle[],
     currentTime: number,
-    { fontFamily, bgStyle, fontSize, positionX, positionY, color }: { 
+    { fontFamily, bgStyle, fontSize, positionX, positionY, color, effect }: { 
         fontFamily: string; 
         bgStyle: SubtitleBgStyle;
         fontSize: number;
         positionX: number;
         positionY: number;
         color: string;
+        effect: GraphicEffectType;
     }
 ) => {
     if (subtitles.length === 0) return;
@@ -2934,6 +2935,23 @@ const drawLyricsDisplay = (
             // 未來歌詞：使用傳入顏色的80%透明度
             ctx.fillStyle = color + 'CC'; // 80% 透明度
             ctx.shadowBlur = 0;
+        }
+        
+        // 應用字幕效果
+        if (effect === GraphicEffectType.SHADOW) {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+        } else if (effect === GraphicEffectType.GLOW) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        } else if (effect === GraphicEffectType.OUTLINE) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.lineWidth = 3;
+            ctx.strokeText(line.text, x, y);
         }
         
         // 繪製文字
@@ -3505,7 +3523,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 fontSize: propsRef.current.lyricsFontSize,
                 positionX: propsRef.current.lyricsPositionX,
                 positionY: propsRef.current.lyricsPositionY,
-                color: subtitleColor
+                color: subtitleColor,
+                effect: subtitleEffect
             });
         } else if (propsRef.current.subtitleDisplayMode === SubtitleDisplayMode.CLASSIC && currentSubtitle) {
             // 傳統字幕模式
