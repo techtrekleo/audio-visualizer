@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 響應式設計優化 */
+@import './responsive.css';
+
 /* Base styles for the entire application */
 html, body, #root {
   height: 100%;
@@ -260,9 +263,6 @@ input[type="range"].slider-enhanced::-moz-range-thumb:hover,
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4) !important;
   border-color: #0891b2 !important;
 }
-
-/* 響應式設計優化 */
-@import './responsive.css';
 
 /* 摺疊動畫優化 */
 .collapsible-content {
