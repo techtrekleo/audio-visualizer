@@ -3414,6 +3414,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 
                 ctx.putImageData(imageData, 0, 0);
                 ctx.restore();
+            }
         }
 
         const drawFunction = VISUALIZATION_MAP[visualizationType];
