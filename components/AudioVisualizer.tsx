@@ -43,6 +43,8 @@ interface AudioVisualizerProps {
     lyricsPositionX: number;
     lyricsPositionY: number;
     subtitleDisplayMode: SubtitleDisplayMode;
+    // When true, skip drawing visualizer effects but keep background and subtitles
+    disableVisualizer?: boolean;
 }
 
 /**
@@ -3325,10 +3327,65 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         } = propsRef.current;
 
         const canvas = (ref as React.RefObject<HTMLCanvasElement>).current;
-        if (!canvas || !analyser) return;
+        if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        // If visualizer is disabled: only draw background and subtitles
+        if (propsRef.current.disableVisualizer) {
+            const width = canvas.width = canvas.clientWidth;
+            const height = canvas.height = canvas.clientHeight;
+            // Background color
+            ctx.clearRect(0, 0, width, height);
+            if (backgroundColor) {
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, width, height);
+            }
+            // Background image if available
+            if (backgroundImageRef.current) {
+                const img = backgroundImageRef.current;
+                const imgRatio = img.width / img.height;
+                const canvasRatio = width / height;
+                let drawW = width, drawH = height, dx = 0, dy = 0;
+                if (imgRatio > canvasRatio) {
+                    drawH = height;
+                    drawW = imgRatio * drawH;
+                    dx = (width - drawW) / 2;
+                } else {
+                    drawW = width;
+                    drawH = drawW / imgRatio;
+                    dy = (height - drawH) / 2;
+                }
+                ctx.drawImage(img, dx, dy, drawW, drawH);
+            }
+
+            // Subtitles
+            const currentTime = propsRef.current.currentTime;
+            if (showSubtitles && subtitles.length > 0) {
+                drawSubtitles(
+                    ctx,
+                    width,
+                    height,
+                    subtitles,
+                    currentTime,
+                    {
+                        fontFamily: subtitleFontFamily,
+                        bgStyle: subtitleBgStyle,
+                        fontSize: subtitleFontSize,
+                        positionX: 0,
+                        positionY: 0,
+                        color: subtitleColor,
+                        effect: graphicEffect,
+                    }
+                );
+            }
+
+            // No further drawing when disabled
+            return;
+        }
+
+        if (!analyser) return;
 
         frame.current++;
         const dataArray = new Uint8Array(analyser.frequencyBinCount);

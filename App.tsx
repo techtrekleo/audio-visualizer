@@ -522,14 +522,63 @@ function App() {
                                         lyricsPositionX={lyricsPositionX}
                                         lyricsPositionY={lyricsPositionY}
                                         subtitleDisplayMode={subtitleDisplayMode}
+                                        disableVisualizer={!showVisualizer}
                                     />
                                 </div>
                             </div>
                         ) : (
-                            <div style={wrapperStyle} className="flex items-center justify-center bg-black/60 rounded-lg border border-gray-700 overflow-hidden w-full">
-                                <div className="text-center p-8 text-gray-300">
-                                    <div className="text-2xl font-semibold mb-2">可視化已關閉</div>
-                                    <div className="text-sm text-gray-400">開啟「顯示可視化」以恢復預覽與錄製</div>
+                            <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
+                                <div 
+                                    style={{
+                                        ...visualizerContainerStyle,
+                                        backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
+                                        backgroundSize: '20px 20px',
+                                    }} 
+                                    className="relative shadow-2xl shadow-cyan-500/10"
+                                >
+                                   <AudioVisualizer 
+                                        key={showVisualizer ? 'vis-on' : 'vis-off'}
+                                        ref={canvasRef}
+                                        analyser={analyser} 
+                                        audioRef={audioRef}
+                                        visualizationType={visualizationType} 
+                                        isPlaying={isPlaying}
+                                        customText={customText}
+                                        textColor={textColor}
+                                        fontFamily={fontFamily}
+                                        graphicEffect={graphicEffect}
+                                        textSize={textSize}
+                                        textPositionX={textPositionX}
+                                        textPositionY={textPositionY}
+                                        sensitivity={sensitivity}
+                                        smoothing={smoothing}
+                                        equalization={equalization}
+                                        backgroundColor={canvasBgColors[backgroundColor]}
+                                        colors={COLOR_PALETTES[colorPalette]}
+                                        backgroundImage={showBackgroundImage ? backgroundImage : null}
+                                        watermarkPosition={watermarkPosition}
+                                        waveformStroke={waveformStroke}
+                                        isTransitioning={isTransitioning}
+                                        transitionType={transitionType}
+                                        backgroundImages={showBackgroundImage ? backgroundImages : []}
+                                        currentImageIndex={currentImageIndex}
+                                        subtitles={subtitles}
+                                        showSubtitles={showSubtitles}
+                                        subtitleFontSize={subtitleFontSize}
+                                        subtitleFontFamily={subtitleFontFamily}
+                                        subtitleColor={subtitleColor}
+                                        subtitleBgStyle={subtitleBgStyle}
+                                        effectScale={effectScale}
+                                        effectOffsetX={effectOffsetX}
+                                        effectOffsetY={effectOffsetY}
+                                        showLyricsDisplay={showLyricsDisplay}
+                                        currentTime={currentTime}
+                                        lyricsFontSize={lyricsFontSize}
+                                        lyricsPositionX={lyricsPositionX}
+                                        lyricsPositionY={lyricsPositionY}
+                                        subtitleDisplayMode={subtitleDisplayMode}
+                                        disableVisualizer={!showVisualizer}
+                                    />
                                 </div>
                             </div>
                         )}
