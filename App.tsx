@@ -51,6 +51,10 @@ function App() {
     const [transitionType, setTransitionType] = useState<TransitionType>(TransitionType.TV_STATIC); // 轉場效果類型
     const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>(WatermarkPosition.BOTTOM_RIGHT);
     const [waveformStroke, setWaveformStroke] = useState<boolean>(true);
+    // Toggles
+    const [showVisualizer, setShowVisualizer] = useState<boolean>(true);
+    const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(true);
+    const [subtitlesOnlyMode, setSubtitlesOnlyMode] = useState<boolean>(false);
 
     // Effect Transform State
     const [effectScale, setEffectScale] = useState<number>(1.0);
@@ -468,58 +472,60 @@ function App() {
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
                 <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
-                         <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
-                            <div 
-                                style={{
-                                    ...visualizerContainerStyle,
-                                    backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
-                                    backgroundSize: '20px 20px',
-                                }} 
-                                className="relative shadow-2xl shadow-cyan-500/10"
-                            >
-                               <AudioVisualizer 
-                                    ref={canvasRef}
-                                    analyser={analyser} 
-                                    audioRef={audioRef}
-                                    visualizationType={visualizationType} 
-                                    isPlaying={isPlaying}
-                                    customText={customText}
-                                    textColor={textColor}
-                                    fontFamily={fontFamily}
-                                    graphicEffect={graphicEffect}
-                                    textSize={textSize}
-                                    textPositionX={textPositionX}
-                                    textPositionY={textPositionY}
-                                    sensitivity={sensitivity}
-                                    smoothing={smoothing}
-                                    equalization={equalization}
-                                    backgroundColor={canvasBgColors[backgroundColor]}
-                                    colors={COLOR_PALETTES[colorPalette]}
-                                    backgroundImage={backgroundImage}
-                                    watermarkPosition={watermarkPosition}
-                                    waveformStroke={waveformStroke}
-                                    isTransitioning={isTransitioning}
-                                    transitionType={transitionType}
-                                    backgroundImages={backgroundImages}
-                                    currentImageIndex={currentImageIndex}
-                                    subtitles={subtitles}
-                                    showSubtitles={showSubtitles}
-                                    subtitleFontSize={subtitleFontSize}
-                                    subtitleFontFamily={subtitleFontFamily}
-                                    subtitleColor={subtitleColor}
-                                    subtitleBgStyle={subtitleBgStyle}
-                                    effectScale={effectScale}
-                                    effectOffsetX={effectOffsetX}
-                                    effectOffsetY={effectOffsetY}
-                                    showLyricsDisplay={showLyricsDisplay}
-                                    currentTime={currentTime}
-                                    lyricsFontSize={lyricsFontSize}
-                                    lyricsPositionX={lyricsPositionX}
-                                    lyricsPositionY={lyricsPositionY}
-                                    subtitleDisplayMode={subtitleDisplayMode}
-                                />
+                        {showVisualizer && !subtitlesOnlyMode && (
+                            <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
+                                <div 
+                                    style={{
+                                        ...visualizerContainerStyle,
+                                        backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
+                                        backgroundSize: '20px 20px',
+                                    }} 
+                                    className="relative shadow-2xl shadow-cyan-500/10"
+                                >
+                                   <AudioVisualizer 
+                                        ref={canvasRef}
+                                        analyser={analyser} 
+                                        audioRef={audioRef}
+                                        visualizationType={visualizationType} 
+                                        isPlaying={isPlaying}
+                                        customText={customText}
+                                        textColor={textColor}
+                                        fontFamily={fontFamily}
+                                        graphicEffect={graphicEffect}
+                                        textSize={textSize}
+                                        textPositionX={textPositionX}
+                                        textPositionY={textPositionY}
+                                        sensitivity={sensitivity}
+                                        smoothing={smoothing}
+                                        equalization={equalization}
+                                        backgroundColor={canvasBgColors[backgroundColor]}
+                                        colors={COLOR_PALETTES[colorPalette]}
+                                        backgroundImage={showBackgroundImage ? backgroundImage : null}
+                                        watermarkPosition={watermarkPosition}
+                                        waveformStroke={waveformStroke}
+                                        isTransitioning={isTransitioning}
+                                        transitionType={transitionType}
+                                        backgroundImages={showBackgroundImage ? backgroundImages : []}
+                                        currentImageIndex={currentImageIndex}
+                                        subtitles={subtitles}
+                                        showSubtitles={showSubtitles}
+                                        subtitleFontSize={subtitleFontSize}
+                                        subtitleFontFamily={subtitleFontFamily}
+                                        subtitleColor={subtitleColor}
+                                        subtitleBgStyle={subtitleBgStyle}
+                                        effectScale={effectScale}
+                                        effectOffsetX={effectOffsetX}
+                                        effectOffsetY={effectOffsetY}
+                                        showLyricsDisplay={showLyricsDisplay}
+                                        currentTime={currentTime}
+                                        lyricsFontSize={lyricsFontSize}
+                                        lyricsPositionX={lyricsPositionX}
+                                        lyricsPositionY={lyricsPositionY}
+                                        subtitleDisplayMode={subtitleDisplayMode}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* 橫幅廣告 */}
                         <div className="w-full max-w-7xl mx-auto mb-6">
@@ -626,6 +632,12 @@ function App() {
                             currentTime={currentTime}
                             audioDuration={audioDuration}
                             onSeek={handleSeek}
+                            showVisualizer={showVisualizer}
+                            onShowVisualizerChange={setShowVisualizer}
+                            showBackgroundImage={showBackgroundImage}
+                            onShowBackgroundImageChange={setShowBackgroundImage}
+                            subtitlesOnlyMode={subtitlesOnlyMode}
+                            onSubtitlesOnlyModeChange={setSubtitlesOnlyMode}
                         />
                     </div>
             </main>

@@ -51,6 +51,8 @@ export enum FontType {
     ROCKNROLL_ONE = 'RocknRoll One',
     REGGAE_ONE = 'Reggae One',
     VT323 = 'VT323',
+    NOTO_SANS_TC = 'Noto Sans TC',
+    SOURCE_HAN_SANS = 'Source Han Sans',
 }
 
 export enum BackgroundColorType {

@@ -344,6 +344,8 @@ const Controls: React.FC<ControlsProps> = ({
         [FontType.ROCKNROLL_ONE]: '搖滾圓體',
         [FontType.REGGAE_ONE]: '雷鬼 Stencil',
         [FontType.VT323]: '立體裝甲',
+        [FontType.NOTO_SANS_TC]: 'Noto Sans TC',
+        [FontType.SOURCE_HAN_SANS]: 'Source Han Sans',
     };
 
     const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

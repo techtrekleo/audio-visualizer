@@ -10,9 +10,10 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
     const startRecording = useCallback((canvasElement: HTMLCanvasElement, audioStream: MediaStream, isTransparent: boolean = false) => {
         if (!canvasElement) return;
 
-        const webmTransparentOptions = { mimeType: 'video/webm; codecs=vp9,opus', extension: 'webm' };
+        const webmTransparentOptions = { mimeType: 'video/webm;codecs=vp9,opus', extension: 'webm' };
+        const webmVp8Options = { mimeType: 'video/webm;codecs=vp8,opus', extension: 'webm' };
         const webmFallbackOptions = { mimeType: 'video/webm', extension: 'webm' };
-        const mp4Options = { mimeType: 'video/mp4; codecs=avc1,mp4a', extension: 'mp4' };
+        const mp4Options = { mimeType: 'video/mp4;codecs=h264,aac', extension: 'mp4' };
 
         let selectedConfig;
 
@@ -20,6 +21,8 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
             // For transparency, WEBM is the only real choice. Prefer VP9 for better quality/alpha support.
             if (MediaRecorder.isTypeSupported(webmTransparentOptions.mimeType)) {
                 selectedConfig = webmTransparentOptions;
+            } else if (MediaRecorder.isTypeSupported(webmVp8Options.mimeType)) {
+                selectedConfig = webmVp8Options;
             } else if (MediaRecorder.isTypeSupported(webmFallbackOptions.mimeType)) {
                 selectedConfig = webmFallbackOptions;
             } else {
@@ -32,6 +35,8 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
                 selectedConfig = mp4Options;
             } else if (MediaRecorder.isTypeSupported(webmTransparentOptions.mimeType)) {
                 selectedConfig = webmTransparentOptions;
+            } else if (MediaRecorder.isTypeSupported(webmVp8Options.mimeType)) {
+                selectedConfig = webmVp8Options;
             } else if (MediaRecorder.isTypeSupported(webmFallbackOptions.mimeType)) {
                 selectedConfig = webmFallbackOptions;
             } else {
@@ -39,8 +44,9 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
                 return;
             }
         }
-        
+        // Safari-friendly stream composition
         const canvasStream = canvasElement.captureStream(30); // 30 fps
+        // Ensure audio is a proper MediaStreamTrack (avoid captureStream from <audio> directly)
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...audioStream.getAudioTracks()
@@ -68,7 +74,8 @@ export const useMediaRecorder = (onRecordingComplete: (url: string, extension: s
         };
         
         recordedChunksRef.current = [];
-        mediaRecorderRef.current.start();
+        // Use small timeslice to flush data regularly; helps Safari stability
+        mediaRecorderRef.current.start(1000);
         setIsRecording(true);
 
     }, [onRecordingComplete]);

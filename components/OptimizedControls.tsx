@@ -176,6 +176,13 @@ interface OptimizedControlsProps {
     currentTime: number;
     audioDuration: number;
     onSeek: (time: number) => void;
+    // Toggles
+    showVisualizer: boolean;
+    onShowVisualizerChange: (show: boolean) => void;
+    showBackgroundImage: boolean;
+    onShowBackgroundImageChange: (show: boolean) => void;
+    subtitlesOnlyMode: boolean;
+    onSubtitlesOnlyModeChange: (show: boolean) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean; variant?: 'primary' | 'secondary' | 'danger' }>> = ({ children, onClick, className = '', disabled=false, variant = 'primary' }) => {
@@ -455,6 +462,8 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
         [FontType.ROCKNROLL_ONE]: '搖滾圓體',
         [FontType.REGGAE_ONE]: '雷鬼 Stencil',
         [FontType.VT323]: '立體裝甲',
+        [FontType.NOTO_SANS_TC]: 'Noto Sans TC',
+        [FontType.SOURCE_HAN_SANS]: 'Source Han Sans',
     };
 
     const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -500,6 +509,42 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
 
             {/* 主要控制面板 */}
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-2xl p-6">
+                {/* 額外開關 */}
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center justify-between bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
+                        <span className="text-sm text-gray-200">顯示可視化</span>
+                        <button
+                            onClick={() => props.onShowVisualizerChange(!props.showVisualizer)}
+                            type="button"
+                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${props.showVisualizer ? 'bg-cyan-600' : 'bg-gray-500'}`}
+                            aria-pressed={props.showVisualizer}
+                        >
+                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.showVisualizer ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
+                        <span className="text-sm text-gray-200">顯示背景圖片</span>
+                        <button
+                            onClick={() => props.onShowBackgroundImageChange(!props.showBackgroundImage)}
+                            type="button"
+                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${props.showBackgroundImage ? 'bg-cyan-600' : 'bg-gray-500'}`}
+                            aria-pressed={props.showBackgroundImage}
+                        >
+                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.showBackgroundImage ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
+                        <span className="text-sm text-gray-200">僅輸出字幕 (不顯示可視化)</span>
+                        <button
+                            onClick={() => props.onSubtitlesOnlyModeChange(!props.subtitlesOnlyMode)}
+                            type="button"
+                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${props.subtitlesOnlyMode ? 'bg-purple-600' : 'bg-gray-500'}`}
+                            aria-pressed={props.subtitlesOnlyMode}
+                        >
+                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.subtitlesOnlyMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+                </div>
                 {/* 播放控制 - 始終顯示 */}
                 <div className="mb-6">
                     <div className="flex items-center space-x-2 mb-4">
