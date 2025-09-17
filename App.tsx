@@ -471,7 +471,7 @@ function App() {
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
                 <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
-                        {showVisualizer && (
+                        {showVisualizer ? (
                             <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
                                 <div 
                                     style={{
@@ -523,6 +523,13 @@ function App() {
                                         lyricsPositionY={lyricsPositionY}
                                         subtitleDisplayMode={subtitleDisplayMode}
                                     />
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={wrapperStyle} className="flex items-center justify-center bg-black/60 rounded-lg border border-gray-700 overflow-hidden w-full">
+                                <div className="text-center p-8 text-gray-300">
+                                    <div className="text-2xl font-semibold mb-2">可視化已關閉</div>
+                                    <div className="text-sm text-gray-400">開啟「顯示可視化」以恢復預覽與錄製</div>
                                 </div>
                             </div>
                         )}

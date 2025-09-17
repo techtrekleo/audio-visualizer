@@ -552,7 +552,13 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                 <Icon path={props.isPlaying ? ICON_PATHS.PAUSE : ICON_PATHS.PLAY} className="w-7 h-7" />
                             </Button>
                             <Button 
-                                onClick={props.onRecordToggle} 
+                                onClick={() => {
+                                    if (!props.showVisualizer) {
+                                        alert('目前已關閉可視化，請先開啟再進行錄製。');
+                                        return;
+                                    }
+                                    props.onRecordToggle();
+                                }} 
                                 variant={props.isRecording ? 'danger' : 'secondary'}
                                 className={`${props.isRecording ? 'animate-pulse shadow-red-500/50' : ''}`}
                                 disabled={props.isLoading || props.isGeneratingSubtitles}
