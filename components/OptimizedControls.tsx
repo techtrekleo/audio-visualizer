@@ -181,8 +181,6 @@ interface OptimizedControlsProps {
     onShowVisualizerChange: (show: boolean) => void;
     showBackgroundImage: boolean;
     onShowBackgroundImageChange: (show: boolean) => void;
-    subtitlesOnlyMode: boolean;
-    onSubtitlesOnlyModeChange: (show: boolean) => void;
 }
 
 const Button: React.FC<React.PropsWithChildren<{ onClick?: () => void; className?: string; disabled?: boolean; variant?: 'primary' | 'secondary' | 'danger' }>> = ({ children, onClick, className = '', disabled=false, variant = 'primary' }) => {
@@ -533,17 +531,7 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                             <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.showBackgroundImage ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
-                    <div className="flex items-center justify-between bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-3">
-                        <span className="text-sm text-gray-200">僅輸出字幕 (不顯示可視化)</span>
-                        <button
-                            onClick={() => props.onSubtitlesOnlyModeChange(!props.subtitlesOnlyMode)}
-                            type="button"
-                            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${props.subtitlesOnlyMode ? 'bg-purple-600' : 'bg-gray-500'}`}
-                            aria-pressed={props.subtitlesOnlyMode}
-                        >
-                            <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${props.subtitlesOnlyMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
+                    
                 </div>
                 {/* 播放控制 - 始終顯示 */}
                 <div className="mb-6">

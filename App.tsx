@@ -54,7 +54,6 @@ function App() {
     // Toggles
     const [showVisualizer, setShowVisualizer] = useState<boolean>(true);
     const [showBackgroundImage, setShowBackgroundImage] = useState<boolean>(true);
-    const [subtitlesOnlyMode, setSubtitlesOnlyMode] = useState<boolean>(false);
 
     // Effect Transform State
     const [effectScale, setEffectScale] = useState<number>(1.0);
@@ -472,7 +471,7 @@ function App() {
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
                 <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
-                        {showVisualizer && !subtitlesOnlyMode && (
+                        {showVisualizer && (
                             <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
                                 <div 
                                     style={{
@@ -483,6 +482,7 @@ function App() {
                                     className="relative shadow-2xl shadow-cyan-500/10"
                                 >
                                    <AudioVisualizer 
+                                        key={showVisualizer ? 'vis-on' : 'vis-off'}
                                         ref={canvasRef}
                                         analyser={analyser} 
                                         audioRef={audioRef}
@@ -636,8 +636,6 @@ function App() {
                             onShowVisualizerChange={setShowVisualizer}
                             showBackgroundImage={showBackgroundImage}
                             onShowBackgroundImageChange={setShowBackgroundImage}
-                            subtitlesOnlyMode={subtitlesOnlyMode}
-                            onSubtitlesOnlyModeChange={setSubtitlesOnlyMode}
                         />
                     </div>
             </main>
