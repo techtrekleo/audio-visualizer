@@ -53,6 +53,8 @@ export enum FontType {
     VT323 = 'VT323',
     NOTO_SANS_TC = 'Noto Sans TC',
     SOURCE_HAN_SANS = 'Source Han Sans',
+    CW_TEX_KAI = 'cwTeXKai',
+    KLEE_ONE = 'Klee One',
 }
 
 export enum BackgroundColorType {

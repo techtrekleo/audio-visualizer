@@ -462,6 +462,8 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
         [FontType.VT323]: '立體裝甲',
         [FontType.NOTO_SANS_TC]: 'Noto Sans TC',
         [FontType.SOURCE_HAN_SANS]: 'Source Han Sans',
+        [FontType.CW_TEX_KAI]: 'cwTeXKai (仿楷體)',
+        [FontType.KLEE_ONE]: 'Klee One (楷書風)',
     };
 
     const handleBackgroundImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
