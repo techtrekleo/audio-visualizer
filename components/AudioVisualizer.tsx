@@ -3588,7 +3588,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         if (propsRef.current.isPlaying) {
             animationFrameId.current = requestAnimationFrame(renderFrame);
         }
-    }, [analyser, ref]);
+    }, [analyser, ref, disableVisualizer]);
 
     useEffect(() => {
         if (isPlaying) {
