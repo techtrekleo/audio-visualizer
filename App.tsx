@@ -471,117 +471,60 @@ function App() {
 
             <main className="flex-1 flex flex-col p-4 overflow-y-auto">
                 <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-4">
-                        {showVisualizer ? (
-                            <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
-                                <div 
-                                    style={{
-                                        ...visualizerContainerStyle,
-                                        backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
-                                        backgroundSize: '20px 20px',
-                                    }} 
-                                    className="relative shadow-2xl shadow-cyan-500/10"
-                                >
-                                   <AudioVisualizer 
-                                        key={showVisualizer ? 'vis-on' : 'vis-off'}
-                                        ref={canvasRef}
-                                        analyser={analyser} 
-                                        audioRef={audioRef}
-                                        visualizationType={visualizationType} 
-                                        isPlaying={isPlaying}
-                                        customText={customText}
-                                        textColor={textColor}
-                                        fontFamily={fontFamily}
-                                        graphicEffect={graphicEffect}
-                                        textSize={textSize}
-                                        textPositionX={textPositionX}
-                                        textPositionY={textPositionY}
-                                        sensitivity={sensitivity}
-                                        smoothing={smoothing}
-                                        equalization={equalization}
-                                        backgroundColor={canvasBgColors[backgroundColor]}
-                                        colors={COLOR_PALETTES[colorPalette]}
-                                        backgroundImage={showBackgroundImage ? backgroundImage : null}
-                                        watermarkPosition={watermarkPosition}
-                                        waveformStroke={waveformStroke}
-                                        isTransitioning={isTransitioning}
-                                        transitionType={transitionType}
-                                        backgroundImages={showBackgroundImage ? backgroundImages : []}
-                                        currentImageIndex={currentImageIndex}
-                                        subtitles={subtitles}
-                                        showSubtitles={showSubtitles}
-                                        subtitleFontSize={subtitleFontSize}
-                                        subtitleFontFamily={subtitleFontFamily}
-                                        subtitleColor={subtitleColor}
-                                        subtitleBgStyle={subtitleBgStyle}
-                                        effectScale={effectScale}
-                                        effectOffsetX={effectOffsetX}
-                                        effectOffsetY={effectOffsetY}
-                                        showLyricsDisplay={showLyricsDisplay}
-                                        currentTime={currentTime}
-                                        lyricsFontSize={lyricsFontSize}
-                                        lyricsPositionX={lyricsPositionX}
-                                        lyricsPositionY={lyricsPositionY}
-                                        subtitleDisplayMode={subtitleDisplayMode}
-                                        disableVisualizer={!showVisualizer}
-                                    />
-                                </div>
+                        <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
+                            <div 
+                                style={{
+                                    ...visualizerContainerStyle,
+                                    backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
+                                    backgroundSize: '20px 20px',
+                                }} 
+                                className="relative shadow-2xl shadow-cyan-500/10"
+                            >
+                               <AudioVisualizer 
+                                    key={showVisualizer ? 'vis-on' : 'vis-off'}
+                                    ref={canvasRef}
+                                    analyser={analyser} 
+                                    audioRef={audioRef}
+                                    visualizationType={visualizationType} 
+                                    isPlaying={isPlaying}
+                                    customText={customText}
+                                    textColor={textColor}
+                                    fontFamily={fontFamily}
+                                    graphicEffect={graphicEffect}
+                                    textSize={textSize}
+                                    textPositionX={textPositionX}
+                                    textPositionY={textPositionY}
+                                    sensitivity={sensitivity}
+                                    smoothing={smoothing}
+                                    equalization={equalization}
+                                    backgroundColor={canvasBgColors[backgroundColor]}
+                                    colors={COLOR_PALETTES[colorPalette]}
+                                    backgroundImage={showBackgroundImage ? backgroundImage : null}
+                                    watermarkPosition={watermarkPosition}
+                                    waveformStroke={waveformStroke}
+                                    isTransitioning={isTransitioning}
+                                    transitionType={transitionType}
+                                    backgroundImages={showBackgroundImage ? backgroundImages : []}
+                                    currentImageIndex={currentImageIndex}
+                                    subtitles={subtitles}
+                                    showSubtitles={showSubtitles}
+                                    subtitleFontSize={subtitleFontSize}
+                                    subtitleFontFamily={subtitleFontFamily}
+                                    subtitleColor={subtitleColor}
+                                    subtitleBgStyle={subtitleBgStyle}
+                                    effectScale={effectScale}
+                                    effectOffsetX={effectOffsetX}
+                                    effectOffsetY={effectOffsetY}
+                                    showLyricsDisplay={showLyricsDisplay}
+                                    currentTime={currentTime}
+                                    lyricsFontSize={lyricsFontSize}
+                                    lyricsPositionX={lyricsPositionX}
+                                    lyricsPositionY={lyricsPositionY}
+                                    subtitleDisplayMode={subtitleDisplayMode}
+                                    disableVisualizer={!showVisualizer}
+                                />
                             </div>
-                        ) : (
-                            <div style={wrapperStyle} className="flex items-center justify-center bg-black rounded-lg border border-gray-700 overflow-hidden">
-                                <div 
-                                    style={{
-                                        ...visualizerContainerStyle,
-                                        backgroundImage: isTransparentBg ? checkerboardUrl : 'none',
-                                        backgroundSize: '20px 20px',
-                                    }} 
-                                    className="relative shadow-2xl shadow-cyan-500/10"
-                                >
-                                   <AudioVisualizer 
-                                        key={showVisualizer ? 'vis-on' : 'vis-off'}
-                                        ref={canvasRef}
-                                        analyser={analyser} 
-                                        audioRef={audioRef}
-                                        visualizationType={visualizationType} 
-                                        isPlaying={isPlaying}
-                                        customText={customText}
-                                        textColor={textColor}
-                                        fontFamily={fontFamily}
-                                        graphicEffect={graphicEffect}
-                                        textSize={textSize}
-                                        textPositionX={textPositionX}
-                                        textPositionY={textPositionY}
-                                        sensitivity={sensitivity}
-                                        smoothing={smoothing}
-                                        equalization={equalization}
-                                        backgroundColor={canvasBgColors[backgroundColor]}
-                                        colors={COLOR_PALETTES[colorPalette]}
-                                        backgroundImage={showBackgroundImage ? backgroundImage : null}
-                                        watermarkPosition={watermarkPosition}
-                                        waveformStroke={waveformStroke}
-                                        isTransitioning={isTransitioning}
-                                        transitionType={transitionType}
-                                        backgroundImages={showBackgroundImage ? backgroundImages : []}
-                                        currentImageIndex={currentImageIndex}
-                                        subtitles={subtitles}
-                                        showSubtitles={showSubtitles}
-                                        subtitleFontSize={subtitleFontSize}
-                                        subtitleFontFamily={subtitleFontFamily}
-                                        subtitleColor={subtitleColor}
-                                        subtitleBgStyle={subtitleBgStyle}
-                                        effectScale={effectScale}
-                                        effectOffsetX={effectOffsetX}
-                                        effectOffsetY={effectOffsetY}
-                                        showLyricsDisplay={showLyricsDisplay}
-                                        currentTime={currentTime}
-                                        lyricsFontSize={lyricsFontSize}
-                                        lyricsPositionX={lyricsPositionX}
-                                        lyricsPositionY={lyricsPositionY}
-                                        subtitleDisplayMode={subtitleDisplayMode}
-                                        disableVisualizer={!showVisualizer}
-                                    />
-                                </div>
-                            </div>
-                        )}
+                        </div>
 
                         {/* 橫幅廣告 */}
                         <div className="w-full max-w-7xl mx-auto mb-6">
