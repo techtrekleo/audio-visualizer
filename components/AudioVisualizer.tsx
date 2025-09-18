@@ -3334,10 +3334,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
         // If visualizer is disabled: only draw background and subtitles
         if (propsRef.current.disableVisualizer) {
-            // Set canvas size properly
-            const rect = canvas.getBoundingClientRect();
-            const width = canvas.width = rect.width;
-            const height = canvas.height = rect.height;
+            // Use existing canvas dimensions (set by ResizeObserver)
+            const { width, height } = canvas;
             // Background color
             ctx.clearRect(0, 0, width, height);
             if (backgroundColor && backgroundColor !== 'transparent') {
@@ -3372,22 +3370,28 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             // Subtitles
             const currentTime = propsRef.current.currentTime;
             if (showSubtitles && subtitles.length > 0) {
-                drawSubtitles(
-                    ctx,
-                    width,
-                    height,
-                    subtitles,
-                    currentTime,
-                    {
-                        fontFamily: subtitleFontFamily,
-                        bgStyle: subtitleBgStyle,
-                        fontSize: subtitleFontSize,
-                        positionX: 0,
-                        positionY: 0,
-                        color: subtitleColor,
-                        effect: graphicEffect,
-                    }
+                // Find current subtitle based on time
+                const currentSubtitle = subtitles.find(sub => 
+                    currentTime >= sub.time && 
+                    (subtitles[subtitles.indexOf(sub) + 1]?.time || Infinity) > currentTime
                 );
+                
+                if (currentSubtitle) {
+                    drawSubtitles(
+                        ctx,
+                        width,
+                        height,
+                        currentSubtitle,
+                        {
+                            fontSizeVw: subtitleFontSize,
+                            fontFamily: subtitleFontFamily,
+                            color: subtitleColor,
+                            effect: graphicEffect,
+                            bgStyle: subtitleBgStyle,
+                            isBeat: false
+                        }
+                    );
+                }
             }
 
             // No further drawing when disabled
