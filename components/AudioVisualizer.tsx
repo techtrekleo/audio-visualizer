@@ -3276,7 +3276,7 @@ type Shockwave = {
 
 
 const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((props, ref) => {
-    const { analyser, audioRef, isPlaying } = props;
+    const { analyser, audioRef, isPlaying, disableVisualizer } = props;
     const animationFrameId = useRef<number>(0);
     const frame = useRef<number>(0);
     const particlesRef = useRef<Particle[]>([]);
