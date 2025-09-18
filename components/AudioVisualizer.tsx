@@ -3631,7 +3631,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, renderFrame]);
+    }, [isPlaying, renderFrame, disableVisualizer]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;
