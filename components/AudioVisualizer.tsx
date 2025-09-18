@@ -3335,125 +3335,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // If visualizer is disabled: only draw background and subtitles
-        if (propsRef.current.disableVisualizer) {
-            // Ensure canvas has proper dimensions
-            const rect = canvas.getBoundingClientRect();
-            if (canvas.width !== rect.width || canvas.height !== rect.height) {
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-            }
-            const { width, height } = canvas;
-            
-            console.log('disableVisualizer mode - Canvas size:', width, height);
-            console.log('Background color:', backgroundColor);
-            console.log('Background image ref:', backgroundImageRef.current);
-            console.log('Background image prop:', propsRef.current.backgroundImage);
-            console.log('Subtitles:', subtitles.length, 'Show subtitles:', showSubtitles);
-            
-            // Background color
-            ctx.clearRect(0, 0, width, height);
-            if (backgroundColor && backgroundColor !== 'transparent') {
-                ctx.fillStyle = backgroundColor;
-                ctx.fillRect(0, 0, width, height);
-                console.log('Background color drawn:', backgroundColor);
-            } else {
-                // Default black background if no background color or transparent
-                ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-                ctx.fillRect(0, 0, width, height);
-                console.log('Default black background drawn');
-            }
-            // Background image if available
-            if (backgroundImageRef.current) {
-                const img = backgroundImageRef.current;
-                const imgRatio = img.width / img.height;
-                const canvasRatio = width / height;
-                let drawW = width, drawH = height, dx = 0, dy = 0;
-                if (imgRatio > canvasRatio) {
-                    drawH = height;
-                    drawW = imgRatio * drawH;
-                    dx = (width - drawW) / 2;
-                } else {
-                    drawW = width;
-                    drawH = drawW / imgRatio;
-                    dy = (height - drawH) / 2;
-                }
-                ctx.drawImage(img, dx, dy, drawW, drawH);
-                console.log('Background image drawn in disableVisualizer mode');
-            } else {
-                console.log('No background image available in disableVisualizer mode');
-            }
-
-            // Subtitles
-            const currentTime = propsRef.current.currentTime;
-            console.log('Current time:', currentTime);
-            if (showSubtitles && subtitles.length > 0) {
-                // Find current subtitle based on time - improved logic
-                let currentSubtitle = null;
-                for (let i = 0; i < subtitles.length; i++) {
-                    const sub = subtitles[i];
-                    const nextSub = subtitles[i + 1];
-                    
-                    if (currentTime >= sub.time && (!nextSub || currentTime < nextSub.time)) {
-                        currentSubtitle = sub;
-                        break;
-                    }
-                }
-                
-                console.log('Current subtitle found:', currentSubtitle);
-                console.log('All subtitles:', subtitles.map(s => ({ time: s.time, text: s.text.substring(0, 20) + '...' })));
-                console.log('Time comparison details:', subtitles.slice(0, 5).map(s => ({
-                    time: s.time,
-                    currentTime: currentTime,
-                    isMatch: currentTime >= s.time,
-                    nextTime: subtitles[subtitles.indexOf(s) + 1]?.time || 'end',
-                    timeDiff: currentTime - s.time
-                })));
-                
-                if (currentSubtitle) {
-                    drawSubtitles(
-                        ctx,
-                        width,
-                        height,
-                        currentSubtitle,
-                        {
-                            fontSizeVw: subtitleFontSize,
-                            fontFamily: subtitleFontFamily,
-                            color: subtitleColor,
-                            effect: graphicEffect,
-                            bgStyle: subtitleBgStyle,
-                            isBeat: false
-                        }
-                    );
-                    console.log('Subtitle drawn successfully');
-                } else {
-                    console.log('No subtitle found for current time');
-                    // Show first subtitle if no match found
-                    if (subtitles.length > 0) {
-                        console.log('Showing first subtitle as fallback');
-                        drawSubtitles(
-                            ctx,
-                            width,
-                            height,
-                            subtitles[0],
-                            {
-                                fontSizeVw: subtitleFontSize,
-                                fontFamily: subtitleFontFamily,
-                                color: subtitleColor,
-                                effect: graphicEffect,
-                                bgStyle: subtitleBgStyle,
-                                isBeat: false
-                            }
-                        );
-                    }
-                }
-            } else {
-                console.log('Subtitles not shown - showSubtitles:', showSubtitles, 'subtitles count:', subtitles.length);
-            }
-
-            // No further drawing when disabled
-            return;
-        }
+        // If visualizer is disabled, skip visualizer effects but continue with normal flow
+        const isVisualizerDisabled = propsRef.current.disableVisualizer;
 
         if (!analyser) return;
 
@@ -3545,7 +3428,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         }
 
         const drawFunction = VISUALIZATION_MAP[visualizationType];
-        if (drawFunction) {
+        if (drawFunction && !isVisualizerDisabled) {
             const shouldTransform = !IGNORE_TRANSFORM_VISUALIZATIONS.has(visualizationType);
 
             if (shouldTransform) {
