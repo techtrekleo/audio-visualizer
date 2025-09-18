@@ -3334,12 +3334,18 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
         // If visualizer is disabled: only draw background and subtitles
         if (propsRef.current.disableVisualizer) {
-            const width = canvas.width = canvas.clientWidth;
-            const height = canvas.height = canvas.clientHeight;
+            // Set canvas size properly
+            const rect = canvas.getBoundingClientRect();
+            const width = canvas.width = rect.width;
+            const height = canvas.height = rect.height;
             // Background color
             ctx.clearRect(0, 0, width, height);
-            if (backgroundColor) {
+            if (backgroundColor && backgroundColor !== 'transparent') {
                 ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, width, height);
+            } else {
+                // Default black background if no background color or transparent
+                ctx.fillStyle = 'rgba(0, 0, 0, 1)';
                 ctx.fillRect(0, 0, width, height);
             }
             // Background image if available
@@ -3358,6 +3364,9 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                     dy = (height - drawH) / 2;
                 }
                 ctx.drawImage(img, dx, dy, drawW, drawH);
+                console.log('Background image drawn in disableVisualizer mode');
+            } else {
+                console.log('No background image available in disableVisualizer mode');
             }
 
             // Subtitles
