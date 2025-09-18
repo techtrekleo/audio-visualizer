@@ -3345,6 +3345,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             console.log('disableVisualizer mode - Canvas size:', width, height);
             console.log('Background color:', backgroundColor);
             console.log('Background image ref:', backgroundImageRef.current);
+            console.log('Background image prop:', propsRef.current.backgroundImage);
             console.log('Subtitles:', subtitles.length, 'Show subtitles:', showSubtitles);
             
             // Background color
@@ -3398,6 +3399,12 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                 
                 console.log('Current subtitle found:', currentSubtitle);
                 console.log('All subtitles:', subtitles.map(s => ({ time: s.time, text: s.text.substring(0, 20) + '...' })));
+                console.log('Time comparison details:', subtitles.slice(0, 5).map(s => ({
+                    time: s.time,
+                    currentTime: currentTime,
+                    isMatch: currentTime >= s.time,
+                    nextTime: subtitles[subtitles.indexOf(s) + 1]?.time || 'end'
+                })));
                 
                 if (currentSubtitle) {
                     drawSubtitles(
