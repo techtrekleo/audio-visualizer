@@ -3301,17 +3301,20 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
     
     useEffect(() => {
         if (props.backgroundImage) {
+            console.log('Loading background image:', props.backgroundImage);
             const img = new Image();
             img.crossOrigin = 'anonymous'; // Important for canvas tainted issues
             img.src = props.backgroundImage;
             img.onload = () => {
+                console.log('Background image loaded successfully');
                 backgroundImageRef.current = img;
             };
-            img.onerror = () => {
-                console.error("Failed to load background image.");
+            img.onerror = (error) => {
+                console.error("Failed to load background image:", error);
                 backgroundImageRef.current = null;
             }
         } else {
+            console.log('No background image prop provided');
             backgroundImageRef.current = null;
         }
     }, [props.backgroundImage]);
@@ -3403,7 +3406,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                     time: s.time,
                     currentTime: currentTime,
                     isMatch: currentTime >= s.time,
-                    nextTime: subtitles[subtitles.indexOf(s) + 1]?.time || 'end'
+                    nextTime: subtitles[subtitles.indexOf(s) + 1]?.time || 'end',
+                    timeDiff: currentTime - s.time
                 })));
                 
                 if (currentSubtitle) {
