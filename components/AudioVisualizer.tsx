@@ -3336,15 +3336,23 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         if (propsRef.current.disableVisualizer) {
             // Use existing canvas dimensions (set by ResizeObserver)
             const { width, height } = canvas;
+            
+            console.log('disableVisualizer mode - Canvas size:', width, height);
+            console.log('Background color:', backgroundColor);
+            console.log('Background image ref:', backgroundImageRef.current);
+            console.log('Subtitles:', subtitles.length, 'Show subtitles:', showSubtitles);
+            
             // Background color
             ctx.clearRect(0, 0, width, height);
             if (backgroundColor && backgroundColor !== 'transparent') {
                 ctx.fillStyle = backgroundColor;
                 ctx.fillRect(0, 0, width, height);
+                console.log('Background color drawn:', backgroundColor);
             } else {
                 // Default black background if no background color or transparent
                 ctx.fillStyle = 'rgba(0, 0, 0, 1)';
                 ctx.fillRect(0, 0, width, height);
+                console.log('Default black background drawn');
             }
             // Background image if available
             if (backgroundImageRef.current) {
@@ -3369,12 +3377,15 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
             // Subtitles
             const currentTime = propsRef.current.currentTime;
+            console.log('Current time:', currentTime);
             if (showSubtitles && subtitles.length > 0) {
                 // Find current subtitle based on time
                 const currentSubtitle = subtitles.find(sub => 
                     currentTime >= sub.time && 
                     (subtitles[subtitles.indexOf(sub) + 1]?.time || Infinity) > currentTime
                 );
+                
+                console.log('Current subtitle found:', currentSubtitle);
                 
                 if (currentSubtitle) {
                     drawSubtitles(
@@ -3391,7 +3402,12 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
                             isBeat: false
                         }
                     );
+                    console.log('Subtitle drawn successfully');
+                } else {
+                    console.log('No subtitle found for current time');
                 }
+            } else {
+                console.log('Subtitles not shown - showSubtitles:', showSubtitles, 'subtitles count:', subtitles.length);
             }
 
             // No further drawing when disabled
