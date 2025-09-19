@@ -77,7 +77,8 @@ const createRoundedRectPath = (ctx: CanvasRenderingContext2D, x: number, y: numb
     ctx.closePath();
 };
 
-const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     // Global effects are now handled in drawCustomText
@@ -143,7 +144,8 @@ const drawMonstercat = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
 };
 
 
-const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -228,7 +230,8 @@ const drawLuminousWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     ctx.restore();
 };
 
-const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
@@ -366,7 +369,8 @@ const drawFusion = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width:
     ctx.restore();
 };
 
-const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerY = height / 2;
     const centerX = width / 2;
@@ -462,7 +466,8 @@ const drawNebulaWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerX = width / 2;
@@ -664,7 +669,8 @@ const drawSolarSystem = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
-const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerX = width / 2;
@@ -870,7 +876,8 @@ const drawTechWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     ctx.restore();
 };
 
-const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -1114,7 +1121,8 @@ const drawStellarCore = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
-const drawWaterRipple = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawWaterRipple = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -1210,7 +1218,8 @@ const drawWaterRipple = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
-const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -1265,7 +1274,8 @@ const drawRadialBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
     ctx.restore();
 };
 
-const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerX = width / 2;
@@ -1486,7 +1496,8 @@ const drawParticleGalaxy = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     ctx.restore();
 };
 
-const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerX = width / 2;
@@ -1619,7 +1630,8 @@ const drawLiquidMetal = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, w
     ctx.restore();
 };
 
-const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerY = height / 2;
@@ -1680,7 +1692,8 @@ const drawGlitchWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wi
 };
 
 
-const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     // Removed screen shake for better viewing experience
@@ -1759,7 +1772,8 @@ const drawCrtGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.restore();
 };
 
-const drawMonstercatV2 = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawMonstercatV2 = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerY = height / 2;
@@ -1899,7 +1913,8 @@ const drawMonstercatV2 = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, 
     ctx.restore();
 };
 
-const drawMonstercatGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawMonstercatGlitch = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     // 1. Draw the base Monstercat visual
     drawMonstercat(ctx, dataArray, width, height, frame, sensitivity, colors, graphicEffect, isBeat, waveformStroke);
 
@@ -1935,7 +1950,8 @@ const dataMoshState: { imageData: ImageData | null, framesLeft: number } = {
     framesLeft: 0,
 };
 
-const drawDataMosh = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawDataMosh = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     // Optimized data mosh with reduced effects for better performance
@@ -2149,7 +2165,8 @@ const drawDataMosh = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, widt
     ctx.restore();
 };
 
-const drawSignalScramble = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawSignalScramble = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     // Base wave with intense chromatic aberration
@@ -2230,7 +2247,8 @@ const pixelRainState: {
     particles: [],
 };
 
-const drawPixelSort = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawPixelSort = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     // Create a digital storm effect with audio-reactive elements
@@ -2465,7 +2483,8 @@ const drawPixelSort = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, wid
     ctx.restore();
 };
 
-const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+    if (!dataArray) return;
     ctx.save();
     const centerX = width / 2;
     const centerY = height / 2;
@@ -2585,7 +2604,8 @@ const drawRepulsorField = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array,
     ctx.restore();
 };
 
-const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean) => {
+    if (!dataArray) return;
     ctx.save();
     
     const centerX = width / 2;
@@ -2654,7 +2674,8 @@ const drawAudioLandscape = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array
     ctx.restore();
 };
 
-const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+const drawPianoVirtuoso = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array | null, width: number, height: number, frame: number, sensitivity: number, colors: Palette, graphicEffect: GraphicEffectType, isBeat?: boolean, waveformStroke?: boolean, particles?: Particle[]) => {
+    if (!dataArray) return;
     ctx.save();
 
     const keyboardHeight = height * 0.25; // Made keyboard slightly taller
@@ -3173,7 +3194,8 @@ const drawCustomText = (
     ctx.restore();
 };
 
-const equalizeDataArray = (data: Uint8Array, balance: number): Uint8Array => {
+const equalizeDataArray = (data: Uint8Array | null, balance: number): Uint8Array | null => {
+    if (!data) return null;
     if (balance <= 0) {
         return data;
     }
@@ -3186,7 +3208,8 @@ const equalizeDataArray = (data: Uint8Array, balance: number): Uint8Array => {
 };
 
 
-const smoothDataArray = (data: Uint8Array, windowSize: number): Uint8Array => {
+const smoothDataArray = (data: Uint8Array | null, windowSize: number): Uint8Array | null => {
+    if (!data) return null;
     if (windowSize <= 0) {
         return data;
     }
@@ -3205,7 +3228,7 @@ const smoothDataArray = (data: Uint8Array, windowSize: number): Uint8Array => {
 
 type DrawFunction = (
     ctx: CanvasRenderingContext2D, 
-    dataArray: Uint8Array, 
+    dataArray: Uint8Array | null, 
     width: number, 
     height: number, 
     frame: number,
@@ -3338,16 +3361,23 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         // If visualizer is disabled, skip visualizer effects but continue with normal flow
         const isVisualizerDisabled = propsRef.current.disableVisualizer;
 
-        if (!analyser) return;
+        // Only require analyser for visualizer effects, not for background/subtitles
+        if (!analyser && !isVisualizerDisabled) return;
 
         frame.current++;
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        analyser.getByteFrequencyData(dataArray);
-
-        const bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+        
+        // Only process audio data if analyser is available
+        let dataArray: Uint8Array | null = null;
+        let bassAvg = 0;
         let isBeat = false;
-        if (bassAvg > 180) {
-             isBeat = true;
+        
+        if (analyser) {
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+            bassAvg = dataArray.slice(0, 32).reduce((a, b) => a + b, 0) / 32;
+            if (bassAvg > 180) {
+                isBeat = true;
+            }
         }
         
         const balancedData = equalizeDataArray(dataArray, equalization);
@@ -3555,7 +3585,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
         return () => {
             cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isPlaying, renderFrame, disableVisualizer]);
+    }, [isPlaying, renderFrame, disableVisualizer, analyser]);
 
     useEffect(() => {
         const canvas = (ref as React.RefObject<HTMLCanvasElement>)?.current;

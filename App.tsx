@@ -309,6 +309,16 @@ function App() {
 
     const handleFileSelect = (file: File) => {
         console.log('選擇音訊文件:', { name: file.name, type: file.type, size: file.size });
+        
+        // 停止當前播放
+        if (isPlaying && audioRef.current) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+        }
+        
+        // 重置音頻分析
+        resetAudioAnalysis();
+        
         setAudioFile(file);
         const url = URL.createObjectURL(file);
         setAudioUrl(url);
