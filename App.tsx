@@ -122,11 +122,46 @@ function App() {
             console.log('Interval 執行:', { backgroundImagesLength: backgroundImages.length, isPlaying });
             if (backgroundImages.length > 1 && isPlaying) {
                 console.log('開始轉場動畫');
+                
+                // 設置轉場開始時間
+                (window as any).transitionStartTime = performance.now();
                 setIsTransitioning(true);
                 
-                // 電視雜訊轉場時間設定
-                const transitionDuration = 1000; // 電視雜訊1秒
-                const switchTime = 500; // 電視雜訊0.5秒切換
+                // 根據轉場類型設定不同的持續時間
+                const getTransitionDuration = (type: TransitionType): number => {
+                    switch (type) {
+                        case TransitionType.TV_STATIC:
+                            return 800; // 0.8秒，確保震盪效果完整
+                        case TransitionType.FADE:
+                            return 800; // 0.8秒
+                        case TransitionType.SLIDE_LEFT:
+                        case TransitionType.SLIDE_RIGHT:
+                        case TransitionType.SLIDE_UP:
+                        case TransitionType.SLIDE_DOWN:
+                            return 600; // 0.6秒
+                        case TransitionType.ZOOM_IN:
+                        case TransitionType.ZOOM_OUT:
+                            return 700; // 0.7秒
+                        case TransitionType.SPIRAL:
+                            return 1200; // 1.2秒
+                        case TransitionType.WAVE:
+                            return 900; // 0.9秒
+                        case TransitionType.DIAMOND:
+                        case TransitionType.CIRCLE:
+                            return 650; // 0.65秒
+                        case TransitionType.BLINDS:
+                            return 800; // 0.8秒
+                        case TransitionType.CHECKERBOARD:
+                            return 750; // 0.75秒
+                        case TransitionType.RANDOM_PIXELS:
+                            return 1000; // 1秒
+                        default:
+                            return 1000; // 預設1秒
+                    }
+                };
+                
+                const transitionDuration = getTransitionDuration(transitionType);
+                const switchTime = transitionDuration * 0.5; // 在中間時間切換圖片
                 
                 setTimeout(() => {
                     console.log('切換圖片');

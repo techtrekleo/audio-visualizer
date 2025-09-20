@@ -3431,8 +3431,8 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
         // 繪製轉場動畫（只在背景圖片區域）
         if (isTransitioning && backgroundImages.length > 0) {
-            // 使用固定的轉場進度，避免循環計算
-            const transitionProgress = 0.5; // 固定在中間進度，讓轉場效果穩定
+            // 計算平滑的轉場進度
+            const transitionProgress = calculateTransitionProgress(transitionType);
             
             drawTransitionEffect(ctx, width, height, transitionType, transitionProgress);
         }
@@ -3594,6 +3594,94 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 
 AudioVisualizer.displayName = 'AudioVisualizer';
 
+// 計算轉場進度的函數
+const calculateTransitionProgress = (transitionType: TransitionType): number => {
+    // 獲取轉場開始時間（使用 performance.now() 獲取高精度時間戳）
+    const transitionStartTime = window.transitionStartTime || performance.now();
+    const currentTime = performance.now();
+    const elapsed = currentTime - transitionStartTime;
+    
+    // 根據轉場類型設定不同的持續時間
+    const getTransitionDuration = (type: TransitionType): number => {
+        switch (type) {
+            case TransitionType.TV_STATIC:
+                return 800; // 0.8秒，確保震盪效果完整
+            case TransitionType.FADE:
+                return 800; // 0.8秒
+            case TransitionType.SLIDE_LEFT:
+            case TransitionType.SLIDE_RIGHT:
+            case TransitionType.SLIDE_UP:
+            case TransitionType.SLIDE_DOWN:
+                return 600; // 0.6秒
+            case TransitionType.ZOOM_IN:
+            case TransitionType.ZOOM_OUT:
+                return 700; // 0.7秒
+            case TransitionType.SPIRAL:
+                return 1200; // 1.2秒
+            case TransitionType.WAVE:
+                return 900; // 0.9秒
+            case TransitionType.DIAMOND:
+            case TransitionType.CIRCLE:
+                return 650; // 0.65秒
+            case TransitionType.BLINDS:
+                return 800; // 0.8秒
+            case TransitionType.CHECKERBOARD:
+                return 750; // 0.75秒
+            case TransitionType.RANDOM_PIXELS:
+                return 1000; // 1秒
+            default:
+                return 1000; // 預設1秒
+        }
+    };
+    
+    const duration = getTransitionDuration(transitionType);
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // 使用緩動函數讓動畫更平滑
+    return applyEasing(progress, transitionType);
+};
+
+// 緩動函數，讓動畫更平滑
+const applyEasing = (progress: number, transitionType: TransitionType): number => {
+    switch (transitionType) {
+        case TransitionType.FADE:
+            // 淡入淡出使用正弦緩動
+            return Math.sin(progress * Math.PI);
+        case TransitionType.SLIDE_LEFT:
+        case TransitionType.SLIDE_RIGHT:
+        case TransitionType.SLIDE_UP:
+        case TransitionType.SLIDE_DOWN:
+            // 滑動使用 ease-out
+            return 1 - Math.pow(1 - progress, 3);
+        case TransitionType.ZOOM_IN:
+        case TransitionType.ZOOM_OUT:
+            // 縮放使用 ease-in-out
+            return progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        case TransitionType.SPIRAL:
+            // 螺旋使用線性，但加上正弦波動
+            return progress + Math.sin(progress * Math.PI * 4) * 0.1;
+        case TransitionType.WAVE:
+            // 波浪使用正弦緩動
+            return Math.sin(progress * Math.PI);
+        case TransitionType.DIAMOND:
+        case TransitionType.CIRCLE:
+            // 幾何形狀使用 ease-out
+            return 1 - Math.pow(1 - progress, 2);
+        case TransitionType.BLINDS:
+        case TransitionType.CHECKERBOARD:
+        case TransitionType.RANDOM_PIXELS:
+            // 隨機效果使用線性
+            return progress;
+        case TransitionType.TV_STATIC:
+            // 電視雜訊使用快速震盪，確保在短時間內也有明顯效果
+            return Math.sin(progress * Math.PI * 6) * 0.5 + 0.5;
+        default:
+            return progress;
+    }
+};
+
 // 轉場效果函數
 const drawTransitionEffect = (
     ctx: CanvasRenderingContext2D, 
@@ -3657,27 +3745,66 @@ const drawTransitionEffect = (
 
 // 電視雜訊效果
 const drawTVStatic = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.globalAlpha = Math.sin(progress * Math.PI) * 0.3;
+    ctx.save();
     
+    // 使用更強烈的震盪效果
+    const intensity = Math.sin(progress * Math.PI * 4) * 0.5 + 0.5; // 0-1 的震盪
+    const alpha = Math.sin(progress * Math.PI) * 0.8 + 0.2; // 0.2-1.0 的透明度變化
+    
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alpha;
+    
+    // 創建雜訊效果
     const imageData = ctx.createImageData(width, height);
     const data = imageData.data;
     
     for (let i = 0; i < data.length; i += 4) {
+        // 使用更強烈的雜訊對比
         const noise = Math.random() * 255;
-        data[i] = noise;     // R
-        data[i + 1] = noise; // G
-        data[i + 2] = noise; // B
-        data[i + 3] = 255;   // A
+        const contrast = intensity > 0.5 ? noise : 255 - noise; // 高對比切換
+        
+        data[i] = contrast;     // R
+        data[i + 1] = contrast; // G
+        data[i + 2] = contrast; // B
+        data[i + 3] = 255;      // A
     }
     
     ctx.putImageData(imageData, 0, 0);
+    
+    // 添加額外的震盪線條效果
+    if (intensity > 0.3) {
+        ctx.globalAlpha = intensity * 0.3;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        
+        // 繪製水平震盪線
+        for (let y = 0; y < height; y += 20) {
+            if (Math.random() < intensity) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+        
+        // 繪製垂直震盪線
+        for (let x = 0; x < width; x += 30) {
+            if (Math.random() < intensity * 0.5) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+        }
+    }
+    
+    ctx.restore();
 };
 
 // 淡入淡出效果
 const drawFade = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = Math.sin(progress * Math.PI);
+    ctx.globalAlpha = progress;
     ctx.fillStyle = 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, width, height);
 };
@@ -3756,7 +3883,8 @@ const drawSpiral = (ctx: CanvasRenderingContext2D, width: number, height: number
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     
-    for (let angle = 0; angle < progress * Math.PI * 8; angle += 0.1) {
+    const maxAngle = progress * Math.PI * 8;
+    for (let angle = 0; angle < maxAngle; angle += 0.1) {
         const radius = (angle / (Math.PI * 8)) * maxRadius * progress;
         const x = centerX + Math.cos(angle) * radius;
         const y = centerY + Math.sin(angle) * radius;
@@ -3776,7 +3904,9 @@ const drawWave = (ctx: CanvasRenderingContext2D, width: number, height: number, 
     ctx.moveTo(0, height);
     
     for (let x = 0; x <= width; x += 5) {
-        const y = height * (1 - progress) + Math.sin((x / width) * Math.PI * 4 + progress * Math.PI * 2) * 50 * progress;
+        const waveHeight = height * (1 - progress);
+        const waveOffset = Math.sin((x / width) * Math.PI * 4 + progress * Math.PI * 2) * 50 * progress;
+        const y = waveHeight + waveOffset;
         ctx.lineTo(x, y);
     }
     
@@ -3826,8 +3956,9 @@ const drawBlinds = (ctx: CanvasRenderingContext2D, width: number, height: number
     const blindHeight = height / blindCount;
     
     for (let i = 0; i < blindCount; i++) {
-        if (Math.random() < progress) {
-            ctx.fillRect(0, i * blindHeight, width, blindHeight);
+        const blindProgress = Math.max(0, progress - (i / blindCount) * 0.5);
+        if (blindProgress > 0) {
+            ctx.fillRect(0, i * blindHeight, width, blindHeight * blindProgress);
         }
     }
 };
@@ -3843,11 +3974,14 @@ const drawCheckerboard = (ctx: CanvasRenderingContext2D, width: number, height: 
     
     for (let x = 0; x < tilesX; x++) {
         for (let y = 0; y < tilesY; y++) {
-            if ((x + y) % 2 === 0 && Math.random() < progress) {
+            const tileProgress = Math.max(0, progress - ((x + y) / (tilesX + tilesY)) * 0.8);
+            if ((x + y) % 2 === 0 && tileProgress > 0) {
+                ctx.globalAlpha = tileProgress;
                 ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
             }
         }
     }
+    ctx.globalAlpha = 1;
 };
 
 // 隨機像素效果
