@@ -113,6 +113,20 @@ export enum SubtitleDisplayMode {
 
 export enum TransitionType {
     TV_STATIC = '電視雜訊',
+    FADE = '淡入淡出',
+    SLIDE_LEFT = '向左滑動',
+    SLIDE_RIGHT = '向右滑動',
+    SLIDE_UP = '向上滑動',
+    SLIDE_DOWN = '向下滑動',
+    ZOOM_IN = '放大',
+    ZOOM_OUT = '縮小',
+    SPIRAL = '螺旋',
+    WAVE = '波浪',
+    DIAMOND = '菱形',
+    CIRCLE = '圓形',
+    BLINDS = '百葉窗',
+    CHECKERBOARD = '棋盤格',
+    RANDOM_PIXELS = '隨機像素',
 }
 
 export type Subtitle = {

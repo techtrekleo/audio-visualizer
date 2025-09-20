@@ -3434,27 +3434,7 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
             // 使用固定的轉場進度，避免循環計算
             const transitionProgress = 0.5; // 固定在中間進度，讓轉場效果穩定
             
-            if (transitionType === TransitionType.TV_STATIC) {
-                // 只在背景圖片區域繪製雜訊效果
-                ctx.save();
-                ctx.globalCompositeOperation = 'multiply';
-                ctx.globalAlpha = Math.sin(transitionProgress * Math.PI) * 0.3;
-                
-                // 創建雜訊效果
-                const imageData = ctx.createImageData(width, height);
-                const data = imageData.data;
-                
-                for (let i = 0; i < data.length; i += 4) {
-                    const noise = Math.random() * 255;
-                    data[i] = noise;     // R
-                    data[i + 1] = noise; // G
-                    data[i + 2] = noise; // B
-                    data[i + 3] = 255;   // A
-                }
-                
-                ctx.putImageData(imageData, 0, 0);
-                ctx.restore();
-            }
+            drawTransitionEffect(ctx, width, height, transitionType, transitionProgress);
         }
 
         const drawFunction = VISUALIZATION_MAP[visualizationType];
@@ -3613,5 +3593,275 @@ const AudioVisualizer = forwardRef<HTMLCanvasElement, AudioVisualizerProps>((pro
 });
 
 AudioVisualizer.displayName = 'AudioVisualizer';
+
+// 轉場效果函數
+const drawTransitionEffect = (
+    ctx: CanvasRenderingContext2D, 
+    width: number, 
+    height: number, 
+    transitionType: TransitionType, 
+    progress: number
+) => {
+    ctx.save();
+    
+    switch (transitionType) {
+        case TransitionType.TV_STATIC:
+            drawTVStatic(ctx, width, height, progress);
+            break;
+        case TransitionType.FADE:
+            drawFade(ctx, width, height, progress);
+            break;
+        case TransitionType.SLIDE_LEFT:
+            drawSlideLeft(ctx, width, height, progress);
+            break;
+        case TransitionType.SLIDE_RIGHT:
+            drawSlideRight(ctx, width, height, progress);
+            break;
+        case TransitionType.SLIDE_UP:
+            drawSlideUp(ctx, width, height, progress);
+            break;
+        case TransitionType.SLIDE_DOWN:
+            drawSlideDown(ctx, width, height, progress);
+            break;
+        case TransitionType.ZOOM_IN:
+            drawZoomIn(ctx, width, height, progress);
+            break;
+        case TransitionType.ZOOM_OUT:
+            drawZoomOut(ctx, width, height, progress);
+            break;
+        case TransitionType.SPIRAL:
+            drawSpiral(ctx, width, height, progress);
+            break;
+        case TransitionType.WAVE:
+            drawWave(ctx, width, height, progress);
+            break;
+        case TransitionType.DIAMOND:
+            drawDiamond(ctx, width, height, progress);
+            break;
+        case TransitionType.CIRCLE:
+            drawCircle(ctx, width, height, progress);
+            break;
+        case TransitionType.BLINDS:
+            drawBlinds(ctx, width, height, progress);
+            break;
+        case TransitionType.CHECKERBOARD:
+            drawCheckerboard(ctx, width, height, progress);
+            break;
+        case TransitionType.RANDOM_PIXELS:
+            drawRandomPixels(ctx, width, height, progress);
+            break;
+    }
+    
+    ctx.restore();
+};
+
+// 電視雜訊效果
+const drawTVStatic = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = Math.sin(progress * Math.PI) * 0.3;
+    
+    const imageData = ctx.createImageData(width, height);
+    const data = imageData.data;
+    
+    for (let i = 0; i < data.length; i += 4) {
+        const noise = Math.random() * 255;
+        data[i] = noise;     // R
+        data[i + 1] = noise; // G
+        data[i + 2] = noise; // B
+        data[i + 3] = 255;   // A
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+};
+
+// 淡入淡出效果
+const drawFade = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = Math.sin(progress * Math.PI);
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.fillRect(0, 0, width, height);
+};
+
+// 向左滑動效果
+const drawSlideLeft = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    const slideWidth = width * progress;
+    ctx.fillRect(0, 0, slideWidth, height);
+};
+
+// 向右滑動效果
+const drawSlideRight = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    const slideWidth = width * progress;
+    ctx.fillRect(width - slideWidth, 0, slideWidth, height);
+};
+
+// 向上滑動效果
+const drawSlideUp = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    const slideHeight = height * progress;
+    ctx.fillRect(0, 0, width, slideHeight);
+};
+
+// 向下滑動效果
+const drawSlideDown = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    const slideHeight = height * progress;
+    ctx.fillRect(0, height - slideHeight, width, slideHeight);
+};
+
+// 放大效果
+const drawZoomIn = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+    const radius = maxRadius * progress;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+};
+
+// 縮小效果
+const drawZoomOut = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+    const radius = maxRadius * (1 - progress);
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+};
+
+// 螺旋效果
+const drawSpiral = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    
+    for (let angle = 0; angle < progress * Math.PI * 8; angle += 0.1) {
+        const radius = (angle / (Math.PI * 8)) * maxRadius * progress;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        ctx.lineTo(x, y);
+    }
+    
+    ctx.lineWidth = 20;
+    ctx.stroke();
+};
+
+// 波浪效果
+const drawWave = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    
+    for (let x = 0; x <= width; x += 5) {
+        const y = height * (1 - progress) + Math.sin((x / width) * Math.PI * 4 + progress * Math.PI * 2) * 50 * progress;
+        ctx.lineTo(x, y);
+    }
+    
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+};
+
+// 菱形效果
+const drawDiamond = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const size = Math.min(width, height) * progress;
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY - size);
+    ctx.lineTo(centerX + size, centerY);
+    ctx.lineTo(centerX, centerY + size);
+    ctx.lineTo(centerX - size, centerY);
+    ctx.closePath();
+    ctx.fill();
+};
+
+// 圓形效果
+const drawCircle = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 * progress;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+};
+
+// 百葉窗效果
+const drawBlinds = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const blindCount = 20;
+    const blindHeight = height / blindCount;
+    
+    for (let i = 0; i < blindCount; i++) {
+        if (Math.random() < progress) {
+            ctx.fillRect(0, i * blindHeight, width, blindHeight);
+        }
+    }
+};
+
+// 棋盤格效果
+const drawCheckerboard = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const tileSize = 50;
+    const tilesX = Math.ceil(width / tileSize);
+    const tilesY = Math.ceil(height / tileSize);
+    
+    for (let x = 0; x < tilesX; x++) {
+        for (let y = 0; y < tilesY; y++) {
+            if ((x + y) % 2 === 0 && Math.random() < progress) {
+                ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            }
+        }
+    }
+};
+
+// 隨機像素效果
+const drawRandomPixels = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    
+    const pixelCount = Math.floor(width * height * progress * 0.1);
+    
+    for (let i = 0; i < pixelCount; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        ctx.fillRect(x, y, 2, 2);
+    }
+};
 
 export default AudioVisualizer;

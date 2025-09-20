@@ -751,13 +751,31 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                             </div>
                                         )}
                                         
-                                        {/* 轉場效果提示 */}
+                                        {/* 轉場效果選擇 */}
                                         {props.isSlideshowEnabled && (
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium text-gray-300">轉場效果</label>
-                                                <div className="px-3 py-2 rounded-lg bg-cyan-600 text-white text-sm font-medium">
-                                                    📺 電視雜訊
-                                                </div>
+                                                <select
+                                                    value={props.transitionType}
+                                                    onChange={(e) => props.onTransitionTypeChange(e.target.value as TransitionType)}
+                                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                                                >
+                                                    <option value={TransitionType.TV_STATIC}>📺 電視雜訊</option>
+                                                    <option value={TransitionType.FADE}>🌅 淡入淡出</option>
+                                                    <option value={TransitionType.SLIDE_LEFT}>⬅️ 向左滑動</option>
+                                                    <option value={TransitionType.SLIDE_RIGHT}>➡️ 向右滑動</option>
+                                                    <option value={TransitionType.SLIDE_UP}>⬆️ 向上滑動</option>
+                                                    <option value={TransitionType.SLIDE_DOWN}>⬇️ 向下滑動</option>
+                                                    <option value={TransitionType.ZOOM_IN}>🔍 放大</option>
+                                                    <option value={TransitionType.ZOOM_OUT}>🔍 縮小</option>
+                                                    <option value={TransitionType.SPIRAL}>🌀 螺旋</option>
+                                                    <option value={TransitionType.WAVE}>🌊 波浪</option>
+                                                    <option value={TransitionType.DIAMOND}>💎 菱形</option>
+                                                    <option value={TransitionType.CIRCLE}>⭕ 圓形</option>
+                                                    <option value={TransitionType.BLINDS}>🪟 百葉窗</option>
+                                                    <option value={TransitionType.CHECKERBOARD}>🏁 棋盤格</option>
+                                                    <option value={TransitionType.RANDOM_PIXELS}>🎲 隨機像素</option>
+                                                </select>
                                             </div>
                                         )}
                                         
@@ -769,11 +787,11 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
                                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                                     </svg>
                                                     <span className="font-medium">
-                                                        📺 電視雜訊過場
+                                                        {getTransitionEmoji(props.transitionType)} {props.transitionType}過場
                                                     </span>
                                                 </div>
                                                 <p className="text-purple-200 text-xs mt-1">
-                                                    每 {props.slideshowInterval} 秒自動切換，使用電視雜訊晃動效果過場
+                                                    每 {props.slideshowInterval} 秒自動切換，使用{props.transitionType}效果過場
                                                 </p>
                                             </div>
                                         )}
@@ -1114,6 +1132,44 @@ const OptimizedControls: React.FC<OptimizedControlsProps> = (props) => {
             </div>
         </div>
     );
+};
+
+// 獲取轉場效果對應的表情符號
+const getTransitionEmoji = (transitionType: TransitionType): string => {
+    switch (transitionType) {
+        case TransitionType.TV_STATIC:
+            return '📺';
+        case TransitionType.FADE:
+            return '🌅';
+        case TransitionType.SLIDE_LEFT:
+            return '⬅️';
+        case TransitionType.SLIDE_RIGHT:
+            return '➡️';
+        case TransitionType.SLIDE_UP:
+            return '⬆️';
+        case TransitionType.SLIDE_DOWN:
+            return '⬇️';
+        case TransitionType.ZOOM_IN:
+            return '🔍';
+        case TransitionType.ZOOM_OUT:
+            return '🔍';
+        case TransitionType.SPIRAL:
+            return '🌀';
+        case TransitionType.WAVE:
+            return '🌊';
+        case TransitionType.DIAMOND:
+            return '💎';
+        case TransitionType.CIRCLE:
+            return '⭕';
+        case TransitionType.BLINDS:
+            return '🪟';
+        case TransitionType.CHECKERBOARD:
+            return '🏁';
+        case TransitionType.RANDOM_PIXELS:
+            return '🎲';
+        default:
+            return '📺';
+    }
 };
 
 export default OptimizedControls;
