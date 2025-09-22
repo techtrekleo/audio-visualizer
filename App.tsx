@@ -718,7 +718,7 @@ function App() {
                         }}
                     >
                         <img 
-                            src="assets/cat-avatar.png" 
+                            src="/assets/cat-avatar.png" 
                             alt="口袋裡的貓" 
                             className="w-8 h-8 rounded-full"
                             style={{ width: '2rem', height: '2rem' }}
